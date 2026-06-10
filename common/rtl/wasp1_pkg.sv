@@ -15,7 +15,23 @@ package wasp1_pkg;
   localparam logic [31:0] I2C_BASE     = 32'h4005_0000;
   localparam logic [31:0] GPIO_BASE    = 32'h4006_0000;
 
+  localparam logic [31:0] OTP_SIZE     = 32'h0001_0000;
+  localparam logic [31:0] ISRAM_SIZE   = 32'h0001_0000;
+  localparam logic [31:0] DSRAM_SIZE   = 32'h0001_0000;
   localparam logic [31:0] PERIPH_SIZE  = 32'h0000_1000;
+
+  localparam int AHB_SLAVE_OTP     = 0;
+  localparam int AHB_SLAVE_ISRAM   = 1;
+  localparam int AHB_SLAVE_DSRAM   = 2;
+  localparam int AHB_SLAVE_DMA     = 3;
+  localparam int AHB_SLAVE_WDG     = 4;
+  localparam int AHB_SLAVE_TIMER   = 5;
+  localparam int AHB_SLAVE_INTC    = 6;
+  localparam int AHB_SLAVE_UART    = 7;
+  localparam int AHB_SLAVE_I2C     = 8;
+  localparam int AHB_SLAVE_GPIO    = 9;
+  localparam int AHB_SLAVE_DEFAULT = 10;
+  localparam int AHB_SLAVE_COUNT   = 11;
 
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;

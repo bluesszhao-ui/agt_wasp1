@@ -90,22 +90,48 @@ wasp1 implementation.
 
 The initial decode follows `docs/wasp1_memory_map.md`.
 
-| Slave | Base |
-| --- | ---: |
-| OTP | `0x0000_0000` |
-| I-SRAM | `0x1000_0000` |
-| D-SRAM | `0x2000_0000` |
-| DMA regs | `0x4000_0000` |
-| WDG | `0x4001_0000` |
-| timer | `0x4002_0000` |
-| intc | `0x4003_0000` |
-| UART | `0x4004_0000` |
-| I2C | `0x4005_0000` |
-| GPIO | `0x4006_0000` |
+| Index | Slave | Base | Initial size |
+| ---: | --- | ---: | ---: |
+| 0 | OTP | `0x0000_0000` | `0x0001_0000` |
+| 1 | I-SRAM | `0x1000_0000` | `0x0001_0000` |
+| 2 | D-SRAM | `0x2000_0000` | `0x0001_0000` |
+| 3 | DMA regs | `0x4000_0000` | `0x0000_1000` |
+| 4 | WDG | `0x4001_0000` | `0x0000_1000` |
+| 5 | timer | `0x4002_0000` | `0x0000_1000` |
+| 6 | intc | `0x4003_0000` | `0x0000_1000` |
+| 7 | UART | `0x4004_0000` | `0x0000_1000` |
+| 8 | I2C | `0x4005_0000` | `0x0000_1000` |
+| 9 | GPIO | `0x4006_0000` | `0x0000_1000` |
+| 10 | default | unmatched | N/A |
 
 Unmatched addresses select `ahb_default_slave`.
 
-## 6. AHB-Lite Subset
+The memory sizes above are initial RTL parameters in `wasp1_pkg`. They can be
+changed later without changing the decoder interface.
+
+## 6. ahb_decoder
+
+`ahb_decoder` is combinational.
+
+Inputs:
+
+```text
+haddr_i
+active_i
+```
+
+Outputs:
+
+```text
+hsel_o[AHB_SLAVE_COUNT-1:0]
+default_sel_o
+```
+
+When `active_i` is low, no slave is selected. When `active_i` is high, exactly
+one bit of `hsel_o` is asserted. Unmapped addresses select
+`AHB_SLAVE_DEFAULT`.
+
+## 7. AHB-Lite Subset
 
 The first bus implementation supports:
 
