@@ -12,6 +12,7 @@
 | Simulation result | PASS |
 | `ahb_decoder` self-check count | 183 |
 | `ahb_default_slave` self-check count | 136 |
+| `ahb_slave_mux` self-check count | 144 |
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
@@ -101,3 +102,36 @@ These are initial parameters, not final capacity decisions.
 | HREADY always high check | PASS for every case |
 | HRDATA zero check | PASS for every case |
 | Scoreboard random check | 128 deterministic random transfers |
+
+## 8. ahb_slave_mux Case Table
+
+| Time | Action | Expected result | Observed result |
+| --- | --- | --- | --- |
+| Check 0 | Drive no slave selected | HRDATA zero, HREADY high, HRESP OKAY, no select error | PASS |
+| Checks 1-11 | Select each slave once | Selected slave HRDATA/HREADY/HRESP forwarded | PASS |
+| Check 12 | Select UART with HREADY low | HREADY low forwarded | PASS |
+| Check 13 | Select default slave with HRESP ERROR | HRESP ERROR forwarded | PASS |
+| Checks 14-15 | Drive two-select and all-select illegal cases | HRESP ERROR and select_err asserted | PASS |
+| Checks 16-143 | Drive 128 deterministic random one-hot selects | RTL response matches selected slave model | PASS |
+
+## 9. ahb_slave_mux Functional Coverage Summary
+
+| Coverage item | Result |
+| --- | --- |
+| Total self-checks | 144 |
+| No-select path | 1 hit |
+| Multi-select error path | 2 hits |
+| HREADY low forwarding | 65 hits |
+| HRESP ERROR forwarding | 70 hits |
+| Slave 0 hits | 13 |
+| Slave 1 hits | 13 |
+| Slave 2 hits | 11 |
+| Slave 3 hits | 14 |
+| Slave 4 hits | 9 |
+| Slave 5 hits | 17 |
+| Slave 6 hits | 13 |
+| Slave 7 hits | 13 |
+| Slave 8 hits | 12 |
+| Slave 9 hits | 9 |
+| Slave 10 hits | 17 |
+| Scoreboard random check | 128 deterministic random one-hot selects |

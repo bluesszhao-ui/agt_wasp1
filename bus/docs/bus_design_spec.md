@@ -172,7 +172,52 @@ make sure they do not affect the response policy.
 other AHB-Lite slaves. The first implementation is zero-wait and combinational;
 the clock/reset ports are reserved for future response-phase or assertion logic.
 
-## 8. AHB-Lite Subset
+## 8. ahb_slave_mux
+
+`ahb_slave_mux` selects the response from the active slave.
+
+Inputs:
+
+```text
+hsel_i[AHB_SLAVE_COUNT-1:0]
+slave_hrdata_i[AHB_SLAVE_COUNT]
+slave_hready_i[AHB_SLAVE_COUNT]
+slave_hresp_i[AHB_SLAVE_COUNT]
+```
+
+Outputs:
+
+```text
+hrdata_o
+hready_o
+hresp_o
+select_err_o
+```
+
+Behavior:
+
+```text
+no selected slave:
+  HRDATA = 0
+  HREADY = 1
+  HRESP  = OKAY
+  select_err_o = 0
+
+exactly one selected slave:
+  HRDATA/HREADY/HRESP are forwarded from the selected slave
+  select_err_o = 0
+
+multiple selected slaves:
+  HRDATA = 0
+  HREADY = 1
+  HRESP  = ERROR
+  select_err_o = 1
+```
+
+The normal fabric path expects `ahb_decoder` to produce one-hot selects.
+`select_err_o` exists to expose integration bugs during verification.
+
+## 9. AHB-Lite Subset
 
 The first bus implementation supports:
 

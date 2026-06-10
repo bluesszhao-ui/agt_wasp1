@@ -18,7 +18,7 @@ PASS       Current verification target passes
 | `common` foundation | PASS | Verilator lint passes |
 | `bus/ahb_decoder` | PASS | Directed, boundary, one-hot, default, and deterministic random tests pass |
 | `bus/ahb_default_slave` | PASS | OKAY/ERROR response paths and random tests pass |
-| `bus/ahb_slave_mux` | TODO | Depends on slave response policy |
+| `bus/ahb_slave_mux` | PASS | Response forwarding, no-select, multi-select, random tests pass |
 | `bus/ahb_arbiter_2m` | TODO | Round-robin arbitration |
 | `sram` | TODO | AHB SRAM slave and model |
 | `otp` | TODO | Executable OTP model and controller |
@@ -39,10 +39,9 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify bus/ahb_slave_mux
-2. Implement and verify bus/ahb_arbiter_2m
-3. Integrate initial bus fabric
-4. Move to sram AHB slave
+1. Implement and verify bus/ahb_arbiter_2m
+2. Integrate initial bus fabric
+3. Move to sram AHB slave
 ```
 
 ## Commit Policy Going Forward
