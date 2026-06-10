@@ -138,6 +138,8 @@ one bit of `hsel_o` is asserted. Unmapped addresses select
 Inputs:
 
 ```text
+hclk_i
+hresetn_i
 hsel_i
 htrans_i
 hwrite_i
@@ -165,6 +167,10 @@ hresp_o  = OKAY otherwise
 The default slave does not stall. It ignores write data and transfer size, but
 the verification still covers read/write and byte/halfword/word combinations to
 make sure they do not affect the response policy.
+
+`hclk_i` and `hresetn_i` are present to keep the module interface aligned with
+other AHB-Lite slaves. The first implementation is zero-wait and combinational;
+the clock/reset ports are reserved for future response-phase or assertion logic.
 
 ## 8. AHB-Lite Subset
 

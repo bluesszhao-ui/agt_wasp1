@@ -17,8 +17,12 @@
 
 ## 2. Simulation Timebase
 
-The current verified bus submodules, `ahb_decoder` and `ahb_default_slave`, are
-pure combinational modules. Their testbenches do not drive a DUT clock.
+The current `ahb_decoder` is pure combinational and its testbench does not drive
+a DUT clock.
+
+`ahb_default_slave` has AHB-style `hclk_i` and `hresetn_i` ports for interface
+consistency. Its current response logic is still zero-wait combinational, but
+the testbench drives a 10ns clock and samples once per verification cycle.
 
 The verification tables below use ordered simulation check windows. These are
 not clock cycles. The project default for clocked modules is:
@@ -75,10 +79,12 @@ These are initial parameters, not final capacity decisions.
 
 | Time | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
-| Checks 0-1 | Drive unselected IDLE and NONSEQ transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
-| Checks 2-3 | Drive selected IDLE and BUSY transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
-| Checks 4-7 | Drive selected NONSEQ/SEQ read/write transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS |
-| Checks 8-135 | Drive 128 deterministic random transfers | RTL response matches scoreboard model | PASS |
+| Cycles 0-2 | Assert reset for two cycles | Inputs initialized, no error response required | PASS |
+| Cycle 3 | Release reset and settle for one cycle | DUT ready for checks | PASS |
+| Cycles 4-5 | Drive unselected IDLE and NONSEQ transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| Cycles 6-7 | Drive selected IDLE and BUSY transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| Cycles 8-11 | Drive selected NONSEQ/SEQ read/write transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS |
+| Cycles 12-139 | Drive 128 deterministic random transfers | RTL response matches scoreboard model | PASS |
 
 ## 7. ahb_default_slave Functional Coverage Summary
 

@@ -3,6 +3,8 @@
 module ahb_default_slave #(
   parameter int DATA_WIDTH = wasp1_pkg::DATA_WIDTH
 ) (
+  input  logic                  hclk_i,
+  input  logic                  hresetn_i,
   input  logic                  hsel_i,
   input  logic [1:0]            htrans_i,
   input  logic                  hwrite_i,
@@ -22,5 +24,6 @@ module ahb_default_slave #(
   assign hresp_o = active_transfer ? AHB_HRESP_ERROR : AHB_HRESP_OKAY;
 
   logic unused_inputs;
-  assign unused_inputs = hwrite_i ^ hsize_i[0] ^ hsize_i[1] ^ hsize_i[2] ^ ^hwdata_i;
+  assign unused_inputs = hclk_i ^ hresetn_i ^ hwrite_i ^ hsize_i[0] ^
+                         hsize_i[1] ^ hsize_i[2] ^ ^hwdata_i;
 endmodule

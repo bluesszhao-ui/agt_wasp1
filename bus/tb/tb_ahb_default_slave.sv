@@ -3,6 +3,10 @@
 module tb_ahb_default_slave;
   import wasp1_pkg::*;
 
+  localparam time CLK_PERIOD = 10ns;
+
+  logic                  hclk;
+  logic                  hresetn;
   logic                  hsel;
   logic [1:0]            htrans;
   logic                  hwrite;
@@ -20,6 +24,8 @@ module tb_ahb_default_slave;
   int unsigned size_hit_count [3];
 
   ahb_default_slave u_ahb_default_slave (
+    .hclk_i(hclk),
+    .hresetn_i(hresetn),
     .hsel_i(hsel),
     .htrans_i(htrans),
     .hwrite_i(hwrite),
@@ -29,6 +35,25 @@ module tb_ahb_default_slave;
     .hready_o(hready),
     .hresp_o(hresp)
   );
+
+  initial begin
+    hclk = 1'b0;
+    forever #(CLK_PERIOD / 2) hclk = ~hclk;
+  end
+
+  task automatic apply_reset;
+    begin
+      hresetn = 1'b0;
+      hsel = 1'b0;
+      htrans = AHB_HTRANS_IDLE;
+      hwrite = 1'b0;
+      hsize = AHB_HSIZE_WORD;
+      hwdata = '0;
+      repeat (2) @(posedge hclk);
+      hresetn = 1'b1;
+      @(posedge hclk);
+    end
+  endtask
 
   task automatic check_response(
     input logic       sel,
@@ -40,12 +65,14 @@ module tb_ahb_default_slave;
     input string      label
   );
     begin
+      @(negedge hclk);
       hsel = sel;
       htrans = trans;
       hwrite = write;
       hsize = size;
       hwdata = wdata;
-      #1;
+      @(posedge hclk);
+      #1ns;
 
       if (hready !== 1'b1) begin
         $error("%s: expected hready=1 got %0b", label, hready);
@@ -147,11 +174,7 @@ module tb_ahb_default_slave;
       size_hit_count[idx] = 0;
     end
 
-    hsel = 1'b0;
-    htrans = AHB_HTRANS_IDLE;
-    hwrite = 1'b0;
-    hsize = AHB_HSIZE_WORD;
-    hwdata = '0;
+    apply_reset();
 
     check_response(1'b0, AHB_HTRANS_IDLE,   1'b0, AHB_HSIZE_BYTE, 32'h0000_0000, AHB_HRESP_OKAY,  "unselected idle read");
     check_response(1'b0, AHB_HTRANS_NONSEQ, 1'b1, AHB_HSIZE_WORD, 32'hCAFE_BABE, AHB_HRESP_OKAY,  "unselected nonseq write");
