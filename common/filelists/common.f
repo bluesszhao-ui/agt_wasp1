@@ -1,0 +1,10 @@
+rtl/wasp1_pkg.sv
+rtl/ahb_lite_if.sv
+rtl/mem_req_rsp_if.sv
+rtl/irq_if.sv
+rtl/debug_if.sv
+rtl/reset_sync.sv
+rtl/sync_reg.sv
+rtl/simple_fifo.sv
+rtl/skid_buffer.sv
+tb/common_lint_top.sv

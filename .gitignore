@@ -1,0 +1,24 @@
+# Build, log, and waveform outputs
+build/*
+logs/*
+wave/*
+*/build/*
+*/logs/*
+*/wave/*
+
+# Keep directory placeholders
+!.gitkeep
+*/!.gitkeep
+*/*/!.gitkeep
+
+# Common simulator outputs
+*.vcd
+*.fst
+*.fsdb
+*.wlf
+*.log
+
+# Local OS/editor noise
+.DS_Store
+*.swp
+*.swo

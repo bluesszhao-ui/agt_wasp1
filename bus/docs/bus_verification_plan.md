@@ -1,0 +1,42 @@
+# bus Verification Plan
+
+## 1. Goals
+
+The bus verification plan checks AHB-Lite arbitration, address decoding, slave
+response muxing, and default error handling.
+
+## 2. Directed Cases
+
+| Time | Action | Expected result | Observed result |
+| --- | --- | --- | --- |
+| 0ns-20ns | Apply reset | Arbiter grant and decoder state reset | TBD |
+| 20ns-60ns | Core reads OTP address | OTP select asserted, core receives OTP response | TBD |
+| 60ns-100ns | Core writes D-SRAM address | D-SRAM select asserted, write controls forwarded | TBD |
+| 100ns-140ns | DMA reads D-SRAM address | DMA receives grant and slave response | TBD |
+| 140ns-200ns | Core and DMA request simultaneously | Round-robin alternates accepted grants | TBD |
+| 200ns-240ns | Access unmapped address | Default slave returns ERROR | TBD |
+| 240ns-300ns | Selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
+
+## 3. Protocol Checks
+
+```text
+only one slave select is active per accepted address phase
+default slave selected for unmapped regions
+granted master receives selected slave response
+non-granted master is stalled
+address/control stay stable while HREADY is low
+round-robin grant toggles under simultaneous valid requests
+```
+
+## 4. Coverage Intent
+
+Functional coverage should include:
+
+```text
+each slave selected at least once
+read and write transfer per writable slave
+default error path
+core priority after reset
+DMA grant after core grant
+stall insertion on each response path
+```
