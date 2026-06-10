@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 interface debug_if #(
   parameter int XLEN = 32
 ) (

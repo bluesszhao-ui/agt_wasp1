@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 interface mem_req_rsp_if #(
   parameter int ADDR_WIDTH = 32,
   parameter int DATA_WIDTH = 32

@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 interface irq_if #(
   parameter int IRQ_COUNT = 1
 ) (

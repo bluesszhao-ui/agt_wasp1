@@ -33,6 +33,19 @@ Each verification document must include a table like this:
 | 20ns-60ns | Drive first transaction | DUT accepts request | TBD |
 | 60ns-100ns | Check response | Response matches expected value | TBD |
 
+Default simulation timebase:
+
+```text
+`timescale 1ns/1ps
+clock period = 10ns
+clock frequency = 100MHz
+```
+
+Pure combinational modules may be checked without a DUT clock, but the
+verification document should state that explicitly. When practical, combinational
+testbenches should still group checks into 10ns verification steps so reports
+remain consistent with clocked modules.
+
 ## 4. Protocol Checks
 
 AHB-Lite modules require checks for:

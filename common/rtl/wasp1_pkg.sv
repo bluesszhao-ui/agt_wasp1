@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 package wasp1_pkg;
   localparam int XLEN       = 32;
   localparam int ADDR_WIDTH = 32;

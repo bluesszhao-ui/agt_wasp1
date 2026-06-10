@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module ahb_decoder #(
   parameter int ADDR_WIDTH = wasp1_pkg::ADDR_WIDTH,
   parameter int SLAVE_COUNT = wasp1_pkg::AHB_SLAVE_COUNT,

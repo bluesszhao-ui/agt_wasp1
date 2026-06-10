@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module reset_sync #(
   parameter int STAGES = 2
 ) (

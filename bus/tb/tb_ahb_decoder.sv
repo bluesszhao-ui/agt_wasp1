@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module tb_ahb_decoder;
   import wasp1_pkg::*;
 

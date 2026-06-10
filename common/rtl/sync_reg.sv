@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module sync_reg #(
   parameter int WIDTH  = 1,
   parameter int STAGES = 2

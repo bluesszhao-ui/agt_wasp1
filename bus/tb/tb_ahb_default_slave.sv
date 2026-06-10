@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module tb_ahb_default_slave;
   import wasp1_pkg::*;
 

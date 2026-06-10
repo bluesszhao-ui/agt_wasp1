@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module common_lint_top (
   input  logic        clk_i,
   input  logic        rst_ni,

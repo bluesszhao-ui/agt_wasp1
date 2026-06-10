@@ -15,18 +15,32 @@
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
-## 2. ahb_decoder Case Table
+## 2. Simulation Timebase
+
+The current verified bus submodules, `ahb_decoder` and `ahb_default_slave`, are
+pure combinational modules. Their testbenches do not drive a DUT clock.
+
+The verification tables below use ordered simulation check windows. These are
+not clock cycles. The project default for clocked modules is:
+
+```text
+timescale = 1ns/1ps
+clock period = 10ns
+clock frequency = 100MHz
+```
+
+## 3. ahb_decoder Case Table
 
 | Time | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
-| 0ns-1ns | Hold `active_i=0` at zero address | No slave selected | PASS |
-| 1ns-16ns | Decode OTP/I-SRAM/D-SRAM base/mid/end/before/after addresses | Matching memory select or default select asserted | PASS |
-| 16ns-51ns | Decode DMA/WDG/timer/intc/UART/I2C/GPIO base/mid/end/before/after addresses | Matching peripheral select or adjacent/default select asserted | PASS |
-| 51ns-55ns | Decode unmapped low/middle/high/top addresses | Default slave selected | PASS |
-| 55ns-183ns | Decode 128 deterministic random addresses | RTL result matches scoreboard model | PASS |
-| 183ns-184ns | Hold valid UART address with `active_i=0` | No slave selected | PASS |
+| Check 0 | Hold `active_i=0` at zero address | No slave selected | PASS |
+| Checks 1-15 | Decode OTP/I-SRAM/D-SRAM base/mid/end/before/after addresses | Matching memory select or default select asserted | PASS |
+| Checks 16-50 | Decode DMA/WDG/timer/intc/UART/I2C/GPIO base/mid/end/before/after addresses | Matching peripheral select or adjacent/default select asserted | PASS |
+| Checks 51-54 | Decode unmapped low/middle/high/top addresses | Default slave selected | PASS |
+| Checks 55-182 | Decode 128 deterministic random addresses | RTL result matches scoreboard model | PASS |
+| Check 183 | Hold valid UART address with `active_i=0` | No slave selected | PASS |
 
-## 3. Functional Coverage Summary
+## 4. ahb_decoder Functional Coverage Summary
 
 | Coverage item | Result |
 | --- | --- |
@@ -45,7 +59,7 @@
 | One-hot select check | PASS for every active decode |
 | Scoreboard random check | 128 deterministic random addresses |
 
-## 4. Notes
+## 5. Notes
 
 The decoder currently uses these default memory sizes from `wasp1_pkg`:
 
@@ -57,16 +71,16 @@ DSRAM_SIZE = 0x0001_0000
 
 These are initial parameters, not final capacity decisions.
 
-## 5. ahb_default_slave Case Table
+## 6. ahb_default_slave Case Table
 
 | Time | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
-| 0ns-2ns | Drive unselected IDLE and NONSEQ transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
-| 2ns-4ns | Drive selected IDLE and BUSY transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
-| 4ns-8ns | Drive selected NONSEQ/SEQ read/write transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS |
-| 8ns-136ns | Drive 128 deterministic random transfers | RTL response matches scoreboard model | PASS |
+| Checks 0-1 | Drive unselected IDLE and NONSEQ transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| Checks 2-3 | Drive selected IDLE and BUSY transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| Checks 4-7 | Drive selected NONSEQ/SEQ read/write transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS |
+| Checks 8-135 | Drive 128 deterministic random transfers | RTL response matches scoreboard model | PASS |
 
-## 6. ahb_default_slave Functional Coverage Summary
+## 7. ahb_default_slave Functional Coverage Summary
 
 | Coverage item | Result |
 | --- | --- |

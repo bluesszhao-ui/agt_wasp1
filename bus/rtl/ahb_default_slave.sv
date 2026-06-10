@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module ahb_default_slave #(
   parameter int DATA_WIDTH = wasp1_pkg::DATA_WIDTH
 ) (

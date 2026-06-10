@@ -86,6 +86,19 @@ coverage summary in the verification report
 Verification reports must include a time-sequenced action table with expected
 and observed results.
 
+Default simulation timing policy:
+
+```text
+timescale: 1ns/1ps
+default verification clock period: 10ns
+default verification clock frequency: 100MHz
+```
+
+Pure combinational modules may not have a DUT clock, but their testbenches
+should still describe case timing in 10ns verification steps where practical.
+Sequential modules must use an explicit clock unless a module-specific spec
+states otherwise.
+
 ## RTL Style
 
 Use synthesizable SystemVerilog.
