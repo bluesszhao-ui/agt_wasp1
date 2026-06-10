@@ -17,7 +17,7 @@ PASS       Current verification target passes
 | Project architecture docs | PASS | Initial architecture and module hierarchy documented |
 | `common` foundation | PASS | Verilator lint passes |
 | `bus/ahb_decoder` | PASS | Directed, boundary, one-hot, default, and deterministic random tests pass |
-| `bus/ahb_default_slave` | TODO | Recommended next module |
+| `bus/ahb_default_slave` | PASS | OKAY/ERROR response paths and random tests pass |
 | `bus/ahb_slave_mux` | TODO | Depends on slave response policy |
 | `bus/ahb_arbiter_2m` | TODO | Round-robin arbitration |
 | `sram` | TODO | AHB SRAM slave and model |
@@ -39,11 +39,10 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify bus/ahb_default_slave
-2. Implement and verify bus/ahb_slave_mux
-3. Implement and verify bus/ahb_arbiter_2m
-4. Integrate initial bus fabric
-5. Move to sram AHB slave
+1. Implement and verify bus/ahb_slave_mux
+2. Implement and verify bus/ahb_arbiter_2m
+3. Integrate initial bus fabric
+4. Move to sram AHB slave
 ```
 
 ## Commit Policy Going Forward

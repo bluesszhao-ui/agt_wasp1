@@ -131,7 +131,42 @@ When `active_i` is low, no slave is selected. When `active_i` is high, exactly
 one bit of `hsel_o` is asserted. Unmapped addresses select
 `AHB_SLAVE_DEFAULT`.
 
-## 7. AHB-Lite Subset
+## 7. ahb_default_slave
+
+`ahb_default_slave` handles unmapped or otherwise invalid decoded accesses.
+
+Inputs:
+
+```text
+hsel_i
+htrans_i
+hwrite_i
+hsize_i
+hwdata_i
+```
+
+Outputs:
+
+```text
+hrdata_o
+hready_o
+hresp_o
+```
+
+Behavior:
+
+```text
+hready_o = 1
+hrdata_o = 0
+hresp_o  = ERROR when hsel_i=1 and htrans_i is NONSEQ or SEQ
+hresp_o  = OKAY otherwise
+```
+
+The default slave does not stall. It ignores write data and transfer size, but
+the verification still covers read/write and byte/halfword/word combinations to
+make sure they do not affect the response policy.
+
+## 8. AHB-Lite Subset
 
 The first bus implementation supports:
 

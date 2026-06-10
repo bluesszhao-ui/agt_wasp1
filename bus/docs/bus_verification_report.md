@@ -10,7 +10,8 @@
 | Simulation command | `make -C bus sim` |
 | Lint result | PASS |
 | Simulation result | PASS |
-| Self-check count | 183 |
+| `ahb_decoder` self-check count | 183 |
+| `ahb_default_slave` self-check count | 136 |
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
@@ -55,3 +56,28 @@ DSRAM_SIZE = 0x0001_0000
 ```
 
 These are initial parameters, not final capacity decisions.
+
+## 5. ahb_default_slave Case Table
+
+| Time | Action | Expected result | Observed result |
+| --- | --- | --- | --- |
+| 0ns-2ns | Drive unselected IDLE and NONSEQ transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| 2ns-4ns | Drive selected IDLE and BUSY transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS |
+| 4ns-8ns | Drive selected NONSEQ/SEQ read/write transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS |
+| 8ns-136ns | Drive 128 deterministic random transfers | RTL response matches scoreboard model | PASS |
+
+## 6. ahb_default_slave Functional Coverage Summary
+
+| Coverage item | Result |
+| --- | --- |
+| Total self-checks | 136 |
+| ERROR response path | 39 hits |
+| OKAY response path | 97 hits |
+| Read path | 70 hits |
+| Write path | 66 hits |
+| Byte size | 43 hits |
+| Halfword size | 47 hits |
+| Word size | 46 hits |
+| HREADY always high check | PASS for every case |
+| HRDATA zero check | PASS for every case |
+| Scoreboard random check | 128 deterministic random transfers |

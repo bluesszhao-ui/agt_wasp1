@@ -15,7 +15,9 @@ response muxing, and default error handling.
 | 100ns-140ns | DMA reads D-SRAM address | DMA receives grant and slave response | TBD |
 | 140ns-200ns | Core and DMA request simultaneously | Round-robin alternates accepted grants | TBD |
 | 200ns-240ns | Access unmapped and boundary addresses | Default slave selected | PASS for `ahb_decoder` |
-| 240ns-300ns | Selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
+| 240ns-300ns | Default slave handles selected valid transfers | HRESP ERROR, HREADY high, HRDATA zero | PASS for `ahb_default_slave` |
+| 300ns-360ns | Default slave handles idle, busy, and unselected transfers | HRESP OKAY, HREADY high, HRDATA zero | PASS for `ahb_default_slave` |
+| 360ns-420ns | Selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
 
 ## 3. Protocol Checks
 
@@ -38,6 +40,19 @@ default path is selected by multiple unmapped addresses
 deterministic random addresses match the scoreboard model
 ```
 
+`ahb_default_slave` additionally checks:
+
+```text
+unselected transfers return OKAY
+selected IDLE/BUSY transfers return OKAY
+selected NONSEQ/SEQ transfers return ERROR
+HREADY is always high
+HRDATA is always zero
+read and write controls do not change response policy
+byte/halfword/word sizes do not change response policy
+deterministic random cases match the scoreboard model
+```
+
 ## 4. Coverage Intent
 
 Functional coverage should include:
@@ -48,6 +63,9 @@ base/mid/end point per slave
 before/after boundary point per slave when applicable
 read and write transfer per writable slave
 default error path
+default slave OKAY and ERROR paths
+default slave byte/halfword/word sizes
+default slave read/write paths
 core priority after reset
 DMA grant after core grant
 stall insertion on each response path
