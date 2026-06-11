@@ -30,6 +30,7 @@ Current module docs:
 | `common` | design spec, verification plan, verification report |
 | `bus` | bus design spec, verification plan, verification report |
 | `sram` | AHB SRAM design spec, verification plan, verification report |
+| `otp` | AHB OTP design spec, verification plan, verification report |
 
 Current bus submodule specs:
 
@@ -40,6 +41,7 @@ bus/docs/ahb_slave_mux_design_spec.md
 bus/docs/ahb_arbiter_2m_design_spec.md
 bus/docs/ahb_fabric_2m_design_spec.md
 sram/docs/ahb_sram_design_spec.md
+otp/docs/ahb_otp_design_spec.md
 ```
 
 ## Project Status

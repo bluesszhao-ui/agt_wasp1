@@ -4,7 +4,8 @@
 
 | Region | Base | Size | Cacheable | Executable | Notes |
 | --- | ---: | ---: | --- | --- | --- |
-| OTP | `0x0000_0000` | TBD | I-cache only | Yes | Main non-volatile program storage |
+| OTP data | `0x0000_0000` | `OTP_DATA_SIZE` | I-cache only | Yes | Main non-volatile program storage |
+| OTP registers | `OTP_REG_BASE` | `0x0000_0100` | No | No | OTP programming/status control |
 | I-SRAM | `0x1000_0000` | TBD | Yes | Yes | Fast code, loader, OTP program routines |
 | D-SRAM | `0x2000_0000` | TBD | Yes or uncached window | Optional | Data, heap, stack, DMA buffers |
 | DMA regs | `0x4000_0000` | `0x1000` | No | No | DMA configuration and status |

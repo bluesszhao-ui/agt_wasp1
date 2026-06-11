@@ -22,7 +22,7 @@ PASS       Current verification target passes
 | `bus/ahb_arbiter_2m` | PASS | Round-robin, stall hold, response routing, random tests pass |
 | `bus/ahb_fabric_2m` | PASS | Initial fabric integration with mock slaves passes |
 | `sram/ahb_sram` | PASS | Byte/half/word, error paths, random write/read tests pass |
-| `otp` | TODO | Executable OTP model and controller |
+| `otp/ahb_otp` | PASS | Executable OTP data window, programming registers, lock/error paths pass |
 | `timer` | TODO | Machine timer |
 | `gpio` | TODO | 32-bit GPIO |
 | `uart` | TODO | UART and FIFO |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to OTP executable/programming model
+1. Move to timer
 ```
 
 ## Commit Policy Going Forward

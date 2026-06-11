@@ -35,6 +35,25 @@ package wasp1_pkg;
   localparam int AHB_SLAVE_DEFAULT = 10;
   localparam int AHB_SLAVE_COUNT   = 11;
 
+  localparam logic [31:0] OTP_REG_WINDOW_SIZE = 32'h0000_0100;
+  localparam logic [31:0] OTP_DATA_SIZE = OTP_SIZE - OTP_REG_WINDOW_SIZE;
+  localparam logic [31:0] OTP_REG_BASE = OTP_BASE + OTP_DATA_SIZE;
+  localparam logic [31:0] OTP_CTRL_OFFSET   = 32'h0000_0000;
+  localparam logic [31:0] OTP_STATUS_OFFSET = 32'h0000_0004;
+  localparam logic [31:0] OTP_ADDR_OFFSET   = 32'h0000_0008;
+  localparam logic [31:0] OTP_WDATA_OFFSET  = 32'h0000_000C;
+  localparam logic [31:0] OTP_RDATA_OFFSET  = 32'h0000_0010;
+  localparam logic [31:0] OTP_KEY_OFFSET    = 32'h0000_0014;
+  localparam logic [31:0] OTP_LOCK_OFFSET   = 32'h0000_0018;
+  localparam logic [31:0] OTP_KEY_VALUE     = 32'h5750_4F54;
+  localparam int OTP_CTRL_PROG_EN_BIT = 0;
+  localparam int OTP_CTRL_START_BIT   = 1;
+  localparam int OTP_CTRL_CLEAR_BIT   = 2;
+  localparam int OTP_STATUS_BUSY_BIT  = 0;
+  localparam int OTP_STATUS_DONE_BIT  = 1;
+  localparam int OTP_STATUS_ERROR_BIT = 2;
+  localparam int OTP_STATUS_LOCK_BIT  = 3;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 
