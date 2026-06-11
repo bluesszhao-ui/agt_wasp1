@@ -24,7 +24,9 @@ response muxing, and default error handling.
 | 640ns-760ns | Arbiter handles simultaneous requests | Grants alternate round-robin | PASS for `ahb_arbiter_2m` |
 | 760ns-840ns | Arbiter sees downstream HREADY low | Grant and output controls remain stable | PASS for `ahb_arbiter_2m` |
 | 840ns-940ns | Arbiter deterministic random requests | RTL grants match scoreboard model | PASS for `ahb_arbiter_2m` |
-| 940ns-1040ns | Full fabric selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
+| 940ns-1040ns | Fabric routes m0/m1 to external slaves | Correct slave select and response routing | PASS for `ahb_fabric_2m` |
+| 1040ns-1140ns | Fabric handles unmapped address | No external select, default ERROR response | PASS for `ahb_fabric_2m` |
+| 1140ns-1240ns | Full fabric selected slave stalls HREADY low | Master observes HREADY low, then completes | PASS for `ahb_fabric_2m` |
 
 ## 3. Protocol Checks
 
@@ -85,6 +87,18 @@ non-selected requesting master held with HREADY low
 deterministic random request scoreboard
 ```
 
+`ahb_fabric_2m` additionally checks:
+
+```text
+integrated reset no-grant/no-select state
+m0 route through decoder/mux to OTP mock slave
+m1 route through decoder/mux to D-SRAM mock slave
+unmapped route to internal default slave
+external slave HREADY low propagation
+round-robin integration across two masters
+idle no-select behavior
+```
+
 ## 4. Coverage Intent
 
 Functional coverage should include:
@@ -105,6 +119,9 @@ arbiter m0-only and m1-only grants
 arbiter simultaneous request alternation
 arbiter downstream stall hold
 arbiter response routing and error path
+fabric external slave routing
+fabric default error routing
+fabric selected slave stall propagation
 core priority after reset
 DMA grant after core grant
 stall insertion on each response path

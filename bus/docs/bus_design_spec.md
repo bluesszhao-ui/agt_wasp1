@@ -75,6 +75,7 @@ default error slave
 | `ahb_default_slave` | Error response for unmapped addresses |
 | `ahb_reg_slice` | Optional timing register slice |
 | `ahb_to_reg_if` | Helper bridge for simple register blocks |
+| `ahb_fabric_2m` | Integrated 2-master fabric with decoder, default slave, and response mux |
 
 ## 4. Arbitration
 
@@ -246,6 +247,26 @@ The normal fabric path expects `ahb_decoder` to produce one-hot selects.
 `select_err_o` exists to expose integration bugs during verification.
 
 ## 9. AHB-Lite Subset
+
+## 9. ahb_fabric_2m
+
+`ahb_fabric_2m` integrates:
+
+```text
+ahb_arbiter_2m
+ahb_decoder
+ahb_default_slave
+ahb_slave_mux
+```
+
+It exposes two master-side ports and ten external slave-side ports. The default
+slave is internal to the fabric. Unmapped addresses assert `default_sel_o` and
+return an ERROR response without selecting any external slave.
+
+See `bus/docs/ahb_fabric_2m_design_spec.md` for the detailed fabric block
+diagram.
+
+## 10. AHB-Lite Subset
 
 The first bus implementation supports:
 

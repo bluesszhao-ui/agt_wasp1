@@ -36,6 +36,7 @@ bus/docs/ahb_decoder_design_spec.md
 bus/docs/ahb_default_slave_design_spec.md
 bus/docs/ahb_slave_mux_design_spec.md
 bus/docs/ahb_arbiter_2m_design_spec.md
+bus/docs/ahb_fabric_2m_design_spec.md
 ```
 
 ## Project Status

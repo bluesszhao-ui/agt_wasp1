@@ -14,6 +14,7 @@
 | `ahb_default_slave` self-check count | 136 |
 | `ahb_slave_mux` self-check count | 144 |
 | `ahb_arbiter_2m` self-check count | 100 |
+| `ahb_fabric_2m` self-check count | 16 |
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
@@ -159,3 +160,26 @@ These are initial parameters, not final capacity decisions.
 | selected HREADY low checks | 3 |
 | response ERROR route checks | 7 |
 | deterministic random request patterns | 64 |
+
+## 12. ahb_fabric_2m Case Table
+
+| Time | Action | Expected result | Observed result |
+| --- | --- | --- | --- |
+| Cycles 0-2 | Assert reset | No grant, no external slave select, default not selected | PASS |
+| Cycles 3-4 | m0 reads OTP region | OTP select asserted, m0 receives OTP mock response | PASS |
+| Cycles 5-6 | m1 writes D-SRAM region | D-SRAM select asserted, m1 receives D-SRAM mock response | PASS |
+| Cycles 7-8 | m0 reads unmapped address | No external select, default selected, m0 receives ERROR | PASS |
+| Cycles 9-10 | D-SRAM mock slave stalls | m0 sees HREADY low, then completes after release | PASS |
+| Cycles 11-18 | m0 and m1 request simultaneously | Round-robin routes m0 to OTP and m1 to DMA regs | PASS |
+| Cycle 19 | Both masters idle | No external select and default not selected | PASS |
+
+## 13. ahb_fabric_2m Functional Coverage Summary
+
+| Coverage item | Result |
+| --- | --- |
+| Total self-checks | 16 |
+| m0 route count | 6 |
+| m1 route count | 5 |
+| default error count | 1 |
+| selected slave stall count | 1 |
+| round-robin integration count | 8 |

@@ -1,0 +1,131 @@
+# ahb_fabric_2m Design Spec
+
+## 1. Scope
+
+`ahb_fabric_2m` integrates the initial wasp1 AHB-Lite fabric:
+
+```text
+2 masters:
+  m0 = core
+  m1 = dma
+
+10 external slaves:
+  OTP, I-SRAM, D-SRAM, DMA regs, WDG, timer, intc, UART, I2C, GPIO
+
+1 internal default slave:
+  unmapped address error response
+```
+
+## 2. Block Diagram
+
+```text
+ m0/core AHB address/control/write-data
+        |
+        v
+ +------------------+
+ |                  |
+ | ahb_arbiter_2m   |<---- m1/dma AHB address/control/write-data
+ |                  |
+ +--------+---------+
+          |
+          | shared address/control/write-data
+          v
+ +------------------+
+ | ahb_decoder      |
+ | haddr -> hsel    |
+ +---+----------+---+
+     |          |
+     |          +----------------------+
+     |                                 |
+     v                                 v
+ external hsel[9:0]             default hsel[10]
+ OTP/I-SRAM/.../GPIO                  |
+     |                                v
+     |                       +-------------------+
+     |                       | ahb_default_slave |
+     |                       +---------+---------+
+     |                                 |
+     +---------------+-----------------+
+                     |
+                     v
+            +----------------+
+            | ahb_slave_mux  |
+            | selected resp  |
+            +-------+--------+
+                    |
+                    | shared HRDATA/HREADY/HRESP
+                    v
+             ahb_arbiter_2m response route
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+      m0/core resp        m1/dma resp
+```
+
+## 3. Ports
+
+| Port group | Direction | Description |
+| --- | --- | --- |
+| `hclk_i`, `hresetn_i` | input | Fabric clock and reset |
+| `m0_*` | input/output | Core AHB master side |
+| `m1_*` | input/output | DMA AHB master side |
+| `slave_hsel_o` | output | One-hot select for 10 external slaves |
+| `slave_haddr_o` | output | Shared slave address |
+| `slave_htrans_o` | output | Shared slave transfer type |
+| `slave_hwrite_o` | output | Shared slave write control |
+| `slave_hsize_o` | output | Shared slave transfer size |
+| `slave_hburst_o` | output | Shared slave burst type |
+| `slave_hprot_o` | output | Shared slave protection bits |
+| `slave_hmastlock_o` | output | Shared slave lock bit |
+| `slave_hwdata_o` | output | Shared slave write data |
+| `slave_hrdata_i` | input | Read data from external slaves |
+| `slave_hready_i` | input | Ready from external slaves |
+| `slave_hresp_i` | input | Response from external slaves |
+| `grant_valid_o` | output | Arbiter grant valid debug/status |
+| `grant_idx_o` | output | Arbiter grant index debug/status |
+| `default_sel_o` | output | Internal default slave selected |
+| `slave_select_err_o` | output | Slave mux multi-select error |
+
+## 4. Behavior
+
+The fabric composes verified submodules:
+
+```text
+ahb_arbiter_2m:
+  chooses m0 or m1
+
+ahb_decoder:
+  decodes selected address
+
+ahb_default_slave:
+  handles unmapped address errors
+
+ahb_slave_mux:
+  returns selected slave response
+```
+
+External slaves see the same shared address/control/write-data bus. Only the
+selected slave has its `slave_hsel_o` bit asserted.
+
+Unmapped addresses do not assert any external `slave_hsel_o` bit. Instead,
+`default_sel_o` is asserted and the internal default slave returns ERROR.
+
+## 5. Verification Summary
+
+Verified by `tb_ahb_fabric_2m` with mock slave responses.
+
+Coverage includes:
+
+```text
+reset no-grant/no-select state
+m0 route to OTP
+m1 route to D-SRAM
+unmapped default error path
+selected external slave HREADY stall propagation
+simultaneous m0/m1 request round-robin integration
+idle no-select behavior
+```
+
+Real SRAM/OTP/peripheral slave integration will receive additional tests when
+those modules are implemented.
