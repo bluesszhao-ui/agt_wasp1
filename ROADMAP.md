@@ -24,7 +24,7 @@ PASS       Current verification target passes
 | `sram/ahb_sram` | PASS | Byte/half/word, error paths, random write/read tests pass |
 | `otp/ahb_otp` | PASS | Executable OTP data window, programming registers, lock/error paths pass |
 | `timer/ahb_timer` | PASS | 64-bit mtime/mtimecmp, IRQ mask/pending, error paths pass |
-| `gpio` | TODO | 32-bit GPIO |
+| `gpio/ahb_gpio` | PASS | 32-bit IO, direction, set/clear/toggle, level/edge IRQ paths pass |
 | `uart` | TODO | UART and FIFO |
 | `dma` | TODO | Single-channel DMA |
 | `intc` | TODO | plic-lite interrupt controller |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to GPIO
+1. Move to UART
 ```
 
 ## Commit Policy Going Forward

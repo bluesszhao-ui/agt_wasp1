@@ -64,6 +64,17 @@ package wasp1_pkg;
   localparam int TIMER_CTRL_IRQ_EN_BIT = 1;
   localparam int TIMER_STATUS_PENDING_BIT = 0;
 
+  localparam logic [31:0] GPIO_DATA_IN_OFFSET    = 32'h0000_0000;
+  localparam logic [31:0] GPIO_DATA_OUT_OFFSET   = 32'h0000_0004;
+  localparam logic [31:0] GPIO_DIR_OFFSET        = 32'h0000_0008;
+  localparam logic [31:0] GPIO_SET_OFFSET        = 32'h0000_000C;
+  localparam logic [31:0] GPIO_CLR_OFFSET        = 32'h0000_0010;
+  localparam logic [31:0] GPIO_TOGGLE_OFFSET     = 32'h0000_0014;
+  localparam logic [31:0] GPIO_IRQ_EN_OFFSET     = 32'h0000_0018;
+  localparam logic [31:0] GPIO_IRQ_TYPE_OFFSET   = 32'h0000_001C;
+  localparam logic [31:0] GPIO_IRQ_POL_OFFSET    = 32'h0000_0020;
+  localparam logic [31:0] GPIO_IRQ_STATUS_OFFSET = 32'h0000_0024;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 

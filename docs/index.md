@@ -32,6 +32,7 @@ Current module docs:
 | `sram` | AHB SRAM design spec, verification plan, verification report |
 | `otp` | AHB OTP design spec, verification plan, verification report |
 | `timer` | AHB timer design spec, verification plan, verification report |
+| `gpio` | AHB GPIO design spec, verification plan, verification report |
 
 Current bus submodule specs:
 
@@ -44,6 +45,7 @@ bus/docs/ahb_fabric_2m_design_spec.md
 sram/docs/ahb_sram_design_spec.md
 otp/docs/ahb_otp_design_spec.md
 timer/docs/ahb_timer_design_spec.md
+gpio/docs/ahb_gpio_design_spec.md
 ```
 
 ## Project Status
