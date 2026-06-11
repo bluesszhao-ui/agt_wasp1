@@ -1,34 +1,39 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_lsu.
+//
+// Reference functions calculate expected store strobes, lane-shifted write
+// data, load extension, and misalignment behavior for directed and random
+// accesses.
 module tb_core_lsu;
   import core_types_pkg::*;
 
-  logic [31:0] base;
-  logic [31:0] imm;
-  logic [31:0] store_data;
-  core_lsu_size_e size;
-  logic unsigned_load;
-  logic load;
-  logic store;
-  logic [31:0] rsp_rdata;
-  logic rsp_err;
-  logic req_valid;
-  logic [31:0] req_addr;
-  logic req_write;
-  logic [1:0] req_size;
-  logic [31:0] req_wdata;
-  logic [3:0] req_wstrb;
-  logic [31:0] load_data;
-  logic misaligned;
-  logic fault;
+  logic [31:0] base;       // Base address stimulus.
+  logic [31:0] imm;        // Immediate/address offset stimulus.
+  logic [31:0] store_data; // Raw store data stimulus.
+  core_lsu_size_e size;    // Access size stimulus.
+  logic unsigned_load;     // Unsigned-load stimulus.
+  logic load;              // Load qualifier stimulus.
+  logic store;             // Store qualifier stimulus.
+  logic [31:0] rsp_rdata;  // Memory response data stimulus.
+  logic rsp_err;           // Memory response error stimulus.
+  logic req_valid;         // DUT request-valid output.
+  logic [31:0] req_addr;   // DUT effective address output.
+  logic req_write;         // DUT write qualifier output.
+  logic [1:0] req_size;    // DUT memory size output.
+  logic [31:0] req_wdata;  // DUT lane-shifted write data.
+  logic [3:0] req_wstrb;   // DUT byte strobes.
+  logic [31:0] load_data;  // DUT formatted load data.
+  logic misaligned;        // DUT misalignment indicator.
+  logic fault;             // DUT combined fault indicator.
 
-  int unsigned pass_count;
-  int unsigned load_count;
-  int unsigned store_count;
-  int unsigned misalign_count;
-  int unsigned sign_count;
-  int unsigned random_count;
-  int unsigned error_count;
+  int unsigned pass_count;     // Number of successful checks.
+  int unsigned load_count;     // Directed load case counter.
+  int unsigned store_count;    // Directed store case counter.
+  int unsigned misalign_count; // Misalignment coverage counter.
+  int unsigned sign_count;     // Sign/zero extension coverage counter.
+  int unsigned random_count;   // Deterministic random check counter.
+  int unsigned error_count;    // Response-error coverage counter.
 
   core_lsu u_core_lsu (
     .base_i(base),
@@ -51,6 +56,7 @@ module tb_core_lsu;
     .fault_o(fault)
   );
 
+  // Reference store byte-enable generation.
   function automatic logic [3:0] ref_wstrb(
     input core_lsu_size_e ref_size,
     input logic [1:0] off
@@ -64,6 +70,7 @@ module tb_core_lsu;
     end
   endfunction
 
+  // Reference store-data lane shifter.
   function automatic logic [31:0] ref_wdata(
     input core_lsu_size_e ref_size,
     input logic [1:0] off,
@@ -79,6 +86,7 @@ module tb_core_lsu;
     end
   endfunction
 
+  // Reference load byte/half selection and sign/zero extension.
   function automatic logic [31:0] ref_load(
     input core_lsu_size_e ref_size,
     input logic ref_unsigned,

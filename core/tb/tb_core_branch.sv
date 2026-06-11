@@ -1,28 +1,33 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_branch.
+//
+// Directed branch pairs cover taken/not-taken cases for all comparisons. Jump
+// and priority checks cover JAL/JALR target behavior, and random branches are
+// compared against a local reference comparator.
 module tb_core_branch;
   import core_types_pkg::*;
 
-  logic [31:0] pc;
-  logic [31:0] rs1;
-  logic [31:0] rs2;
-  logic [31:0] imm;
-  logic branch;
-  core_branch_e branch_op;
-  logic jal;
-  logic jalr;
-  logic taken;
-  logic [31:0] target;
-  logic [31:0] link;
+  logic [31:0] pc;       // PC stimulus.
+  logic [31:0] rs1;      // First operand/JALR base stimulus.
+  logic [31:0] rs2;      // Second operand stimulus.
+  logic [31:0] imm;      // Branch/jump immediate stimulus.
+  logic branch;          // Branch qualifier stimulus.
+  core_branch_e branch_op;// Branch operation stimulus.
+  logic jal;             // JAL qualifier stimulus.
+  logic jalr;            // JALR qualifier stimulus.
+  logic taken;           // DUT redirect/taken output.
+  logic [31:0] target;   // DUT target output.
+  logic [31:0] link;     // DUT link output.
 
-  int unsigned pass_count;
-  int unsigned branch_taken_count;
-  int unsigned branch_not_taken_count;
-  int unsigned signed_count;
-  int unsigned unsigned_count;
-  int unsigned jump_count;
-  int unsigned priority_count;
-  int unsigned random_count;
+  int unsigned pass_count;             // Number of successful checks.
+  int unsigned branch_taken_count;     // Directed taken branch coverage.
+  int unsigned branch_not_taken_count; // Directed not-taken branch coverage.
+  int unsigned signed_count;           // Signed comparison edge coverage.
+  int unsigned unsigned_count;         // Unsigned comparison edge coverage.
+  int unsigned jump_count;             // JAL/JALR coverage counter.
+  int unsigned priority_count;         // Multi-control priority coverage.
+  int unsigned random_count;           // Deterministic random coverage.
 
   core_branch u_core_branch (
     .pc_i(pc),
@@ -38,6 +43,7 @@ module tb_core_branch;
     .link_o(link)
   );
 
+  // Golden branch comparator used by random checks.
   function automatic logic ref_branch_taken(
     input core_branch_e op,
     input logic [31:0] lhs,
@@ -56,6 +62,7 @@ module tb_core_branch;
     end
   endfunction
 
+  // Drive one branch/jump case and check taken, target, and link outputs.
   task automatic check_case(
     input logic [31:0] check_pc,
     input logic [31:0] check_rs1,
@@ -88,6 +95,7 @@ module tb_core_branch;
     end
   endtask
 
+  // For one branch op, check one taken case and one not-taken case.
   task automatic check_branch_pair(
     input core_branch_e op,
     input logic [31:0] lhs_take,
@@ -110,6 +118,7 @@ module tb_core_branch;
     end
   endtask
 
+  // Directed checks for JAL forward/backward and JALR bit-zero clearing.
   task automatic check_jumps;
     begin
       check_case(32'h0000_2000, 32'h0000_0000, 32'h0000_0000, 32'h0000_0100,

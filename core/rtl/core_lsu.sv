@@ -1,37 +1,44 @@
 `timescale 1ns/1ps
 
+// Load/store request formatting helper.
+//
+// This module is combinational. It calculates the effective address, detects
+// misalignment, formats store data/byte strobes, and sign/zero-extends load
+// response data. Pipeline handshake state lives outside this helper.
 module core_lsu (
-  input  logic [31:0]                  base_i,
-  input  logic [31:0]                  imm_i,
-  input  logic [31:0]                  store_data_i,
-  input  core_types_pkg::core_lsu_size_e size_i,
-  input  logic                         unsigned_i,
-  input  logic                         load_i,
-  input  logic                         store_i,
-  input  logic [31:0]                  rsp_rdata_i,
-  input  logic                         rsp_err_i,
+  input  logic [31:0]                  base_i,       // Base address, normally rs1.
+  input  logic [31:0]                  imm_i,        // Sign-extended load/store immediate.
+  input  logic [31:0]                  store_data_i, // Raw rs2 store data before lane shifting.
+  input  core_types_pkg::core_lsu_size_e size_i,     // Byte, halfword, or word access size.
+  input  logic                         unsigned_i,   // Selects zero-extension for byte/half loads.
+  input  logic                         load_i,       // Load request qualifier.
+  input  logic                         store_i,      // Store request qualifier.
+  input  logic [31:0]                  rsp_rdata_i,  // Raw 32-bit memory response data.
+  input  logic                         rsp_err_i,    // Downstream memory response error.
 
-  output logic                         req_valid_o,
-  output logic [31:0]                  req_addr_o,
-  output logic                         req_write_o,
-  output logic [1:0]                   req_size_o,
-  output logic [31:0]                  req_wdata_o,
-  output logic [3:0]                   req_wstrb_o,
+  output logic                         req_valid_o,  // Memory request valid, suppressed on misalign.
+  output logic [31:0]                  req_addr_o,   // Effective byte address.
+  output logic                         req_write_o,  // Store request indicator.
+  output logic [1:0]                   req_size_o,   // Memory access size encoding.
+  output logic [31:0]                  req_wdata_o,  // Store data aligned to target byte lanes.
+  output logic [3:0]                   req_wstrb_o,  // Store byte lane enables.
 
-  output logic [31:0]                  load_data_o,
-  output logic                         misaligned_o,
-  output logic                         fault_o
+  output logic [31:0]                  load_data_o,  // Formatted load result for writeback.
+  output logic                         misaligned_o, // Alignment fault for selected access size.
+  output logic                         fault_o       // Combined misalignment or response fault.
 );
   import core_types_pkg::*;
 
-  logic [31:0] addr;
-  logic [1:0] byte_off;
-  logic [7:0] load_byte;
-  logic [15:0] load_half;
+  logic [31:0] addr;      // Effective address base_i + imm_i.
+  logic [1:0] byte_off;   // Low address bits selecting byte lane inside 32-bit word.
+  logic [7:0] load_byte;  // Selected byte used by LB/LBU.
+  logic [15:0] load_half; // Selected halfword used by LH/LHU.
 
   assign addr = base_i + imm_i;
   assign byte_off = addr[1:0];
 
+  // Alignment rules follow RV32I natural alignment for halfword and word
+  // accesses. Byte accesses are always aligned.
   always_comb begin
     unique case (size_i)
       CORE_LSU_HALF: misaligned_o = addr[0];
@@ -40,6 +47,8 @@ module core_lsu (
     endcase
   end
 
+  // Format the downstream memory request. Misaligned operations are converted
+  // into a local fault and do not issue a request.
   always_comb begin
     req_valid_o = (load_i || store_i) && !misaligned_o;
     req_addr_o = addr;
@@ -87,6 +96,8 @@ module core_lsu (
     end
   end
 
+  // Extract and extend load response data according to address offset and load
+  // signedness. The value is computed even for stores to keep the output stable.
   always_comb begin
     unique case (byte_off)
       2'd0: load_byte = rsp_rdata_i[7:0];
@@ -112,5 +123,6 @@ module core_lsu (
     endcase
   end
 
+  // A load/store fault is either detected locally or reported by memory.
   assign fault_o = misaligned_o || rsp_err_i;
 endmodule

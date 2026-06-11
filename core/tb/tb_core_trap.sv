@@ -1,44 +1,48 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_trap.
+//
+// The bench drives individual trap sources and combinations to verify trap
+// metadata, redirect target selection, interrupt masking, and priority.
 module tb_core_trap;
   import wasp1_pkg::*;
 
-  logic valid;
-  logic [31:0] pc;
-  logic [31:0] instr;
-  logic instr_misaligned;
-  logic [31:0] instr_fault_addr;
-  logic illegal_instr;
-  logic csr_illegal;
-  logic ecall;
-  logic ebreak;
-  logic load;
-  logic store;
-  logic lsu_misaligned;
-  logic [31:0] lsu_fault_addr;
-  logic mret;
-  logic mie_global;
-  logic mtie;
-  logic meie;
-  logic mtip;
-  logic meip;
-  logic [31:0] mtvec;
-  logic [31:0] mepc;
-  logic trap_valid;
-  logic trap_interrupt;
-  logic [4:0] trap_cause;
-  logic [31:0] trap_tval;
-  logic [31:0] trap_pc;
-  logic mret_taken;
-  logic redirect_valid;
-  logic [31:0] redirect_pc;
+  logic valid;                    // Valid instruction slot stimulus.
+  logic [31:0] pc;                // Instruction PC stimulus.
+  logic [31:0] instr;             // Instruction word stimulus.
+  logic instr_misaligned;         // Instruction address misalignment stimulus.
+  logic [31:0] instr_fault_addr;  // Faulting instruction address stimulus.
+  logic illegal_instr;            // Illegal instruction stimulus.
+  logic csr_illegal;              // Illegal CSR stimulus.
+  logic ecall;                    // ECALL stimulus.
+  logic ebreak;                   // EBREAK stimulus.
+  logic load;                     // Load qualifier stimulus.
+  logic store;                    // Store qualifier stimulus.
+  logic lsu_misaligned;           // Data misalignment stimulus.
+  logic [31:0] lsu_fault_addr;    // Faulting data address stimulus.
+  logic mret;                     // MRET stimulus.
+  logic mie_global;               // Global interrupt enable stimulus.
+  logic mtie;                     // Timer interrupt enable stimulus.
+  logic meie;                     // External interrupt enable stimulus.
+  logic mtip;                     // Timer interrupt pending stimulus.
+  logic meip;                     // External interrupt pending stimulus.
+  logic [31:0] mtvec;             // Trap vector stimulus.
+  logic [31:0] mepc;              // Exception PC stimulus for MRET.
+  logic trap_valid;               // DUT trap-valid output.
+  logic trap_interrupt;           // DUT trap interrupt/class output.
+  logic [4:0] trap_cause;         // DUT trap cause output.
+  logic [31:0] trap_tval;         // DUT trap value output.
+  logic [31:0] trap_pc;           // DUT trap PC output.
+  logic mret_taken;               // DUT MRET redirect selected output.
+  logic redirect_valid;           // DUT redirect-valid output.
+  logic [31:0] redirect_pc;       // DUT redirect target output.
 
-  int unsigned pass_count;
-  int unsigned sync_count;
-  int unsigned irq_count;
-  int unsigned mret_count;
-  int unsigned priority_count;
-  int unsigned masked_count;
+  int unsigned pass_count;     // Number of successful checks.
+  int unsigned sync_count;     // Synchronous trap coverage counter.
+  int unsigned irq_count;      // Interrupt coverage counter.
+  int unsigned mret_count;     // MRET coverage counter.
+  int unsigned priority_count; // Priority interaction coverage counter.
+  int unsigned masked_count;   // Masked/gated event coverage counter.
 
   core_trap u_core_trap (
     .valid_i(valid),
@@ -72,6 +76,7 @@ module tb_core_trap;
     .redirect_pc_o(redirect_pc)
   );
 
+  // Drive a legal baseline instruction slot with all events deasserted.
   task automatic drive_idle;
     begin
       valid = 1'b1;
@@ -98,6 +103,7 @@ module tb_core_trap;
     end
   endtask
 
+  // Compare all trap and redirect outputs against expected values.
   task automatic check(
     input logic exp_trap_valid,
     input logic exp_interrupt,

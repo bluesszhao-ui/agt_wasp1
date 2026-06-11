@@ -1,41 +1,45 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_csr.
+//
+// The bench drives CSR instructions, traps, MRET, interrupt pending inputs, and
+// retire pulses. It checks software-visible CSR values and side-effect outputs.
 module tb_core_csr;
   import core_types_pkg::*;
   import wasp1_pkg::*;
 
-  logic clk;
-  logic rst_n;
-  logic csr_valid;
-  core_csr_cmd_e csr_cmd;
-  logic [11:0] csr_addr;
-  logic [31:0] csr_wdata;
-  logic [31:0] csr_rdata;
-  logic csr_illegal;
-  logic retire;
-  logic trap_valid;
-  logic trap_interrupt;
-  logic [4:0] trap_cause;
-  logic [31:0] trap_pc;
-  logic [31:0] trap_tval;
-  logic mret;
-  logic timer_irq;
-  logic external_irq;
-  logic [31:0] mtvec;
-  logic [31:0] mepc;
-  logic mie_global;
-  logic mtie;
-  logic meie;
-  logic mtip;
-  logic meip;
+  logic clk;                 // 100MHz test clock.
+  logic rst_n;               // Active-low reset stimulus.
+  logic csr_valid;           // CSR access qualifier stimulus.
+  core_csr_cmd_e csr_cmd;    // CSR command stimulus.
+  logic [11:0] csr_addr;     // CSR address stimulus.
+  logic [31:0] csr_wdata;    // CSR write data/zimm stimulus.
+  logic [31:0] csr_rdata;    // DUT CSR read data.
+  logic csr_illegal;         // DUT illegal CSR indicator.
+  logic retire;              // Retire pulse stimulus for instret.
+  logic trap_valid;          // Trap-entry stimulus.
+  logic trap_interrupt;      // Trap interrupt-class stimulus.
+  logic [4:0] trap_cause;    // Trap cause stimulus.
+  logic [31:0] trap_pc;      // Trap PC stimulus.
+  logic [31:0] trap_tval;    // Trap value stimulus.
+  logic mret;                // MRET stimulus.
+  logic timer_irq;           // Timer IRQ pending stimulus.
+  logic external_irq;        // External IRQ pending stimulus.
+  logic [31:0] mtvec;        // DUT mtvec output.
+  logic [31:0] mepc;         // DUT mepc output.
+  logic mie_global;          // DUT mstatus.MIE output.
+  logic mtie;                // DUT mie.MTIE output.
+  logic meie;                // DUT mie.MEIE output.
+  logic mtip;                // DUT mip.MTIP output.
+  logic meip;                // DUT mip.MEIP output.
 
-  int unsigned pass_count;
-  int unsigned rw_count;
-  int unsigned set_clear_count;
-  int unsigned readonly_count;
-  int unsigned trap_count;
-  int unsigned counter_count;
-  int unsigned irq_count;
+  int unsigned pass_count;      // Number of successful checks.
+  int unsigned rw_count;        // Direct write/masked write coverage.
+  int unsigned set_clear_count; // CSRRS/CSRRC coverage.
+  int unsigned readonly_count;  // Read-only/unsupported illegal coverage.
+  int unsigned trap_count;      // Trap/MRET coverage.
+  int unsigned counter_count;   // cycle/instret coverage.
+  int unsigned irq_count;       // IRQ enable/pending coverage.
 
   core_csr u_core_csr (
     .clk_i(clk),
@@ -64,11 +68,13 @@ module tb_core_csr;
     .meip_o(meip)
   );
 
+  // Generate the project default 10ns clock.
   initial begin
     clk = 1'b0;
     forever #5ns clk = ~clk;
   end
 
+  // Drive all CSR side-effect inputs inactive.
   task automatic idle_inputs;
     begin
       csr_valid = 1'b0;
@@ -87,6 +93,7 @@ module tb_core_csr;
     end
   endtask
 
+  // Reset DUT and leave inputs idle.
   task automatic reset_dut;
     begin
       idle_inputs();
@@ -98,6 +105,7 @@ module tb_core_csr;
     end
   endtask
 
+  // Perform a pure CSR read and fail if the address is unexpectedly illegal.
   task automatic read_csr(input logic [11:0] addr, output logic [31:0] data);
     begin
       csr_valid = 1'b1;
@@ -116,6 +124,7 @@ module tb_core_csr;
     end
   endtask
 
+  // Read one CSR and compare against an expected value.
   task automatic expect_read(input logic [11:0] addr, input logic [31:0] exp, input string label);
     logic [31:0] data;
     begin
@@ -127,6 +136,7 @@ module tb_core_csr;
     end
   endtask
 
+  // Drive one CSR operation, check the old read value, and commit on a clock.
   task automatic write_csr(
     input core_csr_cmd_e cmd,
     input logic [11:0] addr,

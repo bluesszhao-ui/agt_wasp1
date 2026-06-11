@@ -1,18 +1,24 @@
 `timescale 1ns/1ps
 `include "wasp1_target_defs.svh"
 
+// RV32I integer ALU.
+//
+// This module is purely combinational. Decode selects op_i, and the execute
+// path provides lhs_i/rhs_i. The result is valid in the same cycle.
 module core_alu (
-  input  core_types_pkg::core_alu_op_e op_i,
-  input  logic [31:0]                  lhs_i,
-  input  logic [31:0]                  rhs_i,
-  output logic [31:0]                  result_o
+  input  core_types_pkg::core_alu_op_e op_i,     // ALU operation selected by decode.
+  input  logic [31:0]                  lhs_i,    // Left operand, normally rs1 or PC.
+  input  logic [31:0]                  rhs_i,    // Right operand, normally rs2 or immediate.
+  output logic [31:0]                  result_o  // Combinational ALU result.
 );
   import core_types_pkg::*;
 
-  logic [4:0] shamt;
+  logic [4:0] shamt; // RV32 shift amount, always taken from rhs_i[4:0].
 
   assign shamt = rhs_i[4:0];
 
+  // Select the arithmetic/logic operation. Unsupported encodings return zero
+  // so accidental invalid controls are deterministic in simulation.
   always_comb begin
     unique case (op_i)
       CORE_ALU_ADD:  result_o = lhs_i + rhs_i;

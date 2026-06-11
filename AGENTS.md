@@ -153,6 +153,26 @@ primitives, and IO/debug implementation details. They must not change
 programmer-visible behavior, AHB-Lite protocol behavior, register maps,
 interrupt behavior, or debug architectural behavior.
 
+## Commenting Standard
+
+RTL and verification code must be commented enough that another engineer can
+review and integrate the block without reconstructing intent from context.
+
+Required comment coverage:
+
+```text
+module purpose at the top of every .sv file
+every RTL port explains signal meaning and timing/validity where relevant
+important internal signals, registers, arrays, counters, and masks
+always_ff and always_comb blocks, especially priority and side-effect logic
+CSR, trap, interrupt, alignment, bus protocol, and target-specific behavior
+testbench reference models, tasks, counters, and coverage intent
+```
+
+Avoid empty restatements such as `assign a = b; // assign b to a`. Comments
+should explain architectural meaning, timing, priority, side effects, or
+verification intent.
+
 ## Git Rules
 
 Keep commits small and aligned with verified milestones.

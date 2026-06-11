@@ -1,48 +1,53 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_decode.
+//
+// Local instruction encoders build RV32I/Zicsr instructions. The bench then
+// checks decoded fields, immediate values, control qualifiers, and illegal
+// encoding behavior against explicit expected values.
 module tb_core_decode;
   import core_types_pkg::*;
 
-  logic [31:0] instr;
-  logic [4:0] rd;
-  logic [4:0] rs1;
-  logic [4:0] rs2;
-  logic [31:0] imm;
-  core_imm_sel_e imm_sel;
-  logic uses_rs1;
-  logic uses_rs2;
-  logic writes_rd;
-  logic alu_valid;
-  core_alu_op_e alu_op;
-  logic alu_src_imm;
-  logic load;
-  logic store;
-  core_lsu_size_e lsu_size;
-  logic lsu_unsigned;
-  logic branch;
-  core_branch_e branch_op;
-  logic jal;
-  logic jalr;
-  logic lui;
-  logic auipc;
-  logic csr;
-  core_csr_cmd_e csr_cmd;
-  logic [11:0] csr_addr;
-  logic ecall;
-  logic ebreak;
-  logic mret;
-  logic illegal;
+  logic [31:0] instr;       // Instruction stimulus.
+  logic [4:0] rd;           // DUT decoded rd field.
+  logic [4:0] rs1;          // DUT decoded rs1 field.
+  logic [4:0] rs2;          // DUT decoded rs2 field.
+  logic [31:0] imm;         // DUT decoded immediate.
+  core_imm_sel_e imm_sel;   // DUT immediate format.
+  logic uses_rs1;           // DUT rs1-use qualifier.
+  logic uses_rs2;           // DUT rs2-use qualifier.
+  logic writes_rd;          // DUT rd-write qualifier.
+  logic alu_valid;          // DUT ALU qualifier.
+  core_alu_op_e alu_op;     // DUT ALU operation.
+  logic alu_src_imm;        // DUT ALU immediate-source qualifier.
+  logic load;               // DUT load qualifier.
+  logic store;              // DUT store qualifier.
+  core_lsu_size_e lsu_size; // DUT LSU access size.
+  logic lsu_unsigned;       // DUT unsigned-load qualifier.
+  logic branch;             // DUT branch qualifier.
+  core_branch_e branch_op;  // DUT branch operation.
+  logic jal;                // DUT JAL qualifier.
+  logic jalr;               // DUT JALR qualifier.
+  logic lui;                // DUT LUI qualifier.
+  logic auipc;              // DUT AUIPC qualifier.
+  logic csr;                // DUT CSR qualifier.
+  core_csr_cmd_e csr_cmd;   // DUT CSR command.
+  logic [11:0] csr_addr;    // DUT CSR address.
+  logic ecall;              // DUT ECALL qualifier.
+  logic ebreak;             // DUT EBREAK qualifier.
+  logic mret;               // DUT MRET qualifier.
+  logic illegal;            // DUT illegal-instruction flag.
 
-  int unsigned pass_count;
-  int unsigned alu_r_count;
-  int unsigned alu_i_count;
-  int unsigned branch_count;
-  int unsigned load_count;
-  int unsigned store_count;
-  int unsigned jump_count;
-  int unsigned csr_count;
-  int unsigned system_count;
-  int unsigned illegal_count;
+  int unsigned pass_count;    // Number of successful checks.
+  int unsigned alu_r_count;   // Register-register ALU coverage counter.
+  int unsigned alu_i_count;   // Register-immediate ALU coverage counter.
+  int unsigned branch_count;  // Branch coverage counter.
+  int unsigned load_count;    // Load coverage counter.
+  int unsigned store_count;   // Store coverage counter.
+  int unsigned jump_count;    // Jump/U-type coverage counter.
+  int unsigned csr_count;     // CSR instruction coverage counter.
+  int unsigned system_count;  // ECALL/EBREAK/MRET coverage counter.
+  int unsigned illegal_count; // Illegal encoding coverage counter.
 
   core_decode u_core_decode (
     .instr_i(instr),
@@ -76,6 +81,7 @@ module tb_core_decode;
     .illegal_o(illegal)
   );
 
+  // Encode RV32I R-type instructions for directed decode checks.
   function automatic logic [31:0] enc_r(
     input logic [6:0] funct7,
     input logic [4:0] enc_rs2,
@@ -86,6 +92,7 @@ module tb_core_decode;
     enc_r = {funct7, enc_rs2, enc_rs1, funct3, enc_rd, 7'b0110011};
   endfunction
 
+  // Encode I-type style instructions, including loads/JALR/SYSTEM.
   function automatic logic [31:0] enc_i(
     input logic [11:0] imm12,
     input logic [4:0] enc_rs1,
@@ -96,6 +103,7 @@ module tb_core_decode;
     enc_i = {imm12, enc_rs1, funct3, enc_rd, opcode};
   endfunction
 
+  // Encode S-type store instructions.
   function automatic logic [31:0] enc_s(
     input logic [11:0] imm12,
     input logic [4:0] enc_rs2,
@@ -105,6 +113,7 @@ module tb_core_decode;
     enc_s = {imm12[11:5], enc_rs2, enc_rs1, funct3, imm12[4:0], 7'b0100011};
   endfunction
 
+  // Encode B-type branch instructions with the immediate bit shuffle.
   function automatic logic [31:0] enc_b(
     input logic [12:0] imm13,
     input logic [4:0] enc_rs2,

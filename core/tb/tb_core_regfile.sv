@@ -1,24 +1,28 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_regfile.
+//
+// The bench mirrors architectural register contents in model_regs and verifies
+// reset, x0 immutability, dual reads, same-cycle bypass, and random accesses.
 module tb_core_regfile;
-  logic        clk;
-  logic        rst_n;
-  logic [4:0]  raddr1;
-  logic [31:0] rdata1;
-  logic [4:0]  raddr2;
-  logic [31:0] rdata2;
-  logic        we;
-  logic [4:0]  waddr;
-  logic [31:0] wdata;
+  logic        clk;    // 100MHz test clock.
+  logic        rst_n;  // Active-low DUT reset.
+  logic [4:0]  raddr1; // Read port 1 address stimulus.
+  logic [31:0] rdata1; // Read port 1 DUT data.
+  logic [4:0]  raddr2; // Read port 2 address stimulus.
+  logic [31:0] rdata2; // Read port 2 DUT data.
+  logic        we;     // Write enable stimulus.
+  logic [4:0]  waddr;  // Write address stimulus.
+  logic [31:0] wdata;  // Write data stimulus.
 
-  logic [31:0] model_regs [31:0];
+  logic [31:0] model_regs [31:0]; // Architectural reference model including x0.
 
-  int unsigned pass_count;
-  int unsigned reset_checks;
-  int unsigned write_checks;
-  int unsigned x0_checks;
-  int unsigned bypass_checks;
-  int unsigned random_checks;
+  int unsigned pass_count;    // Number of successful checks.
+  int unsigned reset_checks;  // Reset read coverage counter.
+  int unsigned write_checks;  // Register write coverage counter.
+  int unsigned x0_checks;     // x0 immutability coverage counter.
+  int unsigned bypass_checks; // Same-cycle write/read bypass coverage counter.
+  int unsigned random_checks; // Deterministic random access counter.
 
   core_regfile u_core_regfile (
     .clk_i(clk),
@@ -32,11 +36,13 @@ module tb_core_regfile;
     .wdata_i(wdata)
   );
 
+  // Generate the project default 10ns clock.
   initial begin
     clk = 1'b0;
     forever #5ns clk = ~clk;
   end
 
+  // Drive inactive bus values between tests.
   task automatic idle_inputs;
     begin
       raddr1 = 5'd0;
@@ -47,6 +53,7 @@ module tb_core_regfile;
     end
   endtask
 
+  // Reference architectural read. x0 is always zero regardless of model array.
   function automatic logic [31:0] ref_read(input logic [4:0] addr);
     begin
       if (addr == 5'd0) begin
@@ -57,6 +64,7 @@ module tb_core_regfile;
     end
   endfunction
 
+  // Check both combinational read ports against expected values.
   task automatic check_read(
     input logic [4:0] addr1,
     input logic [31:0] exp1,
@@ -77,6 +85,7 @@ module tb_core_regfile;
     end
   endtask
 
+  // Commit one write and update the reference model after the DUT clock edge.
   task automatic write_reg(
     input logic [4:0] addr,
     input logic [31:0] data,
@@ -98,6 +107,7 @@ module tb_core_regfile;
     end
   endtask
 
+  // Reset DUT and verify every logical register reads zero.
   task automatic check_reset_state;
     begin
       rst_n = 1'b0;

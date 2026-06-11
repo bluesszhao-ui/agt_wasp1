@@ -83,3 +83,21 @@ the affected design spec
 ```
 
 Verification plans and reports must remain aligned with the spec requirements.
+
+## 6. Source Commenting
+
+RTL and verification source files are part of the design documentation.
+
+Every implemented `.sv` file must include:
+
+```text
+top-of-file module/testbench purpose comment
+port comments for RTL modules
+comments for meaningful internal signals and registers
+comments before major combinational or sequential logic blocks
+comments explaining priority, masking, error, trap, interrupt, and protocol behavior
+comments for testbench reference models, tasks, and coverage counters
+```
+
+Comments should explain design intent and verification purpose. They should not
+repeat syntax that is already obvious from the code.

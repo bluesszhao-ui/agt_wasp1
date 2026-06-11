@@ -1,18 +1,22 @@
 `timescale 1ns/1ps
 
+// Self-checking testbench for core_alu.
+//
+// The bench combines directed edge cases with deterministic random checks and
+// compares every result against a local reference model.
 module tb_core_alu;
   import core_types_pkg::*;
 
-  core_alu_op_e op;
-  logic [31:0] lhs;
-  logic [31:0] rhs;
-  logic [31:0] result;
+  core_alu_op_e op;       // Operation driven into DUT.
+  logic [31:0] lhs;       // Left operand driven into DUT.
+  logic [31:0] rhs;       // Right operand driven into DUT.
+  logic [31:0] result;    // DUT result observed by checks.
 
-  int unsigned pass_count;
-  int unsigned op_count [10];
-  int unsigned edge_count;
-  int unsigned signed_count;
-  int unsigned random_count;
+  int unsigned pass_count;   // Number of successful checks.
+  int unsigned op_count [10];// Per-operation coverage counters.
+  int unsigned edge_count;   // Directed edge-case coverage counter.
+  int unsigned signed_count; // Signed compare/shift coverage counter.
+  int unsigned random_count; // Deterministic random check counter.
 
   core_alu u_core_alu (
     .op_i(op),
@@ -21,6 +25,7 @@ module tb_core_alu;
     .result_o(result)
   );
 
+  // Golden ALU model used by all directed and random checks.
   function automatic logic [31:0] ref_alu(
     input core_alu_op_e ref_op,
     input logic [31:0] ref_lhs,
@@ -45,6 +50,7 @@ module tb_core_alu;
     end
   endfunction
 
+  // Drive one transaction, wait for combinational settle, and compare result.
   task automatic check(
     input core_alu_op_e check_op,
     input logic [31:0] check_lhs,
@@ -68,6 +74,8 @@ module tb_core_alu;
     end
   endtask
 
+  // Directed vectors cover wrapping arithmetic, shift masking, signedness, and
+  // representative logic patterns.
   task automatic check_directed;
     begin
       check(CORE_ALU_ADD, 32'h0000_0001, 32'h0000_0002, "add small");
