@@ -20,7 +20,11 @@ response muxing, and default error handling.
 | 360ns-420ns | Slave mux selects each slave response | Selected HRDATA/HREADY/HRESP forwarded | PASS for `ahb_slave_mux` |
 | 420ns-480ns | Slave mux handles no-select and multi-select cases | No-select OKAY, multi-select ERROR | PASS for `ahb_slave_mux` |
 | 480ns-540ns | Selected slave stalls HREADY low | Master sees HREADY low from selected slave | PASS for `ahb_slave_mux` |
-| 540ns-600ns | Full fabric selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
+| 540ns-640ns | Arbiter handles single-master requests | Requesting master granted and response routed | PASS for `ahb_arbiter_2m` |
+| 640ns-760ns | Arbiter handles simultaneous requests | Grants alternate round-robin | PASS for `ahb_arbiter_2m` |
+| 760ns-840ns | Arbiter sees downstream HREADY low | Grant and output controls remain stable | PASS for `ahb_arbiter_2m` |
+| 840ns-940ns | Arbiter deterministic random requests | RTL grants match scoreboard model | PASS for `ahb_arbiter_2m` |
+| 940ns-1040ns | Full fabric selected slave stalls HREADY low | Master control remains stable while stalled | TBD |
 
 ## 3. Protocol Checks
 
@@ -68,6 +72,19 @@ multi-select select_err_o and ERROR response
 deterministic random one-hot response forwarding
 ```
 
+`ahb_arbiter_2m` additionally checks:
+
+```text
+reset no-grant state
+single m0 request grant
+single m1 request grant
+simultaneous request round-robin alternation
+downstream HREADY low grant hold
+selected master response routing
+non-selected requesting master held with HREADY low
+deterministic random request scoreboard
+```
+
 ## 4. Coverage Intent
 
 Functional coverage should include:
@@ -84,6 +101,10 @@ default slave read/write paths
 slave mux no-select and multi-select paths
 slave mux every slave response path
 slave mux HREADY low and HRESP ERROR paths
+arbiter m0-only and m1-only grants
+arbiter simultaneous request alternation
+arbiter downstream stall hold
+arbiter response routing and error path
 core priority after reset
 DMA grant after core grant
 stall insertion on each response path

@@ -13,6 +13,7 @@
 | `ahb_decoder` self-check count | 183 |
 | `ahb_default_slave` self-check count | 136 |
 | `ahb_slave_mux` self-check count | 144 |
+| `ahb_arbiter_2m` self-check count | 100 |
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
@@ -135,3 +136,26 @@ These are initial parameters, not final capacity decisions.
 | Slave 9 hits | 9 |
 | Slave 10 hits | 17 |
 | Scoreboard random check | 128 deterministic random one-hot selects |
+
+## 10. ahb_arbiter_2m Case Table
+
+| Time | Action | Expected result | Observed result |
+| --- | --- | --- | --- |
+| Cycles 0-2 | Assert reset | No grant, output transfer IDLE | PASS |
+| Cycles 3-6 | Drive m0-only then m1-only requests | Requesting master granted, response routed back | PASS |
+| Cycles 7-30 | Drive continuous simultaneous requests | Grants alternate m0/m1 round-robin | PASS |
+| Cycles 31-35 | Force downstream HREADY low | Grant and output address/control remain stable | PASS |
+| Cycles 36-99 | Drive 64 deterministic random request patterns | RTL grant matches scoreboard model | PASS |
+
+## 11. ahb_arbiter_2m Functional Coverage Summary
+
+| Coverage item | Result |
+| --- | --- |
+| Total self-checks | 100 |
+| m0 grant count | 33 |
+| m1 grant count | 33 |
+| simultaneous request count | 32 |
+| downstream stall hold checks | 3 |
+| selected HREADY low checks | 3 |
+| response ERROR route checks | 7 |
+| deterministic random request patterns | 64 |

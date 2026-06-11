@@ -86,6 +86,34 @@ transfers. This avoids starving either core or DMA.
 Locked transfers are reserved in the interface but are not used by the first
 wasp1 implementation.
 
+`ahb_arbiter_2m` uses registered grant state.
+
+Behavior:
+
+```text
+reset:
+  no active grant
+  first simultaneous request after reset grants core/m0
+
+one requester:
+  grant the requesting master
+
+two requesters:
+  grant the master that did not win the previous accepted grant
+
+downstream HREADY low:
+  hold grant and selected address/control/data stable
+
+non-granted requesting master:
+  HREADY returned low
+
+idle non-granted master:
+  HREADY returned high
+```
+
+The arbiter forwards downstream `HRDATA/HRESP/HREADY` only to the granted
+master. The non-granted master sees zero read data and OKAY response.
+
 ## 5. Address Decode
 
 The initial decode follows `docs/wasp1_memory_map.md`.
