@@ -2,7 +2,9 @@ MODULE := core
 VERILATOR ?= verilator
 RTL_FILELIST := filelists/core.f
 TB_CORE_ALU_FILELIST := filelists/tb_core_alu.f
+TB_CORE_REGFILE_FILELIST := filelists/tb_core_regfile.f
 CORE_ALU_TOP := tb_core_alu
+CORE_REGFILE_TOP := tb_core_regfile
 
 .PHONY: all lint sim clean
 
@@ -13,9 +15,12 @@ lint:
 	$(VERILATOR) --lint-only -sv --top-module core_alu \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_regfile \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	@cat logs/lint.log
 
-sim: sim-core-alu
+sim: sim-core-alu sim-core-regfile
 
 lint-ic:
 	@mkdir -p build logs
@@ -23,6 +28,10 @@ lint-ic:
 		+define+WASP1_TARGET_IC \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_regfile \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	@cat logs/lint_ic.log
 
 lint-fpga-v7:
@@ -31,6 +40,10 @@ lint-fpga-v7:
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_regfile \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	@cat logs/lint_fpga_v7.log
 
 sim-core-alu:
@@ -41,6 +54,15 @@ sim-core-alu:
 		-f $(TB_CORE_ALU_FILELIST) > logs/tb_core_alu_build.log 2>&1
 	@./build/obj_$(CORE_ALU_TOP)/V$(CORE_ALU_TOP) > logs/tb_core_alu.log 2>&1
 	@cat logs/tb_core_alu.log
+
+sim-core-regfile:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(CORE_REGFILE_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(CORE_REGFILE_TOP) \
+		-f $(TB_CORE_REGFILE_FILELIST) > logs/tb_core_regfile_build.log 2>&1
+	@./build/obj_$(CORE_REGFILE_TOP)/V$(CORE_REGFILE_TOP) > logs/tb_core_regfile.log 2>&1
+	@cat logs/tb_core_regfile.log
 
 clean:
 	@rm -rf build/* logs/* wave/*
