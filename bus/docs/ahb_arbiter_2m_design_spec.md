@@ -1,0 +1,129 @@
+# ahb_arbiter_2m Design Spec
+
+## 1. Scope
+
+`ahb_arbiter_2m` arbitrates between two AHB-Lite masters:
+
+```text
+m0 = core
+m1 = dma
+```
+
+It forwards one selected master's address/control/write-data channel to the
+shared AHB fabric and routes the shared response back to the granted master.
+
+## 2. Block Diagram
+
+```text
+ m0_haddr/m0_htrans/m0_hwrite/...      m1_haddr/m1_htrans/m1_hwrite/...
+                 |                                      |
+                 v                                      v
+       +-------------------+                  +-------------------+
+       | m0 request detect |                  | m1 request detect |
+       | req = htrans[1]   |                  | req = htrans[1]   |
+       +---------+---------+                  +---------+---------+
+                 |                                      |
+                 +------------------+-------------------+
+                                    |
+                                    v
+                         +--------------------+
+                         | round-robin grant  |
+                         |                    |
+                         | last_grant_q       |
+                         | grant_idx_q        |
+                         | grant_valid_q      |
+                         | update if HREADY=1 |
+                         +---------+----------+
+                                   |
+                    +--------------+--------------+
+                    |                             |
+                    v                             v
+        +----------------------+       +----------------------+
+        | address/control mux  |       | response route mux   |
+        | selected master ->   |       | shared response ->   |
+        | shared AHB bus       |       | granted master       |
+        +----------+-----------+       +----------+-----------+
+                   |                              |
+                   v                              v
+        haddr/htrans/hwrite/...        m0_hrdata/hready/hresp
+        hwdata                         m1_hrdata/hready/hresp
+                   ^
+                   |
+        hrdata_i / hready_i / hresp_i from slave mux
+```
+
+## 3. Ports
+
+| Port group | Direction | Description |
+| --- | --- | --- |
+| `hclk_i`, `hresetn_i` | input | Arbiter clock and active-low reset |
+| `m0_*` inputs | input | Core master address/control/write data |
+| `m0_*` outputs | output | Core master read data/ready/response |
+| `m1_*` inputs | input | DMA master address/control/write data |
+| `m1_*` outputs | output | DMA master read data/ready/response |
+| shared AHB outputs | output | Selected address/control/write data |
+| shared AHB inputs | input | Response from slave mux |
+| `grant_valid_o` | output | Current grant is valid |
+| `grant_idx_o` | output | Current granted master, 0 for core, 1 for DMA |
+
+## 4. Behavior
+
+Request detection:
+
+```text
+master requests when HTRANS[1] = 1
+NONSEQ and SEQ are treated as active requests
+IDLE and BUSY are not treated as requests
+```
+
+Grant policy:
+
+```text
+reset:
+  no grant
+  last_grant_q = m1, so first simultaneous request grants m0
+
+m0 only:
+  grant m0
+
+m1 only:
+  grant m1
+
+m0 and m1:
+  grant the master that did not win the previous accepted grant
+```
+
+Stall policy:
+
+```text
+if downstream HREADY is 0:
+  hold grant_valid_q and grant_idx_q
+  keep selected address/control/write-data source stable
+```
+
+Response routing:
+
+```text
+granted master receives HRDATA/HREADY/HRESP from shared slave response
+non-granted requesting master sees HREADY low
+idle non-granted master sees HREADY high
+non-granted master HRDATA is zero and HRESP is OKAY
+```
+
+## 5. Verification Summary
+
+Verified by `tb_ahb_arbiter_2m`.
+
+Coverage includes:
+
+```text
+reset no-grant state
+m0-only grant
+m1-only grant
+simultaneous request round-robin alternation
+downstream HREADY low grant hold
+selected master response routing
+non-selected requesting master HREADY low
+response ERROR routing
+64 deterministic random request patterns with scoreboard
+```
