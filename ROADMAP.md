@@ -34,6 +34,7 @@ PASS       Current verification target passes
 | `core/core_branch` | PASS | Branch/jump target, compare, priority, and random branch tests pass |
 | `core/core_csr` | PASS | Machine CSR ops, masks, counters, IRQ pending, trap, and MRET tests pass |
 | `core/core_lsu` | PASS | Load/store request formatting, alignment, extension, and random tests pass |
+| `core/core_trap` | PASS | Sync traps, MRET, IRQ masking, and trap priority tests pass |
 | `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
@@ -46,7 +47,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to core trap helper
+1. Move to core hazard helper
 ```
 
 ## Commit Policy Going Forward
