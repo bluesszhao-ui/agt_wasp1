@@ -28,7 +28,8 @@ PASS       Current verification target passes
 | `uart/ahb_uart` | PASS | 8N1 TX/RX loopback, FIFO, IRQ, overrun, error paths pass |
 | `dma/ahb_dma` | PASS | Single-channel word copy, DMA master, IRQ, error paths pass |
 | `intc/ahb_intc` | PASS | PLIC-lite pending, enable, priority, threshold, claim/complete paths pass |
-| `core` | TODO | RV32I + Zicsr 3-stage core |
+| `core/core_alu` | PASS | RV32I integer ALU ops, edge cases, random reference checks pass |
+| `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
@@ -40,7 +41,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to core
+1. Move to core register file
 ```
 
 ## Commit Policy Going Forward

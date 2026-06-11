@@ -1,14 +1,46 @@
 MODULE := core
+VERILATOR ?= verilator
+RTL_FILELIST := filelists/core.f
+TB_CORE_ALU_FILELIST := filelists/tb_core_alu.f
+CORE_ALU_TOP := tb_core_alu
 
 .PHONY: all lint sim clean
 
 all: lint
 
 lint:
-	@echo "$(MODULE): RTL is not implemented yet."
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module core_alu \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) > logs/lint.log 2>&1
+	@cat logs/lint.log
 
-sim:
-	@echo "$(MODULE): testbench is not implemented yet."
+sim: sim-core-alu
+
+lint-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module core_alu \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
+	@cat logs/lint_ic.log
+
+lint-fpga-v7:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module core_alu \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
+	@cat logs/lint_fpga_v7.log
+
+sim-core-alu:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(CORE_ALU_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(CORE_ALU_TOP) \
+		-f $(TB_CORE_ALU_FILELIST) > logs/tb_core_alu_build.log 2>&1
+	@./build/obj_$(CORE_ALU_TOP)/V$(CORE_ALU_TOP) > logs/tb_core_alu.log 2>&1
+	@cat logs/tb_core_alu.log
 
 clean:
 	@rm -rf build/* logs/* wave/*
