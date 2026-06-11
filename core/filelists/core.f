@@ -6,3 +6,4 @@ rtl/core_regfile.sv
 rtl/core_decode.sv
 rtl/core_branch.sv
 rtl/core_csr.sv
+rtl/core_lsu.sv
