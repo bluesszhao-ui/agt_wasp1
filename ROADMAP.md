@@ -21,7 +21,7 @@ PASS       Current verification target passes
 | `bus/ahb_slave_mux` | PASS | Response forwarding, no-select, multi-select, random tests pass |
 | `bus/ahb_arbiter_2m` | PASS | Round-robin, stall hold, response routing, random tests pass |
 | `bus/ahb_fabric_2m` | PASS | Initial fabric integration with mock slaves passes |
-| `sram` | TODO | AHB SRAM slave and model |
+| `sram/ahb_sram` | PASS | Byte/half/word, error paths, random write/read tests pass |
 | `otp` | TODO | Executable OTP model and controller |
 | `timer` | TODO | Machine timer |
 | `gpio` | TODO | 32-bit GPIO |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to sram AHB slave
+1. Move to OTP executable/programming model
 ```
 
 ## Commit Policy Going Forward
