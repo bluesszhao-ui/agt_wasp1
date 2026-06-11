@@ -23,7 +23,7 @@ PASS       Current verification target passes
 | `bus/ahb_fabric_2m` | PASS | Initial fabric integration with mock slaves passes |
 | `sram/ahb_sram` | PASS | Byte/half/word, error paths, random write/read tests pass |
 | `otp/ahb_otp` | PASS | Executable OTP data window, programming registers, lock/error paths pass |
-| `timer` | TODO | Machine timer |
+| `timer/ahb_timer` | PASS | 64-bit mtime/mtimecmp, IRQ mask/pending, error paths pass |
 | `gpio` | TODO | 32-bit GPIO |
 | `uart` | TODO | UART and FIFO |
 | `dma` | TODO | Single-channel DMA |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to timer
+1. Move to GPIO
 ```
 
 ## Commit Policy Going Forward

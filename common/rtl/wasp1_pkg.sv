@@ -54,6 +54,16 @@ package wasp1_pkg;
   localparam int OTP_STATUS_ERROR_BIT = 2;
   localparam int OTP_STATUS_LOCK_BIT  = 3;
 
+  localparam logic [31:0] TIMER_CTRL_OFFSET      = 32'h0000_0000;
+  localparam logic [31:0] TIMER_STATUS_OFFSET    = 32'h0000_0004;
+  localparam logic [31:0] TIMER_MTIME_LO_OFFSET  = 32'h0000_0008;
+  localparam logic [31:0] TIMER_MTIME_HI_OFFSET  = 32'h0000_000C;
+  localparam logic [31:0] TIMER_CMP_LO_OFFSET    = 32'h0000_0010;
+  localparam logic [31:0] TIMER_CMP_HI_OFFSET    = 32'h0000_0014;
+  localparam int TIMER_CTRL_ENABLE_BIT = 0;
+  localparam int TIMER_CTRL_IRQ_EN_BIT = 1;
+  localparam int TIMER_STATUS_PENDING_BIT = 0;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 

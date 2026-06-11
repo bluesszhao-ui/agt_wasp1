@@ -1,0 +1,143 @@
+# ahb_timer Design Spec
+
+## 1. Scope
+
+`ahb_timer` is the machine timer peripheral for wasp1.
+
+It exposes a 64-bit `mtime`, a 64-bit `mtimecmp`, control/status registers, and
+a timer interrupt output for the core interrupt path.
+
+## 2. Block Diagram
+
+```text
+              hclk_i / hresetn_i
+                      |
+                      v
+ hsel_i ----------+----------------+
+ haddr_i -------->| address phase  |
+ htrans_i ------->| range/alignment|
+ hwrite_i ------->| word-only check|
+ hsize_i -------->| capture regs   |
+                 +--------+-------+
+                          |
+                          v
+                 +----------------+
+ hwdata_i ------>| register write |
+                 | CTRL MTIME CMP |
+                 +--------+-------+
+                          |
+          +---------------+----------------+
+          |                                |
+          v                                v
+ +----------------+              +----------------+
+ | 64-bit mtime   |------------->| compare logic  |
+ | enable gated   |              | mtime >= cmp   |
+ +----------------+              +--------+-------+
+                                           |
+                                           v
+                                  timer_irq_o
+                                           |
+              +----------------------------+
+              |
+              v
+       +---------------+
+       | read mux      |
+       | HRDATA/HRESP  |
+       +-------+-------+
+               |
+       hrdata_o/hresp_o
+       hready_o always 1
+```
+
+## 3. Register Map
+
+Offsets are relative to `TIMER_BASE`.
+
+| Offset | Register | Access | Description |
+| --- | --- | --- | --- |
+| `0x00` | `TIMER_CTRL` | R/W | bit0 enable, bit1 irq_enable |
+| `0x04` | `TIMER_STATUS` | R | bit0 pending |
+| `0x08` | `TIMER_MTIME_LO` | R/W | Low 32 bits of `mtime` |
+| `0x0C` | `TIMER_MTIME_HI` | R/W | High 32 bits of `mtime` |
+| `0x10` | `TIMER_CMP_LO` | R/W | Low 32 bits of `mtimecmp` |
+| `0x14` | `TIMER_CMP_HI` | R/W | High 32 bits of `mtimecmp` |
+
+## 4. Behavior
+
+`mtime` increments by one on each `hclk_i` rising edge when `CTRL.enable` is set.
+
+The pending condition is:
+
+```text
+pending = (mtime >= mtimecmp)
+```
+
+The interrupt output is:
+
+```text
+timer_irq_o = pending && CTRL.irq_enable
+```
+
+Pending is level-sensitive. Software clears the pending condition by writing a
+future `mtimecmp` value or disabling interrupt output.
+
+`mtimecmp` resets to all ones so reset does not immediately assert pending.
+
+## 5. AHB-Lite Behavior
+
+`ahb_timer` implements a one-cycle response model:
+
+```text
+cycle N:
+  capture selected NONSEQ/SEQ address/control
+
+cycle N+1:
+  return registered read data or write response
+```
+
+Only aligned word accesses are supported.
+
+Error response:
+
+```text
+out-of-range selected transfer -> ERROR
+misaligned selected transfer   -> ERROR
+non-word transfer              -> ERROR
+unknown register access        -> ERROR
+write to read-only STATUS      -> ERROR
+```
+
+`HREADY` is always high.
+
+## 6. Implementation Targets
+
+`ahb_timer` is target-neutral synthesizable logic. It includes
+`common/rtl/wasp1_target_defs.svh` and is linted for:
+
+```text
+generic simulation
+WASP1_TARGET_IC
+WASP1_TARGET_FPGA_XILINX_VIRTEX7
+```
+
+No FPGA primitive or ASIC macro is required for the first timer implementation.
+
+## 7. Verification Summary
+
+Verified by `tb_ahb_timer`.
+
+Coverage includes:
+
+```text
+reset output state
+control/status register readback
+64-bit mtime and mtimecmp writes
+disabled counter stability
+enabled counter progress
+pending and irq assertion
+irq masking
+pending clear by future compare value
+misaligned, unsupported size, unknown register, and out-of-range errors
+deterministic random compare/interrupt tests
+generic, IC, and Virtex-7 target lint
+```
