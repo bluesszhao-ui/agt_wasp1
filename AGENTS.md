@@ -19,6 +19,8 @@ SoC bus: AHB-Lite
 Core/cache internal interface: lightweight valid/ready request-response
 Debug: RISC-V External Debug Spec 0.13.x target
 Program storage: executable OTP
+Implementation targets: IC and Xilinx Virtex-7 FPGA
+Target selection: compile-time macros in common/rtl/wasp1_target_defs.svh
 ```
 
 ## Directory Rules
@@ -126,6 +128,20 @@ large unrelated refactors
 changing established interfaces without updating docs/tests
 ```
 
+All RTL must support both implementation targets unless a module spec explicitly
+documents why the logic is target-neutral:
+
+```text
+WASP1_TARGET_IC
+WASP1_TARGET_FPGA_XILINX_VIRTEX7
+WASP1_TARGET_SIM_GENERIC
+```
+
+Target macros may select memory wrappers, FPGA synthesis attributes, clock/reset
+primitives, and IO/debug implementation details. They must not change
+programmer-visible behavior, AHB-Lite protocol behavior, register maps,
+interrupt behavior, or debug architectural behavior.
+
 ## Git Rules
 
 Keep commits small and aligned with verified milestones.
@@ -135,6 +151,7 @@ Before committing:
 ```text
 make lint
 module-specific simulation target
+target-specific lint targets when the module has target-sensitive RTL
 git status --short
 ```
 

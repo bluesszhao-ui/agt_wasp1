@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "wasp1_target_defs.svh"
 
 module ahb_sram #(
   parameter int ADDR_WIDTH = wasp1_pkg::ADDR_WIDTH,
@@ -25,7 +26,13 @@ module ahb_sram #(
   localparam int WORD_COUNT = MEM_BYTES / STRB_WIDTH_LOCAL;
   localparam int WORD_INDEX_WIDTH = (WORD_COUNT <= 1) ? 1 : $clog2(WORD_COUNT);
 
+`ifdef WASP1_TARGET_FPGA_XILINX_VIRTEX7
+  (* ram_style = "block" *) logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
+`elsif WASP1_TARGET_IC
   logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
+`else
+  logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
+`endif
 
   logic                  req_valid_q;
   logic                  req_write_q;

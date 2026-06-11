@@ -10,6 +10,7 @@
 | Simulation command | `make -C sram sim` |
 | Lint result | PASS |
 | Simulation result | PASS |
+| Target lint result | PASS for generic, IC, and Xilinx Virtex-7 FPGA macro builds |
 | Self-check count | 52 |
 | Lint log | `sram/logs/lint.log` |
 | Simulation log | `sram/logs/tb_ahb_sram.log` |
@@ -48,3 +49,11 @@ clock frequency = 100MHz
 | Error response count | 4 |
 | Idle/unselected count | 1 |
 | Deterministic random accesses | 16 |
+
+## 5. Target Compile Matrix
+
+| Target | Macro | Command | Result |
+| --- | --- | --- | --- |
+| Generic simulation | `WASP1_TARGET_SIM_GENERIC` by default | `make -C sram lint` | PASS |
+| IC | `WASP1_TARGET_IC` | `make -C sram lint-ic` | PASS |
+| Xilinx Virtex-7 FPGA | `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | `make -C sram lint-fpga-v7` | PASS |

@@ -17,6 +17,22 @@ lint:
 
 sim: sim-ahb-sram
 
+lint-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module ahb_sram \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
+	@cat logs/lint_ic.log
+
+lint-fpga-v7:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module ahb_sram \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-f $(RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
+	@cat logs/lint_fpga_v7.log
+
 sim-ahb-sram:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(AHB_SRAM_TOP) \

@@ -20,7 +20,15 @@ alignment/range error handling, and deterministic random word accesses.
 | Directed | Out-of-range and below-base transfers | HRESP ERROR | PASS |
 | Random | 16 deterministic word write/read pairs | Read data matches written data | PASS |
 
-## 3. Coverage Intent
+## 3. Target Compile Matrix
+
+| Target | Macro | Command | Expected result |
+| --- | --- | --- | --- |
+| Generic simulation | `WASP1_TARGET_SIM_GENERIC` by default | `make -C sram lint` | PASS |
+| IC | `WASP1_TARGET_IC` | `make -C sram lint-ic` | PASS |
+| Xilinx Virtex-7 FPGA | `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | `make -C sram lint-fpga-v7` | PASS |
+
+## 4. Coverage Intent
 
 ```text
 word transfer path

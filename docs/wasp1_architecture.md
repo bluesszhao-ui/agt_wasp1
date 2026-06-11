@@ -29,6 +29,7 @@ Rocket Chip TileLink fabric with an AHB-Lite based SoC interconnect.
 | OTP programming | CPU-controlled through OTP registers |
 | UART programming | Software protocol through boot/program code |
 | OTP programming safety | OTP programming routines execute from I-SRAM |
+| Implementation targets | IC and Xilinx Virtex-7 FPGA |
 
 ## 3. Top-Level Structure
 

@@ -4,9 +4,10 @@
 
 `ahb_sram` is a reusable AHB-Lite SRAM slave for wasp1.
 
-It is intended to be used for I-SRAM and D-SRAM wrappers. The current RTL uses a
-synthesizable register-array memory model. Later synthesis flows may replace the
-array with SRAM macros behind the same AHB-facing behavior.
+It is intended to be used for I-SRAM and D-SRAM wrappers. The module supports
+IC and FPGA implementation targets through `common/rtl/wasp1_target_defs.svh`.
+The current open-source RTL uses a synthesizable word-array model behind a
+stable AHB-facing behavior.
 
 ## 2. Block Diagram
 
@@ -66,7 +67,15 @@ array with SRAM macros behind the same AHB-facing behavior.
 | `BASE_ADDR` | Full address base for range checking |
 | `MEM_BYTES` | SRAM capacity in bytes |
 
-## 5. Behavior
+## 5. Implementation Targets
+
+| Target macro | Implementation intent |
+| --- | --- |
+| `WASP1_TARGET_IC` | IC implementation path. The current model remains synthesizable and keeps the wrapper boundary ready for later SRAM macro replacement. |
+| `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Adds Xilinx-friendly RAM style attributes so the array can infer Virtex-7 block RAM. |
+| `WASP1_TARGET_SIM_GENERIC` | Default generic simulation model when no explicit target macro is defined. |
+
+## 6. Behavior
 
 `ahb_sram` implements a one-cycle response model:
 
@@ -105,7 +114,7 @@ unsupported HSIZE              -> ERROR
 
 `HREADY` is always high. Stalling SRAM behavior can be added later if needed.
 
-## 6. Verification Summary
+## 7. Verification Summary
 
 Verified by `tb_ahb_sram`.
 
@@ -121,4 +130,12 @@ misaligned halfword/word error
 out-of-range high address error
 below-base address error
 16 deterministic random word write/read pairs
+```
+
+Target-sensitive compile checks:
+
+```text
+make -C sram lint
+make -C sram lint-ic
+make -C sram lint-fpga-v7
 ```
