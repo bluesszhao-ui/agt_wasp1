@@ -96,6 +96,18 @@ package wasp1_pkg;
   localparam int UART_IRQ_RX_AVAIL_BIT = 1;
   localparam int UART_IRQ_RX_OVERRUN_BIT = 2;
 
+  localparam logic [31:0] DMA_SRC_OFFSET    = 32'h0000_0000;
+  localparam logic [31:0] DMA_DST_OFFSET    = 32'h0000_0004;
+  localparam logic [31:0] DMA_LEN_OFFSET    = 32'h0000_0008;
+  localparam logic [31:0] DMA_CTRL_OFFSET   = 32'h0000_000C;
+  localparam logic [31:0] DMA_STATUS_OFFSET = 32'h0000_0010;
+  localparam int DMA_CTRL_START_BIT = 0;
+  localparam int DMA_CTRL_IRQ_EN_BIT = 1;
+  localparam int DMA_CTRL_CLEAR_BIT = 2;
+  localparam int DMA_STATUS_BUSY_BIT = 0;
+  localparam int DMA_STATUS_DONE_BIT = 1;
+  localparam int DMA_STATUS_ERROR_BIT = 2;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 

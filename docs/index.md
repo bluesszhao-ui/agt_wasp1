@@ -34,6 +34,7 @@ Current module docs:
 | `timer` | AHB timer design spec, verification plan, verification report |
 | `gpio` | AHB GPIO design spec, verification plan, verification report |
 | `uart` | AHB UART design spec, verification plan, verification report |
+| `dma` | AHB DMA design spec, verification plan, verification report |
 
 Current bus submodule specs:
 
@@ -48,6 +49,7 @@ otp/docs/ahb_otp_design_spec.md
 timer/docs/ahb_timer_design_spec.md
 gpio/docs/ahb_gpio_design_spec.md
 uart/docs/ahb_uart_design_spec.md
+dma/docs/ahb_dma_design_spec.md
 ```
 
 ## Project Status

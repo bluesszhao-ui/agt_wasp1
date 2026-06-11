@@ -26,7 +26,7 @@ PASS       Current verification target passes
 | `timer/ahb_timer` | PASS | 64-bit mtime/mtimecmp, IRQ mask/pending, error paths pass |
 | `gpio/ahb_gpio` | PASS | 32-bit IO, direction, set/clear/toggle, level/edge IRQ paths pass |
 | `uart/ahb_uart` | PASS | 8N1 TX/RX loopback, FIFO, IRQ, overrun, error paths pass |
-| `dma` | TODO | Single-channel DMA |
+| `dma/ahb_dma` | PASS | Single-channel word copy, DMA master, IRQ, error paths pass |
 | `intc` | TODO | plic-lite interrupt controller |
 | `core` | TODO | RV32I + Zicsr 3-stage core |
 | `frontend` | TODO | PC/fetch/redirect |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to DMA
+1. Move to interrupt controller
 ```
 
 ## Commit Policy Going Forward
