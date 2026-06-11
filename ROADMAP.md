@@ -31,6 +31,7 @@ PASS       Current verification target passes
 | `core/core_alu` | PASS | RV32I integer ALU ops, edge cases, random reference checks pass |
 | `core/core_regfile` | PASS | Reset, x0, dual-read, write, bypass, and random access tests pass |
 | `core/core_decode` | PASS | RV32I/Zicsr decode, immediate extraction, and illegal encodings pass |
+| `core/core_branch` | PASS | Branch/jump target, compare, priority, and random branch tests pass |
 | `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
@@ -43,7 +44,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to core branch/jump helper
+1. Move to core CSR file
 ```
 
 ## Commit Policy Going Forward
