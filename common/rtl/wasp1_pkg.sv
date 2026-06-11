@@ -75,6 +75,27 @@ package wasp1_pkg;
   localparam logic [31:0] GPIO_IRQ_POL_OFFSET    = 32'h0000_0020;
   localparam logic [31:0] GPIO_IRQ_STATUS_OFFSET = 32'h0000_0024;
 
+  localparam logic [31:0] UART_DATA_OFFSET       = 32'h0000_0000;
+  localparam logic [31:0] UART_STATUS_OFFSET     = 32'h0000_0004;
+  localparam logic [31:0] UART_CTRL_OFFSET       = 32'h0000_0008;
+  localparam logic [31:0] UART_BAUD_OFFSET       = 32'h0000_000C;
+  localparam logic [31:0] UART_IRQ_STATUS_OFFSET = 32'h0000_0010;
+  localparam int UART_CTRL_ENABLE_BIT = 0;
+  localparam int UART_CTRL_TX_EN_BIT = 1;
+  localparam int UART_CTRL_RX_EN_BIT = 2;
+  localparam int UART_CTRL_TX_IRQ_EN_BIT = 3;
+  localparam int UART_CTRL_RX_IRQ_EN_BIT = 4;
+  localparam int UART_CTRL_OVR_IRQ_EN_BIT = 5;
+  localparam int UART_STATUS_TX_EMPTY_BIT = 0;
+  localparam int UART_STATUS_TX_FULL_BIT = 1;
+  localparam int UART_STATUS_RX_EMPTY_BIT = 2;
+  localparam int UART_STATUS_RX_FULL_BIT = 3;
+  localparam int UART_STATUS_TX_BUSY_BIT = 4;
+  localparam int UART_STATUS_RX_OVERRUN_BIT = 5;
+  localparam int UART_IRQ_TX_EMPTY_BIT = 0;
+  localparam int UART_IRQ_RX_AVAIL_BIT = 1;
+  localparam int UART_IRQ_RX_OVERRUN_BIT = 2;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 

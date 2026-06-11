@@ -25,7 +25,7 @@ PASS       Current verification target passes
 | `otp/ahb_otp` | PASS | Executable OTP data window, programming registers, lock/error paths pass |
 | `timer/ahb_timer` | PASS | 64-bit mtime/mtimecmp, IRQ mask/pending, error paths pass |
 | `gpio/ahb_gpio` | PASS | 32-bit IO, direction, set/clear/toggle, level/edge IRQ paths pass |
-| `uart` | TODO | UART and FIFO |
+| `uart/ahb_uart` | PASS | 8N1 TX/RX loopback, FIFO, IRQ, overrun, error paths pass |
 | `dma` | TODO | Single-channel DMA |
 | `intc` | TODO | plic-lite interrupt controller |
 | `core` | TODO | RV32I + Zicsr 3-stage core |
@@ -40,7 +40,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to UART
+1. Move to DMA
 ```
 
 ## Commit Policy Going Forward

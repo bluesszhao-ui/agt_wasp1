@@ -1,0 +1,152 @@
+# ahb_uart Design Spec
+
+## 1. Scope
+
+`ahb_uart` is the minimal 8N1 UART peripheral for wasp1.
+
+It provides an AHB-Lite register interface, configurable baud divisor, TX/RX
+serial logic, TX/RX FIFOs, RX overrun tracking, and interrupt status.
+
+## 2. Block Diagram
+
+```text
+              hclk_i / hresetn_i
+                      |
+                      v
+ hsel_i ----------+----------------+
+ haddr_i -------->| address phase  |
+ htrans_i ------->| range/alignment|
+ hwrite_i ------->| word-only check|
+ hsize_i -------->| capture regs   |
+                 +--------+-------+
+                          |
+                          v
+                 +----------------+
+ hwdata_i ------>| UART registers |
+                 | CTRL BAUD IRQ  |
+                 +--------+-------+
+                          |
+        +-----------------+------------------+
+        |                                    |
+        v                                    v
+ +-------------+     +------------+   +-------------+
+ | TX FIFO     |---->| uart_tx    |-->| uart_tx_o   |
+ +-------------+     | 8N1 shift  |   +-------------+
+                     +-----+------+
+                           |
+                           v
+                    baud tick
+                           ^
+                           |
+                    +------+------+
+                    | uart_baud   |
+                    +------+------+
+                           |
+                           v
+ +-------------+     +------------+   +-------------+
+ | RX FIFO     |<----| uart_rx    |<--| uart_rx_i   |
+ +-------------+     | 8N1 sample |   +-------------+
+        |
+        v
+ +-------------+
+ | IRQ/status  |---- uart_irq_o
+ +------+------+
+        |
+        v
+ hrdata_o/hresp_o
+ hready_o always 1
+```
+
+## 3. Register Map
+
+Offsets are relative to `UART_BASE`.
+
+| Offset | Register | Access | Description |
+| --- | --- | --- | --- |
+| `0x00` | `UART_DATA` | R/W | Write pushes TX byte, read pops RX byte |
+| `0x04` | `UART_STATUS` | R | TX/RX FIFO and overrun status |
+| `0x08` | `UART_CTRL` | R/W | enable, tx_en, rx_en, IRQ enables |
+| `0x0C` | `UART_BAUD` | R/W | Baud divisor |
+| `0x10` | `UART_IRQ_STATUS` | R/W1C | TX empty, RX available, RX overrun IRQ status |
+
+## 4. Behavior
+
+UART format:
+
+```text
+8 data bits
+no parity
+1 stop bit
+LSB first
+```
+
+`UART_BAUD` controls the number of `hclk_i` cycles per serial bit. A zero
+divisor is treated as one.
+
+Interrupt status bits are latched only when their corresponding interrupt
+enable bit is set. `UART_IRQ_STATUS` is cleared by writing ones to the bits to
+clear.
+
+RX overrun is set when a received byte arrives while the RX FIFO cannot accept
+it. The overrun sticky status clears when software writes one to the overrun IRQ
+status bit.
+
+## 5. AHB-Lite Behavior
+
+`ahb_uart` implements a one-cycle response model:
+
+```text
+cycle N:
+  capture selected NONSEQ/SEQ address/control
+
+cycle N+1:
+  return registered read data or write response
+```
+
+Only aligned word accesses are supported.
+
+Error response:
+
+```text
+out-of-range selected transfer -> ERROR
+misaligned selected transfer   -> ERROR
+non-word transfer              -> ERROR
+unknown register access        -> ERROR
+write DATA when TX FIFO full   -> ERROR
+write to read-only STATUS      -> ERROR
+```
+
+`HREADY` is always high.
+
+## 6. Implementation Targets
+
+`ahb_uart` is target-neutral synthesizable logic. It includes
+`common/rtl/wasp1_target_defs.svh` and is linted for:
+
+```text
+generic simulation
+WASP1_TARGET_IC
+WASP1_TARGET_FPGA_XILINX_VIRTEX7
+```
+
+Top-level pad or FPGA IO primitive binding is outside this module.
+
+## 7. Verification Summary
+
+Verified by `tb_ahb_uart`.
+
+Coverage includes:
+
+```text
+reset output state
+register read/write paths
+TX/RX loopback through real serial path
+deterministic random loopback bytes
+TX FIFO full error
+TX empty IRQ
+RX available IRQ
+RX overrun IRQ and sticky status
+W1C IRQ status clear
+misaligned, unsupported size, unknown register, and out-of-range errors
+generic, IC, and Virtex-7 target lint
+```
