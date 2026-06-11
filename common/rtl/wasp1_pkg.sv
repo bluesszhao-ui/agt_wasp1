@@ -108,6 +108,14 @@ package wasp1_pkg;
   localparam int DMA_STATUS_DONE_BIT = 1;
   localparam int DMA_STATUS_ERROR_BIT = 2;
 
+  localparam logic [31:0] INTC_PENDING_OFFSET   = 32'h0000_0000;
+  localparam logic [31:0] INTC_ENABLE_OFFSET    = 32'h0000_0004;
+  localparam logic [31:0] INTC_CLAIM_OFFSET     = 32'h0000_0008;
+  localparam logic [31:0] INTC_THRESHOLD_OFFSET = 32'h0000_000C;
+  localparam logic [31:0] INTC_PRIORITY_BASE_OFFSET = 32'h0000_0020;
+  localparam int INTC_PRIORITY_STRIDE = 4;
+  localparam int INTC_PRIORITY_BITS = 2;
+
   localparam int CACHE_LINE_BYTES = 16;
   localparam int CACHE_LINE_BITS  = CACHE_LINE_BYTES * 8;
 

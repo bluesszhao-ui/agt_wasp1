@@ -36,6 +36,7 @@ Current module docs:
 | `gpio` | AHB GPIO spec, design spec, verification plan, verification report |
 | `uart` | AHB UART and serial submodule specs, design spec, verification plan, verification report |
 | `dma` | AHB DMA spec, design spec, verification plan, verification report |
+| `intc` | AHB interrupt controller spec, design spec, verification plan, verification report |
 
 Current implemented block specs:
 
@@ -56,6 +57,7 @@ uart/docs/uart_baud_spec.md
 uart/docs/uart_tx_spec.md
 uart/docs/uart_rx_spec.md
 dma/docs/ahb_dma_spec.md
+intc/docs/ahb_intc_spec.md
 ```
 
 Current implemented block design specs:
@@ -77,6 +79,7 @@ uart/docs/uart_baud_design_spec.md
 uart/docs/uart_tx_design_spec.md
 uart/docs/uart_rx_design_spec.md
 dma/docs/ahb_dma_design_spec.md
+intc/docs/ahb_intc_design_spec.md
 ```
 
 ## Project Status
