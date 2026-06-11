@@ -55,14 +55,15 @@ Do not jump straight into top-level integration.
 For each module:
 
 ```text
-1. Write or update design spec
-2. Write or update verification plan
-3. Implement RTL
-4. Add filelists and Makefile targets
-5. Add self-checking testbench
-6. Run lint and simulation
-7. Update verification report
-8. Commit only after PASS
+1. Write or update spec
+2. Write or update design spec
+3. Write or update verification plan
+4. Implement RTL
+5. Add filelists and Makefile targets
+6. Add self-checking testbench
+7. Run lint and simulation
+8. Update verification report
+9. Commit only after PASS
 ```
 
 Proceed module by module in the planned order unless the user explicitly changes
@@ -127,6 +128,16 @@ ad hoc duplicated constants
 large unrelated refactors
 changing established interfaces without updating docs/tests
 ```
+
+Document distinction:
+
+```text
+spec        = required behavior and external/software-visible contract
+design spec = chosen implementation, internal blocks, FSMs, datapaths
+```
+
+Do not collapse these into one file for implemented modules. See
+`docs/wasp1_documentation_policy.md`.
 
 All RTL must support both implementation targets unless a module spec explicitly
 documents why the logic is target-neutral:

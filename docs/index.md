@@ -10,6 +10,7 @@
 | `wasp1_design_plan.md` | Planned module implementation order |
 | `wasp1_verification_plan.md` | Project-wide verification expectations |
 | `wasp1_implementation_targets.md` | IC/FPGA target macro policy, including Virtex-7 |
+| `wasp1_documentation_policy.md` | Required spec/design spec documentation policy |
 
 ## Focus Areas
 
@@ -27,18 +28,41 @@ Current module docs:
 
 | Module | Documents |
 | --- | --- |
-| `common` | design spec, verification plan, verification report |
-| `bus` | bus design spec, verification plan, verification report |
-| `sram` | AHB SRAM design spec, verification plan, verification report |
-| `otp` | AHB OTP design spec, verification plan, verification report |
-| `timer` | AHB timer design spec, verification plan, verification report |
-| `gpio` | AHB GPIO design spec, verification plan, verification report |
-| `uart` | AHB UART design spec, verification plan, verification report |
-| `dma` | AHB DMA design spec, verification plan, verification report |
+| `common` | spec, design spec, verification plan, verification report |
+| `bus` | spec, bus design spec, submodule specs, verification plan, verification report |
+| `sram` | AHB SRAM spec, design spec, verification plan, verification report |
+| `otp` | AHB OTP spec, design spec, verification plan, verification report |
+| `timer` | AHB timer spec, design spec, verification plan, verification report |
+| `gpio` | AHB GPIO spec, design spec, verification plan, verification report |
+| `uart` | AHB UART and serial submodule specs, design spec, verification plan, verification report |
+| `dma` | AHB DMA spec, design spec, verification plan, verification report |
 
-Current bus submodule specs:
+Current implemented block specs:
 
 ```text
+common/docs/common_spec.md
+bus/docs/bus_spec.md
+bus/docs/ahb_decoder_spec.md
+bus/docs/ahb_default_slave_spec.md
+bus/docs/ahb_slave_mux_spec.md
+bus/docs/ahb_arbiter_2m_spec.md
+bus/docs/ahb_fabric_2m_spec.md
+sram/docs/ahb_sram_spec.md
+otp/docs/ahb_otp_spec.md
+timer/docs/ahb_timer_spec.md
+gpio/docs/ahb_gpio_spec.md
+uart/docs/ahb_uart_spec.md
+uart/docs/uart_baud_spec.md
+uart/docs/uart_tx_spec.md
+uart/docs/uart_rx_spec.md
+dma/docs/ahb_dma_spec.md
+```
+
+Current implemented block design specs:
+
+```text
+common/docs/common_design_spec.md
+bus/docs/bus_design_spec.md
 bus/docs/ahb_decoder_design_spec.md
 bus/docs/ahb_default_slave_design_spec.md
 bus/docs/ahb_slave_mux_design_spec.md
@@ -49,6 +73,9 @@ otp/docs/ahb_otp_design_spec.md
 timer/docs/ahb_timer_design_spec.md
 gpio/docs/ahb_gpio_design_spec.md
 uart/docs/ahb_uart_design_spec.md
+uart/docs/uart_baud_design_spec.md
+uart/docs/uart_tx_design_spec.md
+uart/docs/uart_rx_design_spec.md
 dma/docs/ahb_dma_design_spec.md
 ```
 
