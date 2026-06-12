@@ -151,6 +151,10 @@ pure combinational modules should explicitly state that no sequential state
   exists when that distinction matters
 ```
 
+For non-trivial sequential state, include a PNG diagram in `docs/images/` and
+regenerate it with `docs/tools/render_state_pngs.py` when the state behavior
+changes. Keep the text transition description alongside the image.
+
 All RTL must support both implementation targets unless a module spec explicitly
 documents why the logic is target-neutral:
 
