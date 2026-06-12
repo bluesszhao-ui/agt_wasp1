@@ -8,6 +8,7 @@ TB_CORE_BRANCH_FILELIST := filelists/tb_core_branch.f
 TB_CORE_CSR_FILELIST := filelists/tb_core_csr.f
 TB_CORE_LSU_FILELIST := filelists/tb_core_lsu.f
 TB_CORE_TRAP_FILELIST := filelists/tb_core_trap.f
+TB_CORE_HAZARD_FILELIST := filelists/tb_core_hazard.f
 CORE_ALU_TOP := tb_core_alu
 CORE_REGFILE_TOP := tb_core_regfile
 CORE_DECODE_TOP := tb_core_decode
@@ -15,6 +16,7 @@ CORE_BRANCH_TOP := tb_core_branch
 CORE_CSR_TOP := tb_core_csr
 CORE_LSU_TOP := tb_core_lsu
 CORE_TRAP_TOP := tb_core_trap
+CORE_HAZARD_TOP := tb_core_hazard
 
 .PHONY: all lint sim clean
 
@@ -43,9 +45,12 @@ lint:
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_hazard \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	@cat logs/lint.log
 
-sim: sim-core-alu sim-core-regfile sim-core-decode sim-core-branch sim-core-csr sim-core-lsu sim-core-trap
+sim: sim-core-alu sim-core-regfile sim-core-decode sim-core-branch sim-core-csr sim-core-lsu sim-core-trap sim-core-hazard
 
 lint-ic:
 	@mkdir -p build logs
@@ -74,6 +79,10 @@ lint-ic:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_hazard \
 		+define+WASP1_TARGET_IC \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
@@ -106,6 +115,10 @@ lint-fpga-v7:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_hazard \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
@@ -173,6 +186,15 @@ sim-core-trap:
 		-f $(TB_CORE_TRAP_FILELIST) > logs/tb_core_trap_build.log 2>&1
 	@./build/obj_$(CORE_TRAP_TOP)/V$(CORE_TRAP_TOP) > logs/tb_core_trap.log 2>&1
 	@cat logs/tb_core_trap.log
+
+sim-core-hazard:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(CORE_HAZARD_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(CORE_HAZARD_TOP) \
+		-f $(TB_CORE_HAZARD_FILELIST) > logs/tb_core_hazard_build.log 2>&1
+	@./build/obj_$(CORE_HAZARD_TOP)/V$(CORE_HAZARD_TOP) > logs/tb_core_hazard.log 2>&1
+	@cat logs/tb_core_hazard.log
 
 clean:
 	@rm -rf build/* logs/* wave/*
