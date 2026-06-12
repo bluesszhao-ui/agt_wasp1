@@ -407,46 +407,48 @@ def render_core_pipe_l3() -> None:
 
 
 def render_ahb_dma_l3() -> None:
-    canvas = Canvas(2100, 1200)
+    canvas = Canvas(2200, 1250)
     canvas.grid()
-    canvas.text(40, 34, "AHB_DMA L3 CONTROL FSM", scale=3, color=BLACK)
+    canvas.text(40, 34, "AHB_DMA L3 MAIN CONTROL FSM", scale=3, color=BLACK)
     canvas.box_text(
         40,
         90,
         [
             "GREEN TEXT : JUMP CONDITION",
             "GRAY BOX   : REGISTER ACTION",
-            "ERROR PATH : HRESP ERROR OR BAD START",
+            "MAIN PATH  : LEFT TO RIGHT",
+            "ERROR PATH : DROPS TO LOWER RED AREA",
         ],
         "LEGEND",
     )
 
-    canvas.state(110, 500, 140, 90, ("IDLE",), GREEN)
-    canvas.state(430, 230, 210, 100, ("READ", "ADDR"), YELLOW)
-    canvas.state(780, 230, 210, 100, ("READ", "DATA"), YELLOW)
-    canvas.state(780, 690, 210, 100, ("WRITE", "ADDR"), YELLOW)
-    canvas.state(430, 690, 210, 100, ("WRITE", "RESP"), YELLOW)
-    canvas.state(1190, 460, 170, 100, ("DONE",), GREEN)
-    canvas.state(1190, 640, 170, 100, ("ERROR",), PINK)
-    canvas.state(1540, 540, 190, 100, ("IRQ", "STATUS"), GRAY)
+    canvas.state(100, 430, 150, 95, ("IDLE",), GREEN)
+    canvas.state(390, 430, 210, 95, ("READ", "ADDR"), YELLOW)
+    canvas.state(720, 430, 210, 95, ("READ", "DATA"), YELLOW)
+    canvas.state(1060, 430, 220, 95, ("WRITE", "ADDR"), YELLOW)
+    canvas.state(1410, 430, 220, 95, ("WRITE", "RESP"), YELLOW)
+    canvas.state(1800, 360, 170, 95, ("DONE",), GREEN)
+    canvas.state(1800, 710, 170, 95, ("ERROR",), PINK)
+    canvas.state(1980, 535, 170, 95, ("IRQ",), GRAY)
 
-    canvas.path_arrow([(250, 545), (430, 280)], "START OK")
-    canvas.path_arrow([(640, 280), (780, 280)], "ADDR ACCEPT")
-    canvas.path_arrow([(885, 330), (885, 690)], "READ OK")
-    canvas.path_arrow([(780, 740), (640, 740)], "ADDR ACCEPT")
-    canvas.path_arrow([(430, 740), (250, 545)], "MORE")
-    canvas.path_arrow([(640, 740), (1190, 510)], "LAST OK")
-    canvas.path_arrow([(990, 280), (1190, 690)], "READ ERR")
-    canvas.path_arrow([(780, 760), (1190, 690)], "WRITE ERR")
-    canvas.path_arrow([(250, 560), (1190, 690)], "BAD START")
-    canvas.path_arrow([(1360, 510), (1540, 575)], "DONE IRQ")
-    canvas.path_arrow([(1360, 690), (1540, 605)], "ERR IRQ")
-    canvas.path_arrow([(1190, 510), (970, 1010), (110, 590)], "CTRL CLEAR")
-    canvas.path_arrow([(1190, 690), (970, 1080), (110, 590)], "CTRL CLEAR")
+    canvas.path_arrow([(250, 477), (390, 477)], "START OK")
+    canvas.path_arrow([(600, 477), (720, 477)], "HREADY")
+    canvas.path_arrow([(930, 477), (1060, 477)], "READ OK")
+    canvas.path_arrow([(1280, 477), (1410, 477)], "HREADY")
+    canvas.path_arrow([(1630, 477), (1800, 405)], "LAST OK")
+    canvas.path_arrow([(1520, 525), (1520, 625), (830, 625), (830, 525)], "MORE")
+    canvas.path_arrow([(1800, 405), (2040, 535)], "DONE IRQ")
+    canvas.path_arrow([(1800, 758), (2040, 630)], "ERR IRQ")
+
+    canvas.path_arrow([(175, 525), (175, 710), (1800, 758)], "BAD START")
+    canvas.path_arrow([(825, 525), (825, 710), (1800, 758)], "READ ERR")
+    canvas.path_arrow([(1520, 525), (1520, 710), (1800, 758)], "WRITE ERR")
+    canvas.path_arrow([(1885, 455), (1885, 1040), (175, 1040), (175, 525)], "CTRL CLEAR")
+    canvas.path_arrow([(1885, 805), (1885, 1100), (175, 1100), (175, 525)], "CTRL CLEAR")
 
     canvas.box_text(
-        260,
-        370,
+        270,
+        300,
         [
             "&& STATE == IDLE",
             "&& CTRL.START",
@@ -454,47 +456,53 @@ def render_ahb_dma_l3() -> None:
             "&& SRC_Q[1:0] == 0",
             "&& DST_Q[1:0] == 0",
             "ACTION BUSY=1",
+            "ACTION DONE=0 ERROR=0",
             "ACTION REMAINING=LEN_Q",
+            "ACTION CUR_SRC=SRC_Q",
+            "ACTION CUR_DST=DST_Q",
         ],
         "START ACCEPT",
     )
     canvas.box_text(
-        670,
-        85,
+        380,
+        570,
         [
             "ACTION M_HTRANS=NONSEQ",
             "ACTION M_HWRITE=0",
             "ACTION M_HADDR=CUR_SRC",
+            "ACTION M_HSIZE=WORD",
             "&& M_HREADY",
         ],
         "READ ADDRESS",
     )
     canvas.box_text(
-        1010,
-        190,
+        710,
+        570,
         [
             "&& M_HREADY",
             "&& M_HRESP == OKAY",
             "ACTION READ_DATA_Q <= M_HRDATA",
-            "OR M_HRESP == ERROR -> ERROR",
+            "OR M_HRESP == ERROR",
+            "  -> ERROR",
         ],
         "READ RESPONSE",
     )
     canvas.box_text(
-        1010,
-        770,
+        1050,
+        570,
         [
             "ACTION M_HTRANS=NONSEQ",
             "ACTION M_HWRITE=1",
             "ACTION M_HADDR=CUR_DST",
             "ACTION M_HWDATA=READ_DATA_Q",
+            "ACTION M_HSIZE=WORD",
             "&& M_HREADY",
         ],
         "WRITE ADDRESS",
     )
     canvas.box_text(
-        260,
-        830,
+        1350,
+        570,
         [
             "&& M_HREADY",
             "&& M_HRESP == OKAY",
@@ -506,8 +514,8 @@ def render_ahb_dma_l3() -> None:
         "MORE WORDS",
     )
     canvas.box_text(
-        1230,
-        820,
+        1645,
+        245,
         [
             "&& M_HREADY",
             "&& M_HRESP == OKAY",
@@ -519,8 +527,8 @@ def render_ahb_dma_l3() -> None:
         "LAST WORD",
     )
     canvas.box_text(
-        1410,
-        700,
+        1490,
+        805,
         [
             "OR BAD START",
             "OR READ HRESP ERROR",
@@ -531,10 +539,100 @@ def render_ahb_dma_l3() -> None:
         ],
         "ERROR ENTRY",
     )
-    canvas.action_label(1450, 470, ["DMA_IRQ_O = IRQ_ENABLE", "&& (DONE || ERROR)"])
-    canvas.action_label(70, 665, ["SLAVE AHB REG PATH:", "CAPTURE N", "RESPOND N+1"])
-    canvas.text(40, 1100, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
+    canvas.box_text(
+        1850,
+        820,
+        [
+            "&& CTRL.CLEAR",
+            "ACTION DONE=0",
+            "ACTION ERROR=0",
+            "ACTION IRQ DEASSERTS",
+        ],
+        "CLEAR STATUS",
+    )
+    canvas.action_label(1970, 660, ["DMA_IRQ_O = IRQ_ENABLE", "&& (DONE || ERROR)"])
+    canvas.action_label(70, 590, ["BAD START IF:", "LEN=0 OR SRC/DST UNALIGNED"])
+    canvas.text(40, 1150, "NOTE: SLAVE REGISTER AHB RESPONSE PATH IS SPLIT INTO A SEPARATE PNG.", scale=2, color=DARK_GRAY)
+    canvas.text(40, 1180, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
     canvas.write_png(Path("dma/docs/images/ahb_dma_fsm.png"))
+
+    reg = Canvas(1700, 900)
+    reg.grid()
+    reg.text(40, 34, "AHB_DMA L3 SLAVE REGISTER PATH", scale=3, color=BLACK)
+    reg.box_text(
+        40,
+        90,
+        [
+            "ONE CYCLE AHB RESPONSE MODEL",
+            "CAPTURE ADDRESS PHASE AT CYCLE N",
+            "RETURN RESPONSE AT CYCLE N+1",
+        ],
+        "LEGEND",
+    )
+    reg.state(110, 360, 180, 90, ("IDLE", "NO SEL"), GRAY)
+    reg.state(390, 360, 240, 90, ("CAPTURE", "ADDR CTRL"), BLUE)
+    reg.state(760, 190, 220, 90, ("READ", "MUX"), GREEN)
+    reg.state(760, 360, 220, 90, ("ERROR", "HRESP"), PINK)
+    reg.state(760, 530, 220, 90, ("WRITE", "REGS"), GREEN)
+    reg.state(1160, 360, 220, 90, ("RESPOND", "N+1"), YELLOW)
+
+    reg.path_arrow([(290, 405), (390, 405)], "S_HSEL && HTRANS[1]")
+    reg.path_arrow([(630, 405), (760, 235)], "READ OK")
+    reg.path_arrow([(630, 405), (760, 405)], "BAD XFER")
+    reg.path_arrow([(630, 405), (760, 575)], "WRITE OK")
+    reg.path_arrow([(980, 235), (1160, 385)], "HRDATA")
+    reg.path_arrow([(980, 405), (1160, 405)], "ERROR")
+    reg.path_arrow([(980, 575), (1160, 425)], "OKAY")
+    reg.path_arrow([(1270, 450), (1270, 735), (200, 735), (200, 450)], "NEXT CYCLE")
+    reg.box_text(
+        350,
+        500,
+        [
+            "CAPTURED:",
+            "S_HADDR",
+            "S_HWRITE",
+            "S_HSIZE",
+            "REG OFFSET",
+            "ERROR CLASS",
+        ],
+        "CYCLE N",
+    )
+    reg.box_text(
+        720,
+        70,
+        [
+            "READ DMA_SRC/DST/LEN",
+            "READ CTRL/STATUS",
+            "READ RETURNS REGISTER IMAGE",
+            "ACTION S_HRESP=OKAY",
+        ],
+        "READ RESPONSE",
+    )
+    reg.box_text(
+        720,
+        650,
+        [
+            "WRITE SRC/DST/LEN IF IDLE",
+            "CTRL.START REQUESTS FSM START",
+            "CTRL.CLEAR CLEARS DONE/ERROR",
+            "ACTION S_HRESP=OKAY",
+        ],
+        "WRITE RESPONSE",
+    )
+    reg.box_text(
+        1040,
+        500,
+        [
+            "OR OUT OF RANGE",
+            "OR MISALIGNED",
+            "OR HSIZE != WORD",
+            "OR UNKNOWN REG",
+            "ACTION S_HRESP=ERROR",
+        ],
+        "ERROR RESPONSE",
+    )
+    reg.text(40, 830, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
+    reg.write_png(Path("dma/docs/images/ahb_dma_reg_path.png"))
 
 
 def main() -> None:
