@@ -36,6 +36,7 @@ PASS       Current verification target passes
 | `core/core_lsu` | PASS | Load/store request formatting, alignment, extension, and random tests pass |
 | `core/core_trap` | PASS | Sync traps, MRET, IRQ masking, and trap priority tests pass |
 | `core/core_hazard` | PASS | Load-use stalls, EX/WB forwarding, priority, x0, and random dependency tests pass |
+| `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
 | `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
@@ -48,7 +49,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to core writeback helper
+1. Move to core_pipe integration skeleton
 ```
 
 ## Commit Policy Going Forward

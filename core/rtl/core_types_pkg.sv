@@ -60,4 +60,14 @@ package core_types_pkg;
     CORE_LSU_HALF = 2'd1,
     CORE_LSU_WORD = 2'd2
   } core_lsu_size_e;
+
+  // Register writeback source selector used by the execute/writeback pipeline
+  // boundary. Loads, CSR instructions, jumps, and LUI choose non-ALU sources.
+  typedef enum logic [2:0] {
+    CORE_WB_ALU  = 3'd0,
+    CORE_WB_LOAD = 3'd1,
+    CORE_WB_CSR  = 3'd2,
+    CORE_WB_PC4  = 3'd3,
+    CORE_WB_IMM  = 3'd4
+  } core_wb_sel_e;
 endpackage

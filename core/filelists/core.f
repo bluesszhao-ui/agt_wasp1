@@ -9,3 +9,4 @@ rtl/core_csr.sv
 rtl/core_lsu.sv
 rtl/core_trap.sv
 rtl/core_hazard.sv
+rtl/core_wb.sv
