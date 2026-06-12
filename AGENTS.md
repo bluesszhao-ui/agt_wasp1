@@ -155,6 +155,18 @@ For non-trivial sequential state, include a PNG diagram in `docs/images/` and
 regenerate it with `docs/tools/render_state_pngs.py` when the state behavior
 changes. Keep the text transition description alongside the image.
 
+Use diagram detail levels consistently:
+
+```text
+L1 simple register/counter sketch
+L2 standard FSM/state diagram
+L3 detailed engineering diagram with explicit arc conditions, actions, errors,
+   reset paths, and priority notes
+```
+
+Protocol controllers, cache controllers, DMA, debug, interrupt/trap control,
+and pipeline control should default to L3.
+
 All RTL must support both implementation targets unless a module spec explicitly
 documents why the logic is target-neutral:
 

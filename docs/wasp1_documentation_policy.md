@@ -85,10 +85,27 @@ docs/tools/render_state_pngs.py
 Every implemented sequential module must document its state behavior in the
 design spec.
 
-Sequential modules should include a PNG state diagram when the state behavior is
-non-trivial or when the text diagram would be hard to read. The PNG does not
-replace the text transition description; both should be kept so the diagram is
-easy to view and the transitions remain reviewable in diffs.
+Sequential diagrams are classified by detail level:
+
+```text
+L1: simple block/register sketch
+    Use for simple register arrays, basic counters, and low-risk state.
+
+L2: standard state diagram
+    Use for normal peripheral control, FIFO/pointer state, and compact FSMs.
+
+L3: detailed engineering FSM/state diagram
+    Use for protocol controllers, DMA, cache controllers, debug controllers,
+    pipeline control, interrupt/trap control, and any state whose review depends
+    on precise transition conditions.
+```
+
+L3 diagrams must show detailed transition conditions and state actions near the
+arcs or states. Use a clear visual convention such as green condition lines,
+gray action blocks, error paths, reset paths, and priority notes.
+
+The PNG does not replace the text transition description; both should be kept
+so the diagram is easy to view and the transitions remain reviewable in diffs.
 
 For modules with an explicit FSM, the design spec must include a plain-text
 state diagram that shows:

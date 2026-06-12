@@ -24,6 +24,10 @@ YELLOW: Color = (255, 244, 204, 255)
 PINK: Color = (255, 229, 229, 255)
 GRAY: Color = (242, 244, 247, 255)
 DARK_GRAY: Color = (90, 96, 105, 255)
+GRID_MINOR: Color = (235, 238, 242, 255)
+GRID_MAJOR: Color = (214, 219, 226, 255)
+ACTION_GRAY: Color = (218, 222, 228, 255)
+COND_GREEN: Color = (42, 140, 64, 255)
 
 
 FONT = {
@@ -82,6 +86,7 @@ FONT = {
     ">": ["01000", "00100", "00010", "00001", "00010", "00100", "01000"],
     "&": ["01100", "10010", "10100", "01000", "10101", "10010", "01101"],
     "|": ["00100", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "*": ["00000", "10101", "01110", "11111", "01110", "10101", "00000"],
 }
 
 
@@ -124,6 +129,65 @@ class Canvas:
         self.line(x, y, x, y + h, outline, 2)
         self.line(x + w, y, x + w, y + h, outline, 2)
 
+    def grid(self, minor: int = 10, major: int = 50) -> None:
+        for x in range(0, self.width, minor):
+            self.line(x, 0, x, self.height - 1, GRID_MINOR, 1)
+        for y in range(0, self.height, minor):
+            self.line(0, y, self.width - 1, y, GRID_MINOR, 1)
+        for x in range(0, self.width, major):
+            self.line(x, 0, x, self.height - 1, GRID_MAJOR, 1)
+        for y in range(0, self.height, major):
+            self.line(0, y, self.width - 1, y, GRID_MAJOR, 1)
+
+    def ellipse(self, x: int, y: int, w: int, h: int, fill: Color, outline: Color = BLACK, thick: int = 2) -> None:
+        cx = x + w / 2
+        cy = y + h / 2
+        rx = w / 2
+        ry = h / 2
+        for yy in range(y, y + h + 1):
+            for xx in range(x, x + w + 1):
+                n = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2
+                if n <= 1.0:
+                    self.set_px(xx, yy, fill)
+        for yy in range(y - thick, y + h + thick + 1):
+            for xx in range(x - thick, x + w + thick + 1):
+                n = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2
+                if 0.92 <= n <= 1.08:
+                    self.set_px(xx, yy, outline)
+
+    def box_text(self, x: int, y: int, lines: list[str], title: str = "", fill: Color = (248, 249, 251, 255)) -> None:
+        max_w = max([self.text_width(title, 1)] + [self.text_width(line, 1) for line in lines]) + 22
+        h = 22 + 16 * len(lines) + (18 if title else 0)
+        self.rect(x, y, max_w, h, fill, DARK_GRAY)
+        ty = y + 10
+        if title:
+            self.text(x + 10, ty, title, scale=1, color=BLACK)
+            ty += 18
+        for line in lines:
+            color = COND_GREEN if line.strip().startswith("&&") or line.strip().startswith("OR") else DARK_GRAY
+            if line.strip().startswith("ACTION"):
+                color = BLACK
+            self.text(x + 10, ty, line, scale=1, color=color)
+            ty += 16
+
+    def state(self, x: int, y: int, w: int, h: int, lines: tuple[str, ...], fill: Color = WHITE) -> None:
+        self.ellipse(x, y, w, h, fill, BLACK, 2)
+        total_h = len(lines) * 22
+        ty = y + (h - total_h) // 2
+        for line in lines:
+            tx = x + (w - self.text_width(line, 2)) // 2
+            self.text(tx, ty, line, scale=2, color=BLACK)
+            ty += 22
+
+    def action_label(self, x: int, y: int, lines: list[str]) -> None:
+        max_w = max(self.text_width(line, 1) for line in lines) + 18
+        h = 14 * len(lines) + 12
+        self.rect(x, y, max_w, h, ACTION_GRAY, ACTION_GRAY)
+        ty = y + 7
+        for line in lines:
+            self.text(x + 8, ty, line, scale=1, color=DARK_GRAY)
+            ty += 14
+
     def line(self, x0: int, y0: int, x1: int, y1: int, c: Color = BLACK, thick: int = 1) -> None:
         dx = abs(x1 - x0)
         dy = -abs(y1 - y0)
@@ -157,6 +221,15 @@ class Canvas:
             lx = (x0 + x1) // 2
             ly = (y0 + y1) // 2 - 12
             self.text(lx - self.text_width(label, 1) // 2, ly, label, scale=1, color=DARK_GRAY)
+
+    def path_arrow(self, points: list[tuple[int, int]], label: str = "") -> None:
+        if len(points) < 2:
+            return
+        for (x0, y0), (x1, y1) in zip(points, points[1:-1]):
+            self.line(x0, y0, x1, y1, BLACK, 2)
+        x0, y0 = points[-2]
+        x1, y1 = points[-1]
+        self.arrow(x0, y0, x1, y1, label)
 
     def text_width(self, s: str, scale: int = 2) -> int:
         return sum((6 if ch.upper() in FONT else 6) * scale for ch in s)
@@ -241,6 +314,227 @@ def render(path: str, title: str, nodes: list[Node], edges: list[Edge], notes: l
         canvas.text(52, y, "- " + note, scale=2, color=DARK_GRAY)
         y += 24
     canvas.write_png(Path(path))
+
+
+def render_core_pipe_l3() -> None:
+    canvas = Canvas(1900, 1100)
+    canvas.grid()
+    canvas.text(40, 34, "CORE_PIPE L3 PIPELINE STATE / PRIORITY", scale=3, color=BLACK)
+    canvas.box_text(
+        40,
+        90,
+        [
+            "GREEN TEXT : JUMP CONDITION",
+            "GRAY BOX   : REGISTER ACTION",
+            "PRIORITY   : REDIRECT > BUBBLE > ADVANCE",
+        ],
+        "LEGEND",
+    )
+
+    canvas.state(130, 320, 140, 90, ("RESET",), BLUE)
+    canvas.state(420, 300, 180, 110, ("FETCH", "REQ"), GREEN)
+    canvas.state(760, 300, 190, 110, ("IF/ID", "SLOT"), YELLOW)
+    canvas.state(1120, 300, 190, 110, ("EX/WB", "SLOT"), YELLOW)
+    canvas.state(780, 620, 220, 110, ("REDIRECT", "FLUSH"), PINK)
+    canvas.state(1190, 620, 220, 110, ("EXEC", "BUBBLE"), PINK)
+    canvas.state(1500, 300, 190, 110, ("HOLD", "STALL"), GRAY)
+
+    canvas.path_arrow([(270, 365), (420, 355)], "RST_N=1")
+    canvas.path_arrow([(600, 355), (760, 355)], "FETCH_FIRE")
+    canvas.path_arrow([(950, 355), (1120, 355)], "ADVANCE")
+    canvas.path_arrow([(1500, 355), (1310, 355)], "STALL RELEASE")
+    canvas.path_arrow([(870, 620), (870, 410)], "FLUSH IF/ID")
+    canvas.path_arrow([(890, 620), (1190, 410)], "FLUSH EX/WB")
+    canvas.path_arrow([(1000, 675), (420, 410)], "PC TARGET")
+    canvas.path_arrow([(1300, 620), (1230, 410)], "CLEAR EX/WB")
+    canvas.path_arrow([(760, 320), (600, 215), (1500, 320)], "DECODE_STALL")
+    canvas.path_arrow([(1120, 390), (1030, 520), (1500, 390)], "FETCH_STALL")
+
+    canvas.box_text(
+        620,
+        120,
+        [
+            "&& IF_RSP_VALID_I",
+            "&& !FETCH_STALL_I",
+            "&& !DECODE_STALL_I",
+            "&& !REDIRECT_VALID_I",
+            "ACTION IF/ID <= RSP",
+            "ACTION FETCH_PC += 4",
+        ],
+        "FETCH_FIRE",
+    )
+    canvas.box_text(
+        1020,
+        120,
+        [
+            "&& !DECODE_STALL_I",
+            "&& !EXECUTE_BUBBLE_I",
+            "&& !REDIRECT_VALID_I",
+            "ACTION EX/WB <= OLD IF/ID",
+            "ACTION IF/ID <= NEXT OR NOP",
+        ],
+        "ADVANCE",
+    )
+    canvas.box_text(
+        1010,
+        770,
+        [
+            "&& REDIRECT_VALID_I",
+            "ACTION FETCH_PC <= REDIRECT_PC_I",
+            "ACTION IF/ID <= INVALID NOP",
+            "ACTION EX/WB <= INVALID NOP",
+        ],
+        "HIGHEST PRIORITY",
+    )
+    canvas.box_text(
+        1400,
+        660,
+        [
+            "&& EXECUTE_BUBBLE_I",
+            "&& !REDIRECT_VALID_I",
+            "ACTION EX/WB <= INVALID NOP",
+            "NOTE IF/ID HOLDS IF DECODE_STALL_I",
+        ],
+        "LOAD USE BUBBLE",
+    )
+    canvas.action_label(420, 440, ["IF_REQ_VALID = !FETCH_STALL", "IF_RSP_READY = FETCH_ACCEPT"])
+    canvas.action_label(755, 440, ["ID_VALID/PC/INSTR/FAULT", "CAPTURED FROM FETCH RESPONSE"])
+    canvas.action_label(1115, 440, ["EX_VALID/PC/INSTR/FAULT", "CAPTURED FROM OLD IF/ID"])
+    canvas.action_label(1480, 440, ["HOLD PC AND SLOTS", "NO RESPONSE ACCEPT"])
+
+    canvas.text(40, 985, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
+    canvas.write_png(Path("core/docs/images/core_pipe_state.png"))
+
+
+def render_ahb_dma_l3() -> None:
+    canvas = Canvas(2100, 1200)
+    canvas.grid()
+    canvas.text(40, 34, "AHB_DMA L3 CONTROL FSM", scale=3, color=BLACK)
+    canvas.box_text(
+        40,
+        90,
+        [
+            "GREEN TEXT : JUMP CONDITION",
+            "GRAY BOX   : REGISTER ACTION",
+            "ERROR PATH : HRESP ERROR OR BAD START",
+        ],
+        "LEGEND",
+    )
+
+    canvas.state(110, 500, 140, 90, ("IDLE",), GREEN)
+    canvas.state(430, 230, 210, 100, ("READ", "ADDR"), YELLOW)
+    canvas.state(780, 230, 210, 100, ("READ", "DATA"), YELLOW)
+    canvas.state(780, 690, 210, 100, ("WRITE", "ADDR"), YELLOW)
+    canvas.state(430, 690, 210, 100, ("WRITE", "RESP"), YELLOW)
+    canvas.state(1190, 460, 170, 100, ("DONE",), GREEN)
+    canvas.state(1190, 640, 170, 100, ("ERROR",), PINK)
+    canvas.state(1540, 540, 190, 100, ("IRQ", "STATUS"), GRAY)
+
+    canvas.path_arrow([(250, 545), (430, 280)], "START OK")
+    canvas.path_arrow([(640, 280), (780, 280)], "ADDR ACCEPT")
+    canvas.path_arrow([(885, 330), (885, 690)], "READ OK")
+    canvas.path_arrow([(780, 740), (640, 740)], "ADDR ACCEPT")
+    canvas.path_arrow([(430, 740), (250, 545)], "MORE")
+    canvas.path_arrow([(640, 740), (1190, 510)], "LAST OK")
+    canvas.path_arrow([(990, 280), (1190, 690)], "READ ERR")
+    canvas.path_arrow([(780, 760), (1190, 690)], "WRITE ERR")
+    canvas.path_arrow([(250, 560), (1190, 690)], "BAD START")
+    canvas.path_arrow([(1360, 510), (1540, 575)], "DONE IRQ")
+    canvas.path_arrow([(1360, 690), (1540, 605)], "ERR IRQ")
+    canvas.path_arrow([(1190, 510), (970, 1010), (110, 590)], "CTRL CLEAR")
+    canvas.path_arrow([(1190, 690), (970, 1080), (110, 590)], "CTRL CLEAR")
+
+    canvas.box_text(
+        260,
+        370,
+        [
+            "&& STATE == IDLE",
+            "&& CTRL.START",
+            "&& LEN_Q != 0",
+            "&& SRC_Q[1:0] == 0",
+            "&& DST_Q[1:0] == 0",
+            "ACTION BUSY=1",
+            "ACTION REMAINING=LEN_Q",
+        ],
+        "START ACCEPT",
+    )
+    canvas.box_text(
+        670,
+        85,
+        [
+            "ACTION M_HTRANS=NONSEQ",
+            "ACTION M_HWRITE=0",
+            "ACTION M_HADDR=CUR_SRC",
+            "&& M_HREADY",
+        ],
+        "READ ADDRESS",
+    )
+    canvas.box_text(
+        1010,
+        190,
+        [
+            "&& M_HREADY",
+            "&& M_HRESP == OKAY",
+            "ACTION READ_DATA_Q <= M_HRDATA",
+            "OR M_HRESP == ERROR -> ERROR",
+        ],
+        "READ RESPONSE",
+    )
+    canvas.box_text(
+        1010,
+        770,
+        [
+            "ACTION M_HTRANS=NONSEQ",
+            "ACTION M_HWRITE=1",
+            "ACTION M_HADDR=CUR_DST",
+            "ACTION M_HWDATA=READ_DATA_Q",
+            "&& M_HREADY",
+        ],
+        "WRITE ADDRESS",
+    )
+    canvas.box_text(
+        260,
+        830,
+        [
+            "&& M_HREADY",
+            "&& M_HRESP == OKAY",
+            "&& REMAINING > 1",
+            "ACTION CUR_SRC += 4",
+            "ACTION CUR_DST += 4",
+            "ACTION REMAINING -= 1",
+        ],
+        "MORE WORDS",
+    )
+    canvas.box_text(
+        1230,
+        820,
+        [
+            "&& M_HREADY",
+            "&& M_HRESP == OKAY",
+            "&& REMAINING == 1",
+            "ACTION BUSY=0",
+            "ACTION DONE=1",
+            "ACTION ERROR=0",
+        ],
+        "LAST WORD",
+    )
+    canvas.box_text(
+        1410,
+        700,
+        [
+            "OR BAD START",
+            "OR READ HRESP ERROR",
+            "OR WRITE HRESP ERROR",
+            "ACTION BUSY=0",
+            "ACTION DONE=0",
+            "ACTION ERROR=1",
+        ],
+        "ERROR ENTRY",
+    )
+    canvas.action_label(1450, 470, ["DMA_IRQ_O = IRQ_ENABLE", "&& (DONE || ERROR)"])
+    canvas.action_label(70, 665, ["SLAVE AHB REG PATH:", "CAPTURE N", "RESPOND N+1"])
+    canvas.text(40, 1100, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
+    canvas.write_png(Path("dma/docs/images/ahb_dma_fsm.png"))
 
 
 def main() -> None:
@@ -555,6 +849,8 @@ def main() -> None:
     ]
     for args in diagrams:
         render(*args)
+    render_core_pipe_l3()
+    render_ahb_dma_l3()
 
 
 if __name__ == "__main__":
