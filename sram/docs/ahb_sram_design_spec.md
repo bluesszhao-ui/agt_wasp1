@@ -114,7 +114,40 @@ unsupported HSIZE              -> ERROR
 
 `HREADY` is always high. Stalling SRAM behavior can be added later if needed.
 
-## 7. Verification Summary
+## 7. Sequential State Diagram
+
+```text
+Reset:
+  captured transfer valid = 0
+  hrdata_o = 0
+  hresp_o = OKAY
+
+Cycle N address phase:
+  if selected transfer:
+    capture address, write/read, size, and validity/error classification
+  else:
+    capture idle/no-transfer state
+
+Cycle N+1 data/response phase:
+  if captured transfer has error:
+    hresp_o <- ERROR
+    hrdata_o <- 0
+    memory holds
+
+  else if captured write:
+    merge hwdata_i into selected byte lanes
+    memory[word] <- merged data
+    hresp_o <- OKAY
+
+  else if captured read:
+    hrdata_o <- selected word/byte/halfword read data
+    hresp_o <- OKAY
+```
+
+There is no explicit FSM enum. The AHB address-phase capture registers and the
+SRAM word array are the sequential state.
+
+## 8. Verification Summary
 
 Verified by `tb_ahb_sram`.
 

@@ -33,3 +33,28 @@ terminal count.
 ## 4. Reset
 
 Reset clears the counter and deasserts `tick_o`.
+
+## 5. Counter State Diagram
+
+```text
+Reset:
+  count_q = 0
+  tick_o = 0
+
+Disabled:
+  enable_i = 0
+    count_q <- 0
+    tick_o <- 0
+
+Enabled count:
+  enable_i = 1 && count_q < terminal_count - 1
+    count_q <- count_q + 1
+    tick_o <- 0
+
+Terminal:
+  enable_i = 1 && count_q == terminal_count - 1
+    count_q <- 0
+    tick_o <- 1 for one clk_i cycle
+```
+
+`terminal_count` is derived from `divisor_i`, with zero mapped to one.

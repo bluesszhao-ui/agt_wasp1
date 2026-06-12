@@ -139,6 +139,18 @@ design spec = chosen implementation, internal blocks, FSMs, datapaths
 Do not collapse these into one file for implemented modules. See
 `docs/wasp1_documentation_policy.md`.
 
+Sequential design documentation is mandatory:
+
+```text
+modules with explicit FSM state must include a state diagram in design spec
+modules with registers/counters/pipeline slots but no FSM must include a
+  register-transfer, counter-state, or pipeline-state diagram in design spec
+diagrams must show reset state, update priority, transition conditions, and
+  key outputs or side effects
+pure combinational modules should explicitly state that no sequential state
+  exists when that distinction matters
+```
+
 All RTL must support both implementation targets unless a module spec explicitly
 documents why the logic is target-neutral:
 

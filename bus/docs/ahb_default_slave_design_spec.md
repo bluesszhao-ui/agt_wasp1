@@ -57,7 +57,16 @@ HREADY                       -> 1
 HRDATA                       -> 0
 ```
 
-## 5. Verification Summary
+## 5. Sequential State
+
+The current implementation has no sequential state. `hclk_i` and `hresetn_i`
+are reserved interface pins only, so no FSM, register-transfer diagram, or reset
+state exists for this revision.
+
+If a future implementation registers the default response, this section must be
+updated with the response-state diagram and reset values.
+
+## 6. Verification Summary
 
 Verified by `tb_ahb_default_slave`.
 

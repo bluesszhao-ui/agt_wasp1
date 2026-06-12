@@ -110,7 +110,49 @@ idle non-granted master sees HREADY high
 non-granted master HRDATA is zero and HRESP is OKAY
 ```
 
-## 5. Verification Summary
+## 5. Grant State Diagram
+
+The arbiter has no named FSM enum, but `grant_valid_q`, `grant_idx_q`, and
+`last_grant_q` form the sequential grant state.
+
+```text
+Reset:
+  grant_valid_q = 0
+  grant_idx_q = 0
+  last_grant_q = m1
+
+When downstream HREADY=0:
+  grant_valid_q holds
+  grant_idx_q holds
+  last_grant_q holds
+  selected address/control/write-data source holds
+
+When downstream HREADY=1:
+
+  no requests:
+    grant_valid_q <- 0
+    grant_idx_q holds
+    last_grant_q holds
+
+  only m0 requests:
+    grant_valid_q <- 1
+    grant_idx_q <- m0
+    last_grant_q <- m0
+
+  only m1 requests:
+    grant_valid_q <- 1
+    grant_idx_q <- m1
+    last_grant_q <- m1
+
+  both request:
+    last_grant_q == m1 -> grant m0, last_grant_q <- m0
+    last_grant_q == m0 -> grant m1, last_grant_q <- m1
+```
+
+Response routing is driven by the held grant state so an address phase and its
+response remain associated during downstream stalls.
+
+## 6. Verification Summary
 
 Verified by `tb_ahb_arbiter_2m`.
 

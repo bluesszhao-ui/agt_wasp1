@@ -43,7 +43,31 @@ Each read port uses a combinational priority:
 3. otherwise return regs_q[address]
 ```
 
-## 4. Target Support
+## 4. Register State Diagram
+
+```text
+Reset:
+  for x1..x31:
+    regs_q[x] <- 0
+  x0 is not stored and always reads as zero
+
+Each clock edge after reset:
+
+  if we_i && waddr_i != 0:
+    regs_q[waddr_i] <- wdata_i
+  else:
+    regs_q holds
+
+Combinational read priority:
+  raddr == 0                    -> 0
+  we_i && waddr_i == raddr      -> wdata_i same-cycle bypass
+  otherwise                     -> regs_q[raddr]
+```
+
+There is no explicit FSM. The only sequential state is the `x1..x31` register
+array.
+
+## 5. Target Support
 
 The register file uses synthesizable flip-flop array RTL. It is portable across
 IC and Xilinx Virtex-7 FPGA targets. No target primitive is required.

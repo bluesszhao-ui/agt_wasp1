@@ -82,7 +82,47 @@ cycle N+1:
 
 `HREADY` is always high.
 
-## 6. Implementation Targets
+## 6. Sequential State Diagram
+
+```text
+Reset:
+  irq synchronizer stages = 0
+  pending_q = 0
+  enable_q = 0
+  threshold_q = 0
+  priority_q[id] = 0
+  AHB response registers = OKAY/0
+
+Each hclk_i edge:
+
+  IRQ synchronization:
+    irq_meta_q <- irq_src_i
+    irq_sync_q <- irq_meta_q
+
+  Pending set:
+    pending_q <- pending_q | irq_sync_q
+
+  AHB capture:
+    selected transfer -> capture address/control/error class
+    unselected        -> capture idle response
+
+  Register write response:
+    PENDING W1C        -> clear written pending bits
+    ENABLE write       -> enable_q <- hwdata_i
+    THRESHOLD write    -> threshold_q <- hwdata_i
+    PRIORITY[id] write -> priority_q[id] <- hwdata_i
+    CLAIM write        -> clear pending bit for written source ID
+
+  Read/response:
+    CLAIM read  -> best enabled pending source above threshold
+    other reads -> selected register image
+    hresp_o     -> OKAY or ERROR from captured transfer
+```
+
+There is no explicit FSM. The state is the synchronizer, pending/enable/priority
+registers, threshold register, and one-cycle AHB response capture.
+
+## 7. Implementation Targets
 
 `ahb_intc` is target-neutral synthesizable logic. It includes
 `common/rtl/wasp1_target_defs.svh` and is linted for generic simulation, IC,

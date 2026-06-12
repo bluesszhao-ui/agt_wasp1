@@ -39,6 +39,36 @@ sampling begins.
 `RX_STOP` samples the stop bit. A high stop bit produces `data_valid_o`; a low
 stop bit produces `frame_error_o`.
 
+Detailed transition diagram:
+
+```text
+Reset or enable_i=0:
+  -> RX_IDLE
+
+RX_IDLE:
+  data_valid_o = 0
+  frame_error_o = 0
+  uart_rx_i == 1       -> RX_IDLE
+  uart_rx_i == 0       -> RX_START
+
+RX_START:
+  wait for baud_tick_i
+  baud_tick_i && uart_rx_i == 0 -> RX_DATA, bit_idx_q = 0
+  baud_tick_i && uart_rx_i == 1 -> RX_IDLE, false start
+
+RX_DATA:
+  wait for baud_tick_i
+  on tick:
+    shift/sample uart_rx_i into data_q[bit_idx_q]
+    bit_idx_q < 7 -> RX_DATA, bit_idx_q++
+    bit_idx_q = 7 -> RX_STOP
+
+RX_STOP:
+  wait for baud_tick_i
+  baud_tick_i && uart_rx_i == 1 -> data_valid_o pulse, RX_IDLE
+  baud_tick_i && uart_rx_i == 0 -> frame_error_o pulse, RX_IDLE
+```
+
 ## 4. Reset and Disable
 
 Reset or disable returns the FSM to `RX_IDLE` and clears transient outputs.

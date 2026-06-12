@@ -72,7 +72,40 @@ checked-in image assets.
 Spec documents may include high-level interface diagrams when useful, but the
 required detailed wiring/block diagram belongs in the design spec.
 
-## 5. Update Rule
+## 5. Sequential State Diagrams
+
+Every implemented sequential module must document its state behavior in the
+design spec.
+
+For modules with an explicit FSM, the design spec must include a plain-text
+state diagram that shows:
+
+```text
+reset state
+all named states
+transition conditions
+key outputs or side effects in each state
+error, flush, interrupt, or abort priority where applicable
+```
+
+For sequential modules without an explicit FSM, the design spec must include a
+plain-text register-transfer, counter-state, FIFO-pointer, or pipeline-state
+diagram that shows:
+
+```text
+reset values
+clock-edge update conditions
+hold conditions
+clear/flush conditions
+priority between simultaneous events
+externally visible effects
+```
+
+Pure combinational modules do not need a state diagram, but their design spec
+should explicitly say they have no sequential state when that matters for
+integration.
+
+## 6. Update Rule
 
 When RTL, registers, interface behavior, target support, or verification scope
 changes, update both:
@@ -84,7 +117,7 @@ the affected design spec
 
 Verification plans and reports must remain aligned with the spec requirements.
 
-## 6. Source Commenting
+## 7. Source Commenting
 
 RTL and verification source files are part of the design documentation.
 

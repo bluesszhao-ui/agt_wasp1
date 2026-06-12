@@ -43,3 +43,45 @@ shifter shifts right, and the bit counter decrements.
 ## 4. Reset and Disable
 
 Reset or disable forces TX idle high and clears the busy counter.
+
+## 5. Transmit State Diagram
+
+`uart_tx` does not use a named FSM enum, but `busy_q` and `bit_count_q` form the
+transmit state.
+
+```text
+Reset or enable_i=0:
+  TX_IDLE
+    busy_q = 0
+    bit_count_q = 0
+    tx_o = 1
+
+TX_IDLE:
+  data_ready_o = 1
+
+  data_valid_i && data_ready_o
+        |
+        v
+  TX_SHIFT
+    shifter_q <- {stop=1, data_i[7:0], start=0}
+    bit_count_q <- 10
+    busy_q <- 1
+
+TX_SHIFT:
+  data_ready_o = 0
+  tx_o = shifter_q[0]
+
+  baud_tick_i && bit_count_q > 1:
+    shifter_q <- {1'b1, shifter_q[9:1]}
+    bit_count_q <- bit_count_q - 1
+    stay TX_SHIFT
+
+  baud_tick_i && bit_count_q == 1:
+    busy_q <- 0
+    bit_count_q <- 0
+    tx_o returns idle high
+    next TX_IDLE
+```
+
+The disable path has priority over frame shifting and returns immediately to
+idle.

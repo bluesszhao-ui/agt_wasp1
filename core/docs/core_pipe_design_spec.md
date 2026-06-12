@@ -52,7 +52,55 @@ decode is not stalled, IF/ID advances into EX/WB.
 IF/ID captures a fetch response in the same cycle it advances. If no response
 is accepted and decode is not stalled, IF/ID is cleared.
 
-## 4. Target Support
+## 4. Pipeline State Diagram
+
+```text
+Reset:
+  fetch_pc_q = boot_pc_i
+  IF/ID.valid = 0, IF/ID.pc = 0, IF/ID.instr = NOP, IF/ID.fault = 0
+  EX/WB.valid = 0, EX/WB.pc = 0, EX/WB.instr = NOP, EX/WB.fault = 0
+
+Clock-edge priority:
+
+  redirect_valid_i
+        |
+        v
+  fetch_pc_q = redirect_pc_i
+  IF/ID <- invalid NOP
+  EX/WB <- invalid NOP
+
+  else normal pipeline update:
+
+    fetch_fire = if_rsp_valid_i &&
+                 !fetch_stall_i &&
+                 !decode_stall_i &&
+                 !redirect_valid_i
+
+    if fetch_fire:
+      fetch_pc_q <- fetch_pc_q + 4
+
+    if execute_bubble_i:
+      EX/WB <- invalid NOP
+    else if !decode_stall_i:
+      EX/WB <- old IF/ID
+    else:
+      EX/WB holds old value
+
+    if fetch_fire:
+      IF/ID <- {valid=1, pc=old fetch_pc_q, instr=if_rsp_instr_i,
+                fault=if_rsp_fault_i}
+    else if !decode_stall_i:
+      IF/ID <- invalid NOP
+    else:
+      IF/ID holds old value
+```
+
+`redirect_valid_i` therefore beats fetch acceptance, decode advance, and
+execute bubble. A load-use sequence is represented by asserting
+`decode_stall_i` and `execute_bubble_i` together: IF/ID holds while EX/WB is
+cleared.
+
+## 5. Target Support
 
 The module is target-neutral synthesizable sequential logic. No IC or
 Virtex-7-specific primitive is required.

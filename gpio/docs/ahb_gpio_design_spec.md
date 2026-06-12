@@ -125,7 +125,45 @@ write to read-only DATA_IN     -> ERROR
 
 `HREADY` is always high.
 
-## 6. Implementation Targets
+## 6. Sequential State Diagram
+
+```text
+Reset:
+  DATA_OUT/DIR/IRQ_EN/IRQ_TYPE/IRQ_POL/IRQ_STATUS = 0
+  input synchronizer stages = 0
+  response registers = OKAY/0
+
+Each hclk_i edge:
+
+  Input synchronizer:
+    gpio_in_meta_q <- gpio_in_i
+    gpio_in_sync_q <- gpio_in_meta_q
+
+  AHB capture:
+    selected transfer -> capture address/control/error class
+    unselected        -> capture idle response
+
+  Register write response:
+    DATA_OUT write      -> out_q <- hwdata_i
+    DIR write           -> dir_q <- hwdata_i
+    SET write           -> out_q <- out_q | hwdata_i
+    CLR write           -> out_q <- out_q & ~hwdata_i
+    TOGGLE write        -> out_q <- out_q ^ hwdata_i
+    IRQ config writes   -> update IRQ_EN/TYPE/POL
+    IRQ_STATUS W1C      -> clear written status bits
+
+  IRQ detect:
+    level/edge condition && IRQ_EN -> set IRQ_STATUS bit
+
+  Read/response:
+    hrdata_o <- selected register read data
+    hresp_o  <- OKAY or ERROR from captured transfer
+```
+
+Interrupt set and W1C clear priority must remain deterministic when both touch
+the same bit in one cycle; the RTL behavior is verified by the GPIO testbench.
+
+## 7. Implementation Targets
 
 `ahb_gpio` is target-neutral synthesizable logic. It includes
 `common/rtl/wasp1_target_defs.svh` and is linted for:
@@ -138,7 +176,7 @@ WASP1_TARGET_FPGA_XILINX_VIRTEX7
 
 Top-level pad or FPGA IO primitive binding is intentionally outside this module.
 
-## 7. Verification Summary
+## 8. Verification Summary
 
 Verified by `tb_ahb_gpio`.
 

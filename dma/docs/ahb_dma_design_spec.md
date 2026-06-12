@@ -129,7 +129,61 @@ unknown register access        -> ERROR
 AHB master read/write HRESP    -> STATUS.error
 ```
 
-## 6. Implementation Targets
+## 6. DMA Control FSM
+
+```text
+Reset:
+  DMA_IDLE
+  SRC/DST/LEN = 0
+  busy/done/error = 0
+  master outputs idle
+
+DMA_IDLE:
+  busy = 0
+  start accepted when LEN != 0 and SRC/DST word aligned
+        |
+        v
+  DMA_READ_ADDR
+
+  rejected start -> DMA_IDLE, error=1, done=0
+
+DMA_READ_ADDR:
+  drive AHB master read address for current SRC
+  HREADY -> DMA_READ_DATA
+
+DMA_READ_DATA:
+  wait for read response
+  HRESP=ERROR -> DMA_IDLE, busy=0, error=1
+  HRESP=OKAY  -> latch read data, DMA_WRITE_ADDR
+
+DMA_WRITE_ADDR:
+  drive AHB master write address/current DST and latched data
+  HREADY -> DMA_WRITE_RESP
+
+DMA_WRITE_RESP:
+  wait for write response
+  HRESP=ERROR -> DMA_IDLE, busy=0, error=1
+  HRESP=OKAY and more words:
+    SRC <- SRC + 4
+    DST <- DST + 4
+    remaining <- remaining - 1
+    -> DMA_READ_ADDR
+  HRESP=OKAY and last word:
+    busy=0, done=1, error=0
+    -> DMA_IDLE
+```
+
+The slave register path is a separate one-cycle AHB response state machine:
+
+```text
+cycle N capture selected register transfer
+cycle N+1 return read/write response or ERROR
+```
+
+`DMA_CTRL.clear` clears sticky `done/error` in IDLE or while not conflicting
+with terminal transfer completion.
+
+## 7. Implementation Targets
 
 `ahb_dma` is target-neutral synthesizable logic. It includes
 `common/rtl/wasp1_target_defs.svh` and is linted for:
@@ -142,7 +196,7 @@ WASP1_TARGET_FPGA_XILINX_VIRTEX7
 
 No target-specific memory macro or FPGA primitive is required.
 
-## 7. Verification Summary
+## 8. Verification Summary
 
 Verified by `tb_ahb_dma`.
 

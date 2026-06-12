@@ -56,7 +56,43 @@ over MRET and occur after normal CSR writes in the same sequential block.
 
 `mepc` clears bit zero on CSR write and trap entry.
 
-## 5. Target Support
+## 5. Sequential State Diagram
+
+```text
+Reset:
+  mstatus_q = MPP=M, MIE=0, MPIE=0
+  mie_q/mscratch_q/mepc_q/mcause_q/mtval_q = 0
+  mtvec_q = 0
+  cycle_q/instret_q = 0
+
+Each clock edge:
+
+  cycle_q <- cycle_q + 1
+  if retire_i:
+    instret_q <- instret_q + 1
+
+  if legal CSR write:
+    selected CSR <- masked Zicsr write data
+
+  if trap_valid_i:
+    mstatus.MPIE <- old mstatus.MIE
+    mstatus.MIE  <- 0
+    mstatus.MPP  <- machine
+    mepc_q       <- trap_pc_i with bit0 cleared
+    mcause_q     <- {trap_interrupt_i, trap_cause_i}
+    mtval_q      <- trap_tval_i
+
+  else if mret_i:
+    mstatus.MIE  <- old mstatus.MPIE
+    mstatus.MPIE <- 1
+    mstatus.MPP  <- machine
+```
+
+Priority is intentionally ordered so trap entry overrides MRET when both are
+present. Legal CSR writes occur before trap/MRET state updates in the same
+sequential block, so trap metadata wins for `mepc`, `mcause`, and `mtval`.
+
+## 6. Target Support
 
 The module uses portable sequential and combinational RTL and does not require
 target-specific IC or FPGA primitives.

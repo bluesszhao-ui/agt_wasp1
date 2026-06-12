@@ -138,7 +138,49 @@ unknown register access        -> ERROR
 
 `HREADY` is always high.
 
-## 7. Implementation Targets
+## 7. Sequential State Diagram
+
+```text
+Reset:
+  OTP data array <- erased value all 1s
+  KEY unlocked flag <- 0
+  LOCK flag <- 0
+  STATUS busy/done/error <- 0
+  AHB response registers <- OKAY/0
+
+AHB address phase:
+  selected transfer -> capture address/control/region/error class
+  unselected        -> capture idle response
+
+AHB data/response phase:
+  captured AHB error:
+    hresp_o <- ERROR
+    OTP data/register state holds except response registers
+
+  legal register write:
+    CTRL.clear       -> done/error cleared
+    KEY write match  -> unlock flag set
+    LOCK write bit0  -> lock flag set
+    ADDR/WDATA write -> programming operands updated
+
+  CTRL.program_enable && CTRL.start:
+    if unlocked && !locked && addr in range && no 0->1 request:
+      OTP[word] <- OTP[word] & WDATA
+      done <- 1, error <- 0
+    else:
+      OTP data holds
+      done <- 0, error <- 1
+
+  legal read:
+    hrdata_o <- data/register read mux
+    hresp_o <- OKAY
+```
+
+The first open RTL model completes programming in the register response cycle;
+there is no multi-cycle programming FSM yet. The diagram still captures the
+software-visible OTP state transitions.
+
+## 8. Implementation Targets
 
 | Target macro | Implementation intent |
 | --- | --- |
@@ -146,7 +188,7 @@ unknown register access        -> ERROR
 | `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Adds Xilinx-friendly RAM style attributes so the data array can infer Virtex-7 block RAM. |
 | `WASP1_TARGET_SIM_GENERIC` | Default generic simulation model when no explicit target macro is defined. |
 
-## 8. Verification Summary
+## 9. Verification Summary
 
 Verified by `tb_ahb_otp`.
 

@@ -109,7 +109,47 @@ write to read-only STATUS      -> ERROR
 
 `HREADY` is always high.
 
-## 6. Implementation Targets
+## 6. Sequential State Diagram
+
+```text
+Reset:
+  CTRL.enable = 0
+  CTRL.irq_enable = 0
+  mtime = 0
+  mtimecmp = all 1s
+  response registers = OKAY/0
+
+Each hclk_i edge:
+
+  AHB capture:
+    selected transfer -> capture address/control/error class
+    unselected        -> capture idle response
+
+  Counter update:
+    if CTRL.enable:
+      mtime <- mtime + 1
+    else:
+      mtime holds
+
+  Register write response:
+    legal CTRL write       -> update enable/irq_enable
+    legal MTIME_LO/HI write -> update selected 32-bit half of mtime
+    legal CMP_LO/HI write   -> update selected 32-bit half of mtimecmp
+    STATUS write or illegal write -> no state update except response/error
+
+  Read/response:
+    hrdata_o <- selected register read data
+    hresp_o  <- OKAY or ERROR from captured transfer
+
+Combinational pending/IRQ:
+  pending = mtime >= mtimecmp
+  timer_irq_o = pending && CTRL.irq_enable
+```
+
+There is no explicit FSM. The timer state is the AHB response capture, control
+registers, and 64-bit counter/compare pair.
+
+## 7. Implementation Targets
 
 `ahb_timer` is target-neutral synthesizable logic. It includes
 `common/rtl/wasp1_target_defs.svh` and is linted for:
@@ -122,7 +162,7 @@ WASP1_TARGET_FPGA_XILINX_VIRTEX7
 
 No FPGA primitive or ASIC macro is required for the first timer implementation.
 
-## 7. Verification Summary
+## 8. Verification Summary
 
 Verified by `tb_ahb_timer`.
 

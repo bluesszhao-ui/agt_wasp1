@@ -118,7 +118,53 @@ write to read-only STATUS      -> ERROR
 
 `HREADY` is always high.
 
-## 6. Implementation Targets
+## 6. Sequential State Diagram
+
+```text
+Reset:
+  CTRL = disabled
+  BAUD = reset divisor
+  TX/RX FIFO pointers and counts = 0
+  IRQ_STATUS = 0
+  RX overrun sticky = 0
+  AHB response registers = OKAY/0
+  uart_tx/uart_rx submodules reset to idle
+
+AHB register response path:
+  cycle N:
+    selected transfer -> capture address/control/error class
+    unselected        -> capture idle response
+
+  cycle N+1:
+    legal DATA write and TX FIFO not full -> push hwdata_i[7:0] to TX FIFO
+    DATA write when TX FIFO full          -> hresp_o ERROR
+    legal DATA read and RX FIFO not empty -> pop RX FIFO and return byte
+    CTRL/BAUD/IRQ writes                  -> update selected register
+    IRQ_STATUS W1C                        -> clear written sticky IRQ bits
+    illegal transfer                      -> hresp_o ERROR
+
+TX datapath:
+  TX FIFO not empty && uart_tx ready:
+    pop TX FIFO
+    launch byte into uart_tx frame state machine
+
+RX datapath:
+  uart_rx data_valid pulse && RX FIFO not full:
+    push received byte into RX FIFO
+
+  uart_rx data_valid pulse && RX FIFO full:
+    RX overrun sticky <- 1
+
+IRQ latch:
+  enabled TX empty condition  -> set TX empty IRQ_STATUS
+  enabled RX available        -> set RX available IRQ_STATUS
+  enabled RX overrun sticky   -> set RX overrun IRQ_STATUS
+```
+
+The detailed serial bit-level state is documented in `uart_tx_design_spec.md`,
+`uart_rx_design_spec.md`, and `uart_baud_design_spec.md`.
+
+## 7. Implementation Targets
 
 `ahb_uart` is target-neutral synthesizable logic. It includes
 `common/rtl/wasp1_target_defs.svh` and is linted for:
@@ -131,7 +177,7 @@ WASP1_TARGET_FPGA_XILINX_VIRTEX7
 
 Top-level pad or FPGA IO primitive binding is outside this module.
 
-## 7. Verification Summary
+## 8. Verification Summary
 
 Verified by `tb_ahb_uart`.
 

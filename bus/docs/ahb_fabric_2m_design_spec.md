@@ -111,7 +111,46 @@ selected slave has its `slave_hsel_o` bit asserted.
 Unmapped addresses do not assert any external `slave_hsel_o` bit. Instead,
 `default_sel_o` is asserted and the internal default slave returns ERROR.
 
-## 5. Verification Summary
+## 5. Fabric State Diagram
+
+`ahb_fabric_2m` is mostly structural. Its sequential behavior is inherited from
+the integrated arbiter grant state and the default slave response state.
+
+```text
+Reset:
+  arbiter grant_valid = 0
+  external slave_hsel_o = 0
+  default_sel_o = 0
+  master responses idle/OKAY
+
+Active transfer:
+  masters request
+        |
+        v
+  ahb_arbiter_2m grant state chooses held master
+        |
+        v
+  ahb_decoder decodes granted address
+        |
+        +-- mapped address   -> one external slave_hsel_o bit asserted
+        |
+        +-- unmapped address -> default_sel_o asserted
+        |
+        v
+  ahb_slave_mux returns selected slave/default response
+        |
+        v
+  ahb_arbiter_2m routes response to granted master
+
+Downstream HREADY=0:
+  arbiter holds grant state
+  selected slave path remains stable
+  non-granted requesting master observes HREADY low
+```
+
+The fabric itself does not add another FSM beyond these submodule states.
+
+## 6. Verification Summary
 
 Verified by `tb_ahb_fabric_2m` with mock slave responses.
 
