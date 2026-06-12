@@ -37,6 +37,7 @@ PASS       Current verification target passes
 | `core/core_trap` | PASS | Sync traps, MRET, IRQ masking, and trap priority tests pass |
 | `core/core_hazard` | PASS | Load-use stalls, EX/WB forwarding, priority, x0, and random dependency tests pass |
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
+| `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
 | `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
@@ -49,7 +50,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Move to core_pipe integration skeleton
+1. Connect core_pipe to decode/regfile/ALU for the first executable integer datapath
 ```
 
 ## Commit Policy Going Forward

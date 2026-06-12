@@ -10,3 +10,4 @@ rtl/core_lsu.sv
 rtl/core_trap.sv
 rtl/core_hazard.sv
 rtl/core_wb.sv
+rtl/core_pipe.sv
