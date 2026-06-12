@@ -35,6 +35,11 @@ The write path ignores writes when `waddr_i` is zero. For nonzero write
 addresses, `wdata_i` is committed to `regs_q[waddr_i]` on the rising clock
 edge.
 
+`BYPASS_EN` controls same-cycle write-to-read bypass. It defaults to enabled
+for standalone regfile behavior. Integration blocks may disable it when the
+write data is generated from the same read path and would otherwise create a
+combinational loop.
+
 Each read port uses a combinational priority:
 
 ```text
@@ -64,7 +69,7 @@ Each clock edge after reset:
 
 Combinational read priority:
   raddr == 0                    -> 0
-  we_i && waddr_i == raddr      -> wdata_i same-cycle bypass
+  BYPASS_EN && we_i && waddr_i == raddr -> wdata_i same-cycle bypass
   otherwise                     -> regs_q[raddr]
 ```
 

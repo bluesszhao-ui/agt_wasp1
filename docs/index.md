@@ -37,7 +37,7 @@ Current module docs:
 | `uart` | AHB UART and serial submodule specs, design spec, verification plan, verification report |
 | `dma` | AHB DMA spec, design spec, verification plan, verification report |
 | `intc` | AHB interrupt controller spec, design spec, verification plan, verification report |
-| `core` | core spec/design skeleton and core_alu/core_regfile/core_decode/core_branch/core_csr/core_lsu/core_trap/core_hazard/core_wb/core_pipe specs, design specs, verification plans, verification reports |
+| `core` | core spec/design skeleton and core_alu/core_regfile/core_decode/core_branch/core_csr/core_lsu/core_trap/core_hazard/core_wb/core_pipe/core_int_datapath specs, design specs, verification plans, verification reports |
 
 Current implemented block specs:
 
@@ -70,6 +70,7 @@ core/docs/core_trap_spec.md
 core/docs/core_hazard_spec.md
 core/docs/core_wb_spec.md
 core/docs/core_pipe_spec.md
+core/docs/core_int_datapath_spec.md
 ```
 
 Current implemented block design specs:
@@ -103,6 +104,7 @@ core/docs/core_trap_design_spec.md
 core/docs/core_hazard_design_spec.md
 core/docs/core_wb_design_spec.md
 core/docs/core_pipe_design_spec.md
+core/docs/core_int_datapath_design_spec.md
 ```
 
 ## Project Status

@@ -679,6 +679,30 @@ def main() -> None:
             ["TRAP OVERRIDES MRET", "LEGAL CSR WRITES APPLY MASKS", "INSTRET INCREMENTS ON RETIRE"],
         ),
         (
+            "core/docs/images/core_int_datapath_state.png",
+            "CORE_INT_DATAPATH STATE",
+            [
+                Node("fetch", 80, 240, 200, 90, ("FETCH", "RSP"), GREEN),
+                Node("pipe", 370, 240, 220, 90, ("CORE_PIPE", "EX SLOT"), YELLOW),
+                Node("decode", 690, 120, 220, 90, ("DECODE", "CONTROL"), BLUE),
+                Node("reg", 690, 360, 220, 90, ("REGFILE", "RS1 RS2"), BLUE),
+                Node("alu", 1010, 240, 190, 90, ("ALU", "RESULT"), YELLOW),
+                Node("wb", 1300, 240, 190, 90, ("WB", "COMMIT"), GREEN),
+                Node("suppress", 1300, 470, 220, 90, ("SUPPRESS", "FAULT/UNSUP"), PINK),
+            ],
+            [
+                Edge("fetch", "pipe", "ACCEPT"),
+                Edge("pipe", "decode", "EX_INSTR"),
+                Edge("decode", "reg", "RS ADDR"),
+                Edge("reg", "alu", "OPERANDS"),
+                Edge("decode", "alu", "OP IMM"),
+                Edge("alu", "wb", "SUPPORTED"),
+                Edge("decode", "suppress", "ILLEGAL/UNSUP"),
+                Edge("suppress", "wb", "NO WRITE"),
+            ],
+            ["SUPPORTED NOW: ALU LUI AUIPC JAL LINK", "LOAD STORE CSR BRANCH REDIRECT ARE STAGED LATER"],
+        ),
+        (
             "core/docs/images/core_regfile_state.png",
             "CORE_REGFILE STATE",
             [

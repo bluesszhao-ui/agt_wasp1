@@ -4,7 +4,9 @@
 //
 // Provides two combinational read ports and one rising-edge write port. The
 // architectural x0 register is not physically stored and always reads as zero.
-module core_regfile (
+module core_regfile #(
+  parameter bit BYPASS_EN = 1'b1 // Enable same-cycle write-to-read bypass.
+) (
   input  logic        clk_i,    // Register write clock.
   input  logic        rst_ni,   // Active-low asynchronous reset for deterministic bring-up.
 
@@ -35,7 +37,7 @@ module core_regfile (
   always_comb begin
     if (raddr1_i == 5'd0) begin
       rdata1_o = 32'h0000_0000;
-    end else if (we_i && (waddr_i == raddr1_i)) begin
+    end else if (BYPASS_EN && we_i && (waddr_i == raddr1_i)) begin
       rdata1_o = wdata_i;
     end else begin
       rdata1_o = regs_q[raddr1_i];
@@ -46,7 +48,7 @@ module core_regfile (
   always_comb begin
     if (raddr2_i == 5'd0) begin
       rdata2_o = 32'h0000_0000;
-    end else if (we_i && (waddr_i == raddr2_i)) begin
+    end else if (BYPASS_EN && we_i && (waddr_i == raddr2_i)) begin
       rdata2_o = wdata_i;
     end else begin
       rdata2_o = regs_q[raddr2_i];
