@@ -685,6 +685,7 @@ def main() -> None:
                 Node("fetch", 40, 250, 170, 80, ("FETCH", "RSP"), GREEN),
                 Node("pipe", 270, 250, 190, 80, ("CORE_PIPE", "EX SLOT"), YELLOW),
                 Node("decode", 520, 110, 190, 80, ("DECODE", "CONTROL"), BLUE),
+                Node("hazard", 520, 10, 190, 70, ("HAZARD", "STALL/BUBBLE"), PINK),
                 Node("reg", 520, 360, 190, 80, ("REGFILE", "RS1 RS2"), BLUE),
                 Node("alu", 780, 180, 160, 80, ("ALU", "RESULT"), YELLOW),
                 Node("branch", 780, 330, 190, 80, ("BRANCH", "TARGET"), GREEN),
@@ -698,6 +699,8 @@ def main() -> None:
             [
                 Edge("fetch", "pipe", "ACCEPT"),
                 Edge("pipe", "decode", "EX_INSTR"),
+                Edge("decode", "hazard", "ID VS EX"),
+                Edge("hazard", "pipe", "STALL/BUBBLE"),
                 Edge("decode", "reg", "RS ADDR"),
                 Edge("reg", "alu", "OPERANDS"),
                 Edge("reg", "branch", "CMP/JALR"),
@@ -718,7 +721,7 @@ def main() -> None:
                 Edge("decode", "suppress", "ILLEGAL/UNSUP"),
                 Edge("suppress", "wb", "NO WRITE"),
             ],
-            ["SUPPORTED NOW: ALU LUI AUIPC BRANCH JAL JALR LOAD STORE CSR TRAP IRQ", "FULL HAZARD AND CACHE STALLS ARE STAGED LATER"],
+            ["SUPPORTED NOW: ALU LUI AUIPC BRANCH JAL JALR LOAD STORE CSR TRAP IRQ LOAD-USE HAZARD", "FULL FORWARDING MUX AND CACHE STALLS ARE STAGED LATER"],
         ),
         (
             "core/docs/images/core_regfile_state.png",

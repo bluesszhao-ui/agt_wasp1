@@ -4,7 +4,8 @@
 
 `core_int_datapath` is a staged integration block. It is not the final core top;
 it exists to verify the first executable integer, load/store, CSR, trap, and
-interrupt datapath before full hazard logic is integrated.
+interrupt datapath with load-use hazard control before full EX/WB forwarding mux
+integration.
 
 ## 2. Block Diagram
 
@@ -20,8 +21,12 @@ interrupt datapath before full hazard logic is integrated.
  +-------------+      +--------------+
  | core_decode |----->| core_regfile |
  +------+------+      +------+-------+
-        |                    |
-        v                    v
+        |                    ^
+        v                    |
+ +--------------+      stall/bubble
+ | core_hazard  |-------------+
+ +------+-------+             |
+        |                    v
  +--------------+      rs1/rs2 data
  | wb selector  |             |
  +------+-------+             v
@@ -120,6 +125,19 @@ Trap/MRET redirects have priority over branch/JAL/JALR redirects. Trap entry
 updates `mepc`, `mcause`, `mtval`, and `mstatus` in `core_csr` on the same clock
 edge that `core_pipe` flushes younger slots.
 
+Hazard selection:
+
+```text
+ID uses rs1/rs2 matching EX load rd -> stall fetch/decode and bubble execute
+EX forwarding indication            -> exposed for later operand mux integration
+WB forwarding indication            -> exposed for later operand mux integration
+```
+
+The current staged datapath still relies on register-file timing for non-load
+adjacent dependencies. The forwarding decision outputs are observable now, and
+the actual operand forwarding muxes will be added when the final EX/WB split is
+introduced.
+
 ## 4. Sequential State Diagram
 
 ![core_int_datapath state](images/core_int_datapath_state.png)
@@ -146,6 +164,9 @@ Each execute/writeback cycle:
   branch/JAL/JALR target is computed
   load/store request and load writeback data are computed
   CSR read/write data and trap priority are computed
+  ID source registers are compared with EX/WB destinations
+  if load-use hazard:
+    core_pipe holds fetch/decode and injects an EX bubble
   if load/store fault:
     architectural writeback is suppressed
   if trap or MRET redirects:

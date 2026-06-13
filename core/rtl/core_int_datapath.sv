@@ -46,6 +46,11 @@ module core_int_datapath (
   output logic [31:0] trap_pc_o,          // Trap PC written to mepc.
   output logic        mret_taken_o,       // MRET redirect selected.
   output logic [31:0] csr_rdata_o,        // CSR read data observed by writeback.
+  output logic        hazard_load_use_o,  // Decode slot is stalled behind EX load.
+  output logic        hazard_fwd_rs1_ex_o,// Hazard unit rs1 EX-forward decision.
+  output logic        hazard_fwd_rs1_wb_o,// Hazard unit rs1 WB-forward decision.
+  output logic        hazard_fwd_rs2_ex_o,// Hazard unit rs2 EX-forward decision.
+  output logic        hazard_fwd_rs2_wb_o,// Hazard unit rs2 WB-forward decision.
   output logic        unsupported_o       // Instruction class is not integrated yet.
 );
   import core_types_pkg::*;
@@ -58,6 +63,35 @@ module core_int_datapath (
   logic [31:0] ex_pc;             // EX/WB PC from core_pipe.
   logic [31:0] ex_instr;          // EX/WB instruction from core_pipe.
   logic        ex_fetch_fault;    // EX/WB fetch fault from core_pipe.
+
+  logic [4:0]  id_dec_rd;         // Destination register decoded from ID instruction.
+  logic [4:0]  id_dec_rs1;        // Source register 1 decoded from ID instruction.
+  logic [4:0]  id_dec_rs2;        // Source register 2 decoded from ID instruction.
+  logic [31:0] id_dec_imm;        // ID immediate, unused by hazard.
+  core_imm_sel_e id_dec_imm_sel;  // ID immediate format, unused by hazard.
+  logic        id_dec_uses_rs1;   // ID instruction consumes rs1.
+  logic        id_dec_uses_rs2;   // ID instruction consumes rs2.
+  logic        id_dec_writes_rd;  // ID instruction writes rd.
+  logic        id_dec_alu_valid;  // ID ALU qualifier, unused by hazard.
+  core_alu_op_e id_dec_alu_op;    // ID ALU op, unused by hazard.
+  logic        id_dec_alu_src_imm;// ID ALU immediate flag, unused by hazard.
+  logic        id_dec_load;       // ID load qualifier, unused by hazard.
+  logic        id_dec_store;      // ID store qualifier, unused by hazard.
+  core_lsu_size_e id_dec_lsu_size;// ID LSU size, unused by hazard.
+  logic        id_dec_lsu_unsigned;// ID LSU unsigned flag, unused by hazard.
+  logic        id_dec_branch;     // ID branch qualifier, unused by hazard.
+  core_branch_e id_dec_branch_op; // ID branch op, unused by hazard.
+  logic        id_dec_jal;        // ID JAL qualifier, unused by hazard.
+  logic        id_dec_jalr;       // ID JALR qualifier, unused by hazard.
+  logic        id_dec_lui;        // ID LUI qualifier, unused by hazard.
+  logic        id_dec_auipc;      // ID AUIPC qualifier, unused by hazard.
+  logic        id_dec_csr;        // ID CSR qualifier, unused by hazard.
+  core_csr_cmd_e id_dec_csr_cmd;  // ID CSR command, unused by hazard.
+  logic [11:0] id_dec_csr_addr;   // ID CSR address, unused by hazard.
+  logic        id_dec_ecall;      // ID ECALL qualifier, unused by hazard.
+  logic        id_dec_ebreak;     // ID EBREAK qualifier, unused by hazard.
+  logic        id_dec_mret;       // ID MRET qualifier, unused by hazard.
+  logic        id_dec_illegal;    // ID illegal decode, unused by hazard.
 
   logic [4:0]  dec_rd;            // Destination register decoded from EX instruction.
   logic [4:0]  dec_rs1;           // Source register 1 decoded from EX instruction.
@@ -129,6 +163,14 @@ module core_int_datapath (
   logic [31:0] rf_wdata;          // Register file write data.
   logic        unsupported;       // Instruction class not connected yet.
   logic        write_fault;       // Any condition that suppresses architectural writeback.
+  logic        hazard_rs1_fwd_ex; // Hazard unit rs1 EX-forward indication.
+  logic        hazard_rs1_fwd_wb; // Hazard unit rs1 WB-forward indication.
+  logic        hazard_rs2_fwd_ex; // Hazard unit rs2 EX-forward indication.
+  logic        hazard_rs2_fwd_wb; // Hazard unit rs2 WB-forward indication.
+  logic        hazard_load_use;   // Load-use hazard between ID and EX.
+  logic        hazard_fetch_stall;// Fetch stall from hazard unit.
+  logic        hazard_decode_stall;// Decode stall from hazard unit.
+  logic        hazard_execute_bubble;// Execute bubble from hazard unit.
 
   core_pipe pipe_u (
     .clk_i(clk_i),
@@ -140,9 +182,9 @@ module core_int_datapath (
     .if_rsp_ready_o(if_rsp_ready_o),
     .if_rsp_instr_i(if_rsp_instr_i),
     .if_rsp_fault_i(if_rsp_fault_i),
-    .fetch_stall_i(1'b0),
-    .decode_stall_i(1'b0),
-    .execute_bubble_i(1'b0),
+    .fetch_stall_i(hazard_fetch_stall),
+    .decode_stall_i(hazard_decode_stall),
+    .execute_bubble_i(hazard_execute_bubble),
     .redirect_valid_i(pipe_redirect_valid),
     .redirect_pc_i(pipe_redirect_pc),
     .id_valid_o(id_valid),
@@ -185,6 +227,61 @@ module core_int_datapath (
     .ebreak_o(dec_ebreak),
     .mret_o(dec_mret),
     .illegal_o(dec_illegal)
+  );
+
+  core_decode id_decode_u (
+    .instr_i(id_instr),
+    .rd_o(id_dec_rd),
+    .rs1_o(id_dec_rs1),
+    .rs2_o(id_dec_rs2),
+    .imm_o(id_dec_imm),
+    .imm_sel_o(id_dec_imm_sel),
+    .uses_rs1_o(id_dec_uses_rs1),
+    .uses_rs2_o(id_dec_uses_rs2),
+    .writes_rd_o(id_dec_writes_rd),
+    .alu_valid_o(id_dec_alu_valid),
+    .alu_op_o(id_dec_alu_op),
+    .alu_src_imm_o(id_dec_alu_src_imm),
+    .load_o(id_dec_load),
+    .store_o(id_dec_store),
+    .lsu_size_o(id_dec_lsu_size),
+    .lsu_unsigned_o(id_dec_lsu_unsigned),
+    .branch_o(id_dec_branch),
+    .branch_op_o(id_dec_branch_op),
+    .jal_o(id_dec_jal),
+    .jalr_o(id_dec_jalr),
+    .lui_o(id_dec_lui),
+    .auipc_o(id_dec_auipc),
+    .csr_o(id_dec_csr),
+    .csr_cmd_o(id_dec_csr_cmd),
+    .csr_addr_o(id_dec_csr_addr),
+    .ecall_o(id_dec_ecall),
+    .ebreak_o(id_dec_ebreak),
+    .mret_o(id_dec_mret),
+    .illegal_o(id_dec_illegal)
+  );
+
+  core_hazard hazard_u (
+    .id_valid_i(id_valid && !id_fetch_fault),
+    .id_rs1_i(id_dec_rs1),
+    .id_uses_rs1_i(id_dec_uses_rs1),
+    .id_rs2_i(id_dec_rs2),
+    .id_uses_rs2_i(id_dec_uses_rs2),
+    .ex_valid_i(ex_valid && !ex_fetch_fault),
+    .ex_rd_i(dec_rd),
+    .ex_writes_rd_i(wb_rd_write && !write_fault && !trap_valid && !mret_taken),
+    .ex_is_load_i(dec_load),
+    .wb_valid_i(rf_we),
+    .wb_rd_i(rf_waddr),
+    .wb_writes_rd_i(rf_we),
+    .rs1_forward_ex_o(hazard_rs1_fwd_ex),
+    .rs1_forward_wb_o(hazard_rs1_fwd_wb),
+    .rs2_forward_ex_o(hazard_rs2_fwd_ex),
+    .rs2_forward_wb_o(hazard_rs2_fwd_wb),
+    .load_use_stall_o(hazard_load_use),
+    .fetch_stall_o(hazard_fetch_stall),
+    .decode_stall_o(hazard_decode_stall),
+    .execute_bubble_o(hazard_execute_bubble)
   );
 
   core_regfile #(
@@ -373,14 +470,29 @@ module core_int_datapath (
   assign trap_pc_o = trap_pc;
   assign mret_taken_o = mret_taken;
   assign csr_rdata_o = csr_rdata;
+  assign hazard_load_use_o = hazard_load_use;
+  assign hazard_fwd_rs1_ex_o = hazard_rs1_fwd_ex;
+  assign hazard_fwd_rs1_wb_o = hazard_rs1_fwd_wb;
+  assign hazard_fwd_rs2_ex_o = hazard_rs2_fwd_ex;
+  assign hazard_fwd_rs2_wb_o = hazard_rs2_fwd_wb;
   assign unsupported_o = ex_valid && unsupported;
 
   // These decoded controls are intentionally unused in this staged datapath.
   // Keeping them named documents the integration boundary for the next steps.
   logic unused_decode_controls;
-  assign unused_decode_controls = id_valid ^ id_pc[0] ^ id_instr[0] ^
-                                  id_fetch_fault ^ dec_uses_rs1 ^
-                                  dec_uses_rs2 ^ lsu_misaligned ^
-                                  dec_csr_cmd[0] ^ dec_csr_addr[0] ^
-                                  dec_imm_sel[0];
+  assign unused_decode_controls = id_pc[0] ^ id_dec_rd[0] ^ id_dec_imm[0] ^
+                                  id_dec_imm_sel[0] ^ id_dec_writes_rd ^
+                                  id_dec_alu_valid ^ id_dec_alu_op[0] ^
+                                  id_dec_alu_src_imm ^ id_dec_load ^
+                                  id_dec_store ^ id_dec_lsu_size[0] ^
+                                  id_dec_lsu_unsigned ^ id_dec_branch ^
+                                  id_dec_branch_op[0] ^ id_dec_jal ^
+                                  id_dec_jalr ^ id_dec_lui ^
+                                  id_dec_auipc ^ id_dec_csr ^
+                                  id_dec_csr_cmd[0] ^ id_dec_csr_addr[0] ^
+                                  id_dec_ecall ^ id_dec_ebreak ^
+                                  id_dec_mret ^ id_dec_illegal ^
+                                  dec_uses_rs1 ^ dec_uses_rs2 ^
+                                  lsu_misaligned ^ dec_csr_cmd[0] ^
+                                  dec_csr_addr[0] ^ dec_imm_sel[0];
 endmodule

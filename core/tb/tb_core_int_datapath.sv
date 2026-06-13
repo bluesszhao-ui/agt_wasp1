@@ -37,6 +37,11 @@ module tb_core_int_datapath;
   logic [31:0] trap_pc;        // DUT trap PC.
   logic        mret_taken;     // DUT MRET redirect selected.
   logic [31:0] csr_rdata;      // DUT CSR read data.
+  logic        hazard_load_use;// DUT load-use hazard indicator.
+  logic        hazard_fwd_rs1_ex;// DUT rs1 EX-forward indicator.
+  logic        hazard_fwd_rs1_wb;// DUT rs1 WB-forward indicator.
+  logic        hazard_fwd_rs2_ex;// DUT rs2 EX-forward indicator.
+  logic        hazard_fwd_rs2_wb;// DUT rs2 WB-forward indicator.
   logic        unsupported;    // DUT unsupported instruction class flag.
 
   integer pass_count;          // Total passing checks.
@@ -53,6 +58,7 @@ module tb_core_int_datapath;
   integer csr_count;           // CSR read/write coverage.
   integer trap_count;          // Trap and MRET coverage.
   integer irq_count;           // Interrupt trap coverage.
+  integer hazard_count;        // Load-use stall coverage.
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
   logic [31:0] exp_fetch_pc;   // Scoreboard expected fetch request PC.
@@ -92,6 +98,11 @@ module tb_core_int_datapath;
     .trap_pc_o(trap_pc),
     .mret_taken_o(mret_taken),
     .csr_rdata_o(csr_rdata),
+    .hazard_load_use_o(hazard_load_use),
+    .hazard_fwd_rs1_ex_o(hazard_fwd_rs1_ex),
+    .hazard_fwd_rs1_wb_o(hazard_fwd_rs1_wb),
+    .hazard_fwd_rs2_ex_o(hazard_fwd_rs2_ex),
+    .hazard_fwd_rs2_wb_o(hazard_fwd_rs2_wb),
     .unsupported_o(unsupported)
   );
 
@@ -395,6 +406,29 @@ module tb_core_int_datapath;
     end
   endtask
 
+  task automatic expect_load_use_stall(
+    input string       name,
+    input logic [31:0] held_pc
+  );
+    begin
+      @(negedge clk);
+      #1;
+      if (!hazard_load_use || if_rsp_ready || (if_req_pc !== held_pc)) begin
+        $fatal(1, "%s load-use stall mismatch hazard=%0b ready=%0b pc=%08x exp_pc=%08x",
+               name, hazard_load_use, if_rsp_ready, if_req_pc, held_pc);
+      end
+      @(posedge clk);
+      #1;
+      exp_fetch_pc = held_pc;
+      if (ex_valid || (if_req_pc !== exp_fetch_pc)) begin
+        $fatal(1, "%s load-use bubble mismatch ex_valid=%0b pc=%08x exp_pc=%08x",
+               name, ex_valid, if_req_pc, exp_fetch_pc);
+      end
+      pass_count++;
+      hazard_count++;
+    end
+  endtask
+
   initial begin
     pass_count = 0;
     commit_count = 0;
@@ -410,6 +444,7 @@ module tb_core_int_datapath;
     csr_count = 0;
     trap_count = 0;
     irq_count = 0;
+    hazard_count = 0;
     suppress_count = 0;
     pc_count = 0;
 
@@ -566,8 +601,20 @@ module tb_core_int_datapath;
     drive_instr(32'h0000_0013); // drain memory error load
     expect_lsu_fault("memory error lw", 1'b1);
 
-    drive_instr(enc_i(12'h200, 5'd0, 3'b000, 5'd26)); // addi x26,x0,0x200
+    drive_instr(enc_load(12'd0, 5'd20, 3'b010, 5'd24)); // lw x24,0(x20)
     expect_no_commit("memory error drain");
+
+    drive_instr(enc_r(7'b0000000, 5'd0, 5'd24, 3'b000, 5'd25)); // add x25,x24,x0
+    expect_commit("hazard test lw x24", 5'd24, 32'h89AB_CDEF);
+    load_count++;
+    expect_load_use_stall("load-use x24->x25", exp_fetch_pc);
+
+    drive_instr(32'h0000_0013); // drain dependent add
+    expect_commit("load-use dependent add", 5'd25, 32'h89AB_CDEF);
+    alu_r_count++;
+
+    drive_instr(enc_i(12'h200, 5'd0, 3'b000, 5'd26)); // addi x26,x0,0x200
+    expect_no_commit("load-use drain nop");
 
     drive_instr(enc_csr(CSR_MSCRATCH, 5'd26, 3'b001, 5'd27)); // csrrw x27,mscratch,x26
     expect_commit("csr base addi x26", 5'd26, 32'h0000_0200);
@@ -593,7 +640,7 @@ module tb_core_int_datapath;
     expect_no_commit("ecall trap bubble");
 
     drive_instr(enc_csr(CSR_MCAUSE, 5'd0, 3'b010, 5'd31)); // csrrs x31,mcause,x0
-    expect_commit("read mepc", 5'd30, 32'h0000_0018);
+    expect_commit("read mepc", 5'd30, 32'h0000_0024);
     csr_count++;
 
     drive_instr(32'h3020_0073); // mret
@@ -601,7 +648,7 @@ module tb_core_int_datapath;
     csr_count++;
 
     drive_instr(32'h0000_0013); // fall-through, flushed by mret
-    expect_mret_redirect("mret redirect", 32'h0000_0018);
+    expect_mret_redirect("mret redirect", 32'h0000_0024);
 
     drive_instr(enc_i(12'h7ff, 5'd0, 3'b000, 5'd26)); // addi x26,x0,0x7ff
     expect_no_commit("mret redirect bubble");
@@ -644,15 +691,16 @@ module tb_core_int_datapath;
         upper_count < 2 || link_count < 3 || branch_count < 2 ||
         redirect_count < 4 || load_count < 3 || store_count < 2 ||
         lsu_fault_count < 1 || csr_count < 9 || trap_count < 4 ||
-        irq_count < 1 || suppress_count < 16 || pc_count < 53) begin
+        irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
+        pc_count < 56) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d csr=%0d trap=%0d irq=%0d suppress=%0d pc=%0d",
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
              load_count, store_count, lsu_fault_count, csr_count,
-             trap_count, irq_count, suppress_count, pc_count);
+             trap_count, irq_count, hazard_count, suppress_count, pc_count);
     $display("tb_core_int_datapath PASS");
     $finish;
   end

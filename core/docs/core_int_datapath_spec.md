@@ -16,6 +16,7 @@ core_branch
 core_lsu
 core_csr
 core_trap
+core_hazard
 core_wb
 ```
 
@@ -36,6 +37,7 @@ Zicsr read/write/set/clear register and immediate operations
 ECALL/EBREAK/illegal/CSR-fault trap redirect
 MRET redirect
 machine timer/external interrupt trap inputs
+load-use hazard stall and execute bubble
 ```
 
 ## 3. Unsupported Instruction Scope
@@ -73,6 +75,11 @@ trap_tval_o
 trap_pc_o
 mret_taken_o
 csr_rdata_o
+hazard_load_use_o
+hazard_fwd_rs1_ex_o
+hazard_fwd_rs1_wb_o
+hazard_fwd_rs2_ex_o
+hazard_fwd_rs2_wb_o
 timer_irq_i
 external_irq_i
 dmem_req_valid_o
@@ -92,4 +99,4 @@ dependencies through the register file timing, LUI, AUIPC, taken and not-taken
 branches, JAL/JALR link writeback, redirect flush, load data extension, store
 request formatting, LSU fault/trap behavior, CSR read/write old-value
 writeback, ECALL trap entry, MRET redirect, interrupt redirect, x0 suppression,
-illegal trap behavior, and fetch PC stepping.
+illegal trap behavior, load-use stall/bubble behavior, and fetch PC stepping.
