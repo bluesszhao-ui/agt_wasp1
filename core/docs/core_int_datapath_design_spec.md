@@ -4,7 +4,7 @@
 
 `core_int_datapath` is a staged integration block. It is not the final core top;
 it exists to verify the first executable integer datapath before memory, CSR,
-trap, branch redirect, and hazard logic are integrated.
+trap, and hazard logic are integrated.
 
 ## 2. Block Diagram
 
@@ -25,16 +25,16 @@ trap, branch redirect, and hazard logic are integrated.
  +--------------+      rs1/rs2 data
  | wb selector  |             |
  +------+-------+             v
-        |              +--------------+
-        +------------->| core_alu     |
-                       +------+-------+
-                              |
-                              v
-                       +--------------+
-                       | core_wb      |
-                       +------+-------+
-                              |
-                              v
+        |              +--------------+      +---------------+
+        +------------->| core_alu     |      | core_branch   |
+                       +------+-------+      +-------+-------+
+                              |                      |
+                              v                      v
+                       +--------------+       redirect/flush
+                       | core_wb      |------------+
+                       +------+-------+            |
+                              |                    v
+                              v              core_pipe redirect
                          regfile write
                          commit observe
 ```
@@ -65,6 +65,19 @@ ALU ops   -> ALU result
 Unsupported classes and faults drive the `core_wb` fault input so register
 writeback is suppressed.
 
+Control-flow selection:
+
+```text
+taken branch -> redirect to ex_pc + B immediate
+JAL          -> redirect to ex_pc + J immediate and write rd = ex_pc + 4
+JALR         -> redirect to (rs1 + I immediate) with bit 0 cleared and write rd = ex_pc + 4
+not-taken    -> no redirect and no register writeback
+```
+
+Redirect is gated by `ex_valid`, fetch fault, and illegal decode status. When a
+redirect is asserted, `core_pipe` flushes younger IF/ID and EX/WB state on the
+next active clock edge and reloads the fetch PC with the branch target.
+
 ## 4. Sequential State Diagram
 
 ![core_int_datapath state](images/core_int_datapath_state.png)
@@ -88,12 +101,17 @@ Each execute/writeback cycle:
   EX instruction is decoded
   register operands are read
   ALU/writeback data is computed
+  branch/JAL/JALR target is computed
+  if branch/JAL/JALR redirects:
+    core_pipe blocks response acceptance for the redirect cycle
+    core_pipe flushes younger slots and loads target PC
   if valid and supported and rd!=x0:
     core_regfile writes rd on the next clock edge
 ```
 
-Same-cycle register file bypass covers adjacent dependent ALU instructions in
-this staged datapath.
+The integrated regfile instance disables same-cycle bypass to avoid a
+writeback/read combinational loop through the integrated datapath. Adjacent
+integer dependencies are still verified against the staged pipeline timing.
 
 ## 5. Target Support
 

@@ -18,7 +18,10 @@ advance, and checks expected register writeback.
 | ORI | Immediate logical writeback |
 | LUI | U-immediate writeback |
 | AUIPC | PC-relative writeback |
-| JAL link | PC+4 link writeback |
+| BEQ taken | Conditional branch target redirect and younger instruction flush |
+| BEQ not taken | Sequential PC flow without redirect |
+| JAL link/redirect | PC+4 link writeback plus J-immediate redirect |
+| JALR link/redirect | PC+4 link writeback plus aligned register-relative redirect |
 | x0 write | x0 writeback suppression |
 | Illegal | Illegal instruction suppresses writeback |
 | Load unsupported | Unsupported class suppresses writeback |
@@ -26,5 +29,5 @@ advance, and checks expected register writeback.
 ## 3. Exit Criteria
 
 All expected commits and suppressions must match. Coverage counters must show
-ALU-immediate, ALU-register, upper-immediate, link, suppression, and PC stepping
-coverage.
+ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
+suppression, and PC stepping coverage.

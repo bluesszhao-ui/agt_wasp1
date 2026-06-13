@@ -22,15 +22,16 @@ make lint
 | 0ns-21ns | Reset | Hold reset and check boot PC/no commit | Boot PC and no-commit state matched |
 | 25ns-55ns | ADDI/dependency | Execute adjacent ADDI instructions | Immediate writeback and dependency passed |
 | 55ns-95ns | Register ALU | Execute ADD/SUB and immediate logical path | Register and immediate ALU commits matched |
-| 95ns-125ns | Upper/link | Execute LUI/AUIPC/JAL link writeback | U-immediate, PC-relative, and link commits matched |
-| 125ns-138ns | Suppression | x0, illegal, unsupported load, NOP suppressions | All write suppressions matched |
+| 95ns-145ns | Upper/link/redirect | Execute LUI/AUIPC/JAL link and first redirect | U-immediate, PC-relative, link, and redirect matched |
+| 145ns-205ns | Suppression and setup | Illegal, unsupported load, x0, NOP, and branch operands | Suppressions and operand commits matched |
+| 205ns-317ns | Branch/JAL/JALR redirect | Taken BEQ, not-taken BEQ, JAL, JALR, redirect bubbles | Targets, links, flushes, and no-write branch behavior matched |
 
 ## 4. Coverage Summary
 
 The standalone testbench reports:
 
 ```text
-tb_core_int_datapath coverage: pass_count=12 commit=8 alu_i=3 alu_r=2 upper=2 link=1 suppress=4 pc=12
+tb_core_int_datapath coverage: pass_count=29 commit=15 alu_i=8 alu_r=2 upper=2 link=3 branch=2 redirect=4 suppress=10 pc=26
 tb_core_int_datapath PASS
 ```
 
@@ -40,6 +41,8 @@ Coverage intent met:
 - Register-register ALU writeback.
 - Adjacent dependency through staged regfile timing.
 - LUI and AUIPC writeback.
-- JAL link writeback.
+- Taken and not-taken branch behavior.
+- JAL and JALR link writeback.
+- Redirect response blocking, younger-instruction flush, and redirected PC.
 - x0, illegal, unsupported, and NOP suppression.
 - Fetch PC stepping.

@@ -4,8 +4,8 @@
 //
 // This milestone wires the verified pipeline skeleton, decoder, register file,
 // ALU, and writeback helper into one small executable path. It intentionally
-// supports only register-write integer instructions for now; memory, CSR, trap,
-// branch redirect, and full hazard integration are staged separately.
+// supports integer ALU, upper-immediate, and branch/jump redirect behavior for
+// now; memory, CSR, trap, and full hazard integration are staged separately.
 module core_int_datapath (
   input  logic        clk_i,              // Core pipeline/register clock.
   input  logic        rst_ni,             // Active-low asynchronous reset.
@@ -73,6 +73,10 @@ module core_int_datapath (
   logic [31:0] alu_lhs;           // ALU left operand.
   logic [31:0] alu_rhs;           // ALU right operand.
   logic [31:0] alu_result;        // ALU result.
+  logic        branch_taken;      // Branch helper redirect request.
+  logic [31:0] branch_target;     // Branch helper redirect target.
+  logic [31:0] branch_link;       // Branch helper link value, ex_pc + 4.
+  logic        redirect_valid;    // Redirect request after fault/illegal gating.
   logic [31:0] auipc_result;      // PC-relative AUIPC result.
   core_wb_sel_e wb_sel;           // Writeback source selector.
   logic        wb_rd_write;       // Final write intent before x0/fault suppression.
@@ -95,8 +99,8 @@ module core_int_datapath (
     .fetch_stall_i(1'b0),
     .decode_stall_i(1'b0),
     .execute_bubble_i(1'b0),
-    .redirect_valid_i(1'b0),
-    .redirect_pc_i(32'h0000_0000),
+    .redirect_valid_i(redirect_valid),
+    .redirect_pc_i(branch_target),
     .id_valid_o(id_valid),
     .id_pc_o(id_pc),
     .id_instr_o(id_instr),
@@ -165,7 +169,23 @@ module core_int_datapath (
     .result_o(alu_result)
   );
 
+  core_branch branch_u (
+    .pc_i(ex_pc),
+    .rs1_i(rs1_data),
+    .rs2_i(rs2_data),
+    .imm_i(dec_imm),
+    .branch_i(dec_branch),
+    .branch_op_i(dec_branch_op),
+    .jal_i(dec_jal),
+    .jalr_i(dec_jalr),
+    .taken_o(branch_taken),
+    .target_o(branch_target),
+    .link_o(branch_link)
+  );
+
   assign auipc_result = ex_pc + dec_imm;
+  assign redirect_valid = ex_valid && branch_taken && !ex_fetch_fault &&
+                          !dec_illegal;
 
   // Select writeback source for the instruction classes integrated in this
   // milestone. Unsupported classes are allowed through decode for observability
@@ -181,8 +201,8 @@ module core_int_datapath (
     end
   end
 
-  assign unsupported = dec_load || dec_store || dec_branch || dec_csr ||
-                       dec_ecall || dec_ebreak || dec_mret;
+  assign unsupported = dec_load || dec_store || dec_csr || dec_ecall ||
+                       dec_ebreak || dec_mret;
   assign wb_rd_write = dec_writes_rd && (dec_alu_valid || dec_lui ||
                        dec_auipc || dec_jal || dec_jalr);
   assign write_fault = ex_fetch_fault || dec_illegal || unsupported;
@@ -197,7 +217,7 @@ module core_int_datapath (
     .alu_result_i(dec_auipc ? auipc_result : alu_result),
     .load_data_i(32'h0000_0000),
     .csr_rdata_i(32'h0000_0000),
-    .pc_plus4_i(ex_pc + 32'd4),
+    .pc_plus4_i(branch_link),
     .imm_u_i(dec_imm),
     .rf_we_o(rf_we),
     .rf_waddr_o(rf_waddr),
@@ -219,7 +239,6 @@ module core_int_datapath (
   assign unused_decode_controls = id_valid ^ id_pc[0] ^ id_instr[0] ^
                                   id_fetch_fault ^ dec_uses_rs1 ^
                                   dec_uses_rs2 ^ dec_lsu_size[0] ^
-                                  dec_lsu_unsigned ^ dec_branch_op[0] ^
-                                  dec_csr_cmd[0] ^ dec_csr_addr[0] ^
-                                  dec_imm_sel[0];
+                                  dec_lsu_unsigned ^ dec_csr_cmd[0] ^
+                                  dec_csr_addr[0] ^ dec_imm_sel[0];
 endmodule

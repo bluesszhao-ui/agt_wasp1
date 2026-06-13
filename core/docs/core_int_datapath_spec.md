@@ -12,6 +12,7 @@ core_pipe
 core_decode
 core_regfile
 core_alu
+core_branch
 core_wb
 ```
 
@@ -24,11 +25,9 @@ RV32I OP-IMM ALU instructions
 RV32I OP register-register ALU instructions
 LUI
 AUIPC
-JAL/JALR link writeback
+conditional branch redirect
+JAL/JALR link writeback and redirect
 ```
-
-JAL/JALR redirect behavior is not integrated yet; only the link writeback value
-is produced.
 
 ## 3. Unsupported Instruction Scope
 
@@ -37,7 +36,6 @@ writeback in this milestone:
 
 ```text
 load/store
-branch redirect
 CSR/system/trap
 illegal instruction
 fetch fault
@@ -64,6 +62,6 @@ unsupported_o
 ## 5. Verification Requirements
 
 Verification must cover immediate ALU, register ALU, write-after-read
-dependencies through the register file timing, LUI, AUIPC, JAL link writeback,
-x0 suppression, illegal suppression, unsupported suppression, and fetch PC
-stepping.
+dependencies through the register file timing, LUI, AUIPC, taken and not-taken
+branches, JAL/JALR link writeback, redirect flush, x0 suppression, illegal
+suppression, unsupported suppression, and fetch PC stepping.
