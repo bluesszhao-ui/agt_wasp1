@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
 
 module tb_core_int_datapath;
+  import wasp1_pkg::*;
+
   logic        clk;            // Testbench clock.
   logic        rst_n;          // Active-low reset.
   logic [31:0] boot_pc;        // Reset PC for the integrated datapath.
@@ -18,6 +20,8 @@ module tb_core_int_datapath;
   logic [3:0]  dmem_req_wstrb; // DUT data-memory byte strobes.
   logic [31:0] dmem_rsp_rdata; // Testbench data-memory read data.
   logic        dmem_rsp_err;   // Testbench data-memory response error.
+  logic        timer_irq;      // Testbench timer interrupt pending.
+  logic        external_irq;   // Testbench external interrupt pending.
   logic        commit_valid;   // DUT writeback valid.
   logic [4:0]  commit_rd;      // DUT writeback register.
   logic [31:0] commit_data;    // DUT writeback data.
@@ -26,6 +30,13 @@ module tb_core_int_datapath;
   logic [31:0] ex_instr;       // DUT execute slot instruction.
   logic        illegal;        // DUT illegal instruction flag.
   logic        lsu_fault;      // DUT load/store fault flag.
+  logic        trap_valid;     // DUT trap entry selected.
+  logic        trap_interrupt; // DUT trap is an interrupt.
+  logic [4:0]  trap_cause;     // DUT trap cause.
+  logic [31:0] trap_tval;      // DUT trap value.
+  logic [31:0] trap_pc;        // DUT trap PC.
+  logic        mret_taken;     // DUT MRET redirect selected.
+  logic [31:0] csr_rdata;      // DUT CSR read data.
   logic        unsupported;    // DUT unsupported instruction class flag.
 
   integer pass_count;          // Total passing checks.
@@ -39,6 +50,9 @@ module tb_core_int_datapath;
   integer load_count;          // Load writeback coverage.
   integer store_count;         // Store request coverage.
   integer lsu_fault_count;     // LSU misalignment/error coverage.
+  integer csr_count;           // CSR read/write coverage.
+  integer trap_count;          // Trap and MRET coverage.
+  integer irq_count;           // Interrupt trap coverage.
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
   logic [31:0] exp_fetch_pc;   // Scoreboard expected fetch request PC.
@@ -61,6 +75,8 @@ module tb_core_int_datapath;
     .dmem_req_wstrb_o(dmem_req_wstrb),
     .dmem_rsp_rdata_i(dmem_rsp_rdata),
     .dmem_rsp_err_i(dmem_rsp_err),
+    .timer_irq_i(timer_irq),
+    .external_irq_i(external_irq),
     .commit_valid_o(commit_valid),
     .commit_rd_o(commit_rd),
     .commit_data_o(commit_data),
@@ -69,6 +85,13 @@ module tb_core_int_datapath;
     .ex_instr_o(ex_instr),
     .illegal_o(illegal),
     .lsu_fault_o(lsu_fault),
+    .trap_valid_o(trap_valid),
+    .trap_interrupt_o(trap_interrupt),
+    .trap_cause_o(trap_cause),
+    .trap_tval_o(trap_tval),
+    .trap_pc_o(trap_pc),
+    .mret_taken_o(mret_taken),
+    .csr_rdata_o(csr_rdata),
     .unsupported_o(unsupported)
   );
 
@@ -145,6 +168,15 @@ module tb_core_int_datapath;
     input logic [2:0]  funct3
   );
     enc_store = {imm[11:5], rs2, rs1, funct3, imm[4:0], 7'b0100011};
+  endfunction
+
+  function automatic logic [31:0] enc_csr(
+    input logic [11:0] csr,
+    input logic [4:0]  rs1_zimm,
+    input logic [2:0]  funct3,
+    input logic [4:0]  rd
+  );
+    enc_csr = {csr, rs1_zimm, funct3, rd, 7'b1110011};
   endfunction
 
   // Combinational single-cycle data-memory model for this staged datapath.
@@ -262,6 +294,86 @@ module tb_core_int_datapath;
     end
   endtask
 
+  task automatic expect_trap_redirect(
+    input string       name,
+    input logic [4:0]  exp_cause,
+    input logic [31:0] exp_tval,
+    input logic [31:0] exp_pc,
+    input logic [31:0] exp_target
+  );
+    begin
+      #1;
+      if (!trap_valid || trap_interrupt || (trap_cause !== exp_cause) ||
+          (trap_tval !== exp_tval) || (trap_pc !== exp_pc) || if_rsp_ready) begin
+        $fatal(1, "%s trap mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b",
+               name, trap_valid, trap_interrupt, trap_cause, trap_tval,
+               trap_pc, if_rsp_ready);
+      end
+      @(posedge clk);
+      #1;
+      exp_fetch_pc = exp_target;
+      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
+        $fatal(1, "%s trap redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
+               name, if_req_pc, exp_fetch_pc, ex_valid);
+      end
+      pass_count++;
+      trap_count++;
+      redirect_count++;
+    end
+  endtask
+
+  task automatic expect_irq_redirect(
+    input string       name,
+    input logic [4:0]  exp_cause,
+    input logic [31:0] exp_pc,
+    input logic [31:0] exp_target
+  );
+    begin
+      #1;
+      if (!trap_valid || !trap_interrupt || (trap_cause !== exp_cause) ||
+          (trap_tval !== 32'h0000_0000) || (trap_pc !== exp_pc) ||
+          if_rsp_ready) begin
+        $fatal(1, "%s irq mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b",
+               name, trap_valid, trap_interrupt, trap_cause, trap_tval,
+               trap_pc, if_rsp_ready);
+      end
+      @(posedge clk);
+      #1;
+      exp_fetch_pc = exp_target;
+      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
+        $fatal(1, "%s irq redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
+               name, if_req_pc, exp_fetch_pc, ex_valid);
+      end
+      pass_count++;
+      trap_count++;
+      irq_count++;
+      redirect_count++;
+    end
+  endtask
+
+  task automatic expect_mret_redirect(
+    input string       name,
+    input logic [31:0] exp_target
+  );
+    begin
+      #1;
+      if (!mret_taken || trap_valid || if_rsp_ready) begin
+        $fatal(1, "%s mret mismatch mret=%0b trap_valid=%0b ready=%0b",
+               name, mret_taken, trap_valid, if_rsp_ready);
+      end
+      @(posedge clk);
+      #1;
+      exp_fetch_pc = exp_target;
+      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
+        $fatal(1, "%s mret redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
+               name, if_req_pc, exp_fetch_pc, ex_valid);
+      end
+      pass_count++;
+      trap_count++;
+      redirect_count++;
+    end
+  endtask
+
   task automatic expect_redirect_flush(
     input string       name,
     input logic [31:0] exp_target
@@ -295,6 +407,9 @@ module tb_core_int_datapath;
     load_count = 0;
     store_count = 0;
     lsu_fault_count = 0;
+    csr_count = 0;
+    trap_count = 0;
+    irq_count = 0;
     suppress_count = 0;
     pc_count = 0;
 
@@ -304,6 +419,8 @@ module tb_core_int_datapath;
     if_rsp_valid = 1'b0;
     if_rsp_instr = 32'h0000_0013;
     if_rsp_fault = 1'b0;
+    timer_irq = 1'b0;
+    external_irq = 1'b0;
 
     repeat (2) @(posedge clk);
     #1;
@@ -348,14 +465,14 @@ module tb_core_int_datapath;
     link_count++;
     expect_redirect_flush("initial jal redirect", ex_pc + 32'd8);
 
-    drive_instr(32'hffff_ffff); // illegal instruction suppresses writeback
+    drive_instr(enc_i(12'd2, 5'd0, 3'b000, 5'd0)); // x0 write suppressed
     expect_no_commit("initial jal redirect bubble");
 
-    drive_instr(32'h0000_0073); // ecall unsupported for now
-    expect_no_commit("illegal suppress");
+    drive_instr(32'h0000_0013); // nop drain
+    expect_no_commit("x0 suppress after redirect");
 
     drive_instr(32'h0000_0013); // nop drain
-    expect_no_commit("unsupported ecall suppress");
+    expect_no_commit("nop suppress after redirect");
 
     drive_instr(enc_i(12'd1, 5'd0, 3'b000, 5'd0)); // addi x0,x0,1, suppressed
     expect_no_commit("nop x0 drain");
@@ -439,24 +556,103 @@ module tb_core_int_datapath;
     expect_store_req("sb x23", 32'h0000_0301, 2'd0, 32'h0000_8000, 4'b0010);
     expect_no_commit("sb no commit");
 
+    drive_instr(32'h0000_0013); // fall-through, flushed by misaligned trap
+    expect_trap_redirect("misaligned lw trap", TRAP_CAUSE_LOAD_MISALIGNED,
+                         32'h0000_0302, ex_pc, 32'h0000_0000);
+
     drive_instr(enc_load(12'h0F0, 5'd20, 3'b010, 5'd25)); // memory error
-    expect_lsu_fault("misaligned lw", 1'b0);
+    expect_no_commit("misaligned trap bubble");
 
     drive_instr(32'h0000_0013); // drain memory error load
     expect_lsu_fault("memory error lw", 1'b1);
 
+    drive_instr(enc_i(12'h200, 5'd0, 3'b000, 5'd26)); // addi x26,x0,0x200
+    expect_no_commit("memory error drain");
+
+    drive_instr(enc_csr(CSR_MSCRATCH, 5'd26, 3'b001, 5'd27)); // csrrw x27,mscratch,x26
+    expect_commit("csr base addi x26", 5'd26, 32'h0000_0200);
+    alu_i_count++;
+
+    drive_instr(enc_csr(CSR_MSCRATCH, 5'd0, 3'b010, 5'd28)); // csrrs x28,mscratch,x0
+    expect_commit("csrrw mscratch old", 5'd27, 32'h0000_0000);
+    csr_count++;
+
+    drive_instr(enc_csr(CSR_MTVEC, 5'd26, 3'b001, 5'd29)); // csrrw x29,mtvec,x26
+    expect_commit("csrrs mscratch", 5'd28, 32'h0000_0200);
+    csr_count++;
+
+    drive_instr(32'h0000_0073); // ecall, trap to mtvec
+    expect_commit("csrrw mtvec old", 5'd29, 32'h0000_0000);
+    csr_count++;
+
+    drive_instr(32'h0000_0013); // fall-through, flushed by trap
+    expect_trap_redirect("ecall trap", TRAP_CAUSE_ECALL_MMODE, 32'h0000_0000,
+                         ex_pc, 32'h0000_0200);
+
+    drive_instr(enc_csr(CSR_MEPC, 5'd0, 3'b010, 5'd30)); // csrrs x30,mepc,x0
+    expect_no_commit("ecall trap bubble");
+
+    drive_instr(enc_csr(CSR_MCAUSE, 5'd0, 3'b010, 5'd31)); // csrrs x31,mcause,x0
+    expect_commit("read mepc", 5'd30, 32'h0000_0018);
+    csr_count++;
+
+    drive_instr(32'h3020_0073); // mret
+    expect_commit("read mcause", 5'd31, {27'h000_0000, TRAP_CAUSE_ECALL_MMODE});
+    csr_count++;
+
+    drive_instr(32'h0000_0013); // fall-through, flushed by mret
+    expect_mret_redirect("mret redirect", 32'h0000_0018);
+
+    drive_instr(enc_i(12'h7ff, 5'd0, 3'b000, 5'd26)); // addi x26,x0,0x7ff
+    expect_no_commit("mret redirect bubble");
+
+    drive_instr(enc_i(12'h089, 5'd26, 3'b000, 5'd26)); // addi x26,x26,0x89 -> 0x888
+    expect_commit("irq enable base low", 5'd26, 32'h0000_07FF);
+    alu_i_count++;
+
+    drive_instr(enc_csr(CSR_MSTATUS, 5'd26, 3'b001, 5'd27)); // enable mstatus.MIE
+    expect_commit("irq enable value", 5'd26, 32'h0000_0888);
+    alu_i_count++;
+
+    drive_instr(32'h0000_0013); // dependency gap before CSR reads x26
+    expect_commit("write mstatus old", 5'd27, 32'h0000_1880);
+    csr_count++;
+
+    drive_instr(enc_csr(CSR_MIE, 5'd26, 3'b001, 5'd28)); // enable mie.MEIE/MTIE
+    expect_no_commit("csr dependency gap nop");
+
+    drive_instr(32'h0000_0013); // allow mie write to commit before IRQ
+    expect_commit("write mie old", 5'd28, 32'h0000_0000);
+    csr_count++;
+
+    drive_instr(enc_csr(CSR_MSTATUS, 5'd0, 3'b010, 5'd29)); // read mstatus
+    expect_no_commit("mie write drain nop");
+
+    drive_instr(enc_csr(CSR_MIE, 5'd0, 3'b010, 5'd30)); // read mie
+    expect_commit("read mstatus before irq", 5'd29, 32'h0000_1888);
+    csr_count++;
+
+    drive_instr(32'h0000_0013); // drain CSR read before IRQ
+    expect_commit("read mie before irq", 5'd30, 32'h0000_0880);
+    csr_count++;
+
+    timer_irq = 1'b1;
+    expect_irq_redirect("timer irq", TRAP_CAUSE_M_TIMER_IRQ, ex_pc, 32'h0000_0200);
+    timer_irq = 1'b0;
+
     if (commit_count < 8 || alu_i_count < 3 || alu_r_count < 2 ||
         upper_count < 2 || link_count < 3 || branch_count < 2 ||
-        redirect_count < 3 || load_count < 3 || store_count < 2 ||
-        lsu_fault_count < 2 || suppress_count < 12 || pc_count < 34) begin
+        redirect_count < 4 || load_count < 3 || store_count < 2 ||
+        lsu_fault_count < 1 || csr_count < 9 || trap_count < 4 ||
+        irq_count < 1 || suppress_count < 16 || pc_count < 53) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d suppress=%0d pc=%0d",
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d csr=%0d trap=%0d irq=%0d suppress=%0d pc=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
-             load_count, store_count, lsu_fault_count, suppress_count,
-             pc_count);
+             load_count, store_count, lsu_fault_count, csr_count,
+             trap_count, irq_count, suppress_count, pc_count);
     $display("tb_core_int_datapath PASS");
     $finish;
   end

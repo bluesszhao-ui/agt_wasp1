@@ -3,8 +3,8 @@
 ## 1. Scope
 
 `core_int_datapath` is a staged integration block. It is not the final core top;
-it exists to verify the first executable integer and load/store datapath before
-CSR, trap, and hazard logic are integrated.
+it exists to verify the first executable integer, load/store, CSR, trap, and
+interrupt datapath before full hazard logic is integrated.
 
 ## 2. Block Diagram
 
@@ -30,11 +30,16 @@ CSR, trap, and hazard logic are integrated.
         |              +------+-------+      +-------+-------+
         |                     |                      |
         |                     v                      v
-        |              +--------------+       redirect/flush
+        |              +--------------+       branch redirect
         +------------->| core_lsu     |------------+
         |              +------+-------+            |
         |                     |                    v
-        |              dmem req/rsp          core_pipe redirect
+        |              dmem req/rsp        +---------------+
+        |                     |            | core_trap     |
+        |                     v            +-------+-------+
+        |              +--------------+            |
+        +------------->| core_csr     |<-----------+
+        |              +------+-------+     trap state/irq
         |                     |
         |                     v
         |              +--------------+
@@ -66,6 +71,7 @@ Writeback source selection:
 LUI       -> CORE_WB_IMM
 JAL/JALR  -> CORE_WB_PC4
 load      -> CORE_WB_LOAD
+CSR       -> CORE_WB_CSR
 AUIPC     -> ALU result ex_pc + imm
 ALU ops   -> ALU result
 ```
@@ -100,6 +106,20 @@ The staged data-memory interface is single-cycle and response-data based. It is
 intended as the integration boundary for the later D-cache/AHB path, where
 stall and response handshake state will be added.
 
+CSR/trap selection:
+
+```text
+CSR instruction -> old CSR value writes rd, CSR state updates on clock edge
+illegal CSR     -> illegal-instruction trap, no rd writeback
+ECALL/EBREAK    -> trap to mtvec, mepc captures faulting PC
+MRET            -> redirect to mepc, mstatus.MIE restored from MPIE
+enabled IRQ     -> interrupt trap to mtvec with interrupt mcause bit set
+```
+
+Trap/MRET redirects have priority over branch/JAL/JALR redirects. Trap entry
+updates `mepc`, `mcause`, `mtval`, and `mstatus` in `core_csr` on the same clock
+edge that `core_pipe` flushes younger slots.
+
 ## 4. Sequential State Diagram
 
 ![core_int_datapath state](images/core_int_datapath_state.png)
@@ -125,8 +145,12 @@ Each execute/writeback cycle:
   ALU/writeback data is computed
   branch/JAL/JALR target is computed
   load/store request and load writeback data are computed
+  CSR read/write data and trap priority are computed
   if load/store fault:
     architectural writeback is suppressed
+  if trap or MRET redirects:
+    core_pipe blocks response acceptance for the redirect cycle
+    core_pipe flushes younger slots and loads mtvec/mepc target PC
   if branch/JAL/JALR redirects:
     core_pipe blocks response acceptance for the redirect cycle
     core_pipe flushes younger slots and loads target PC

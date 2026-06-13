@@ -14,6 +14,8 @@ core_regfile
 core_alu
 core_branch
 core_lsu
+core_csr
+core_trap
 core_wb
 ```
 
@@ -30,17 +32,21 @@ conditional branch redirect
 JAL/JALR link writeback and redirect
 LB/LBU/LH/LHU/LW load writeback
 SB/SH/SW store request formatting
+Zicsr read/write/set/clear register and immediate operations
+ECALL/EBREAK/illegal/CSR-fault trap redirect
+MRET redirect
+machine timer/external interrupt trap inputs
 ```
 
 ## 3. Unsupported Instruction Scope
 
-The following instruction classes are decoded but suppress architectural
-writeback in this milestone:
+The following cases still suppress architectural register writeback in this
+milestone:
 
 ```text
-CSR/system/trap
 illegal instruction
 fetch fault
+load/store response error
 ```
 
 ## 4. Interface Requirements
@@ -60,6 +66,15 @@ ex_instr_o
 illegal_o
 unsupported_o
 lsu_fault_o
+trap_valid_o
+trap_interrupt_o
+trap_cause_o
+trap_tval_o
+trap_pc_o
+mret_taken_o
+csr_rdata_o
+timer_irq_i
+external_irq_i
 dmem_req_valid_o
 dmem_req_addr_o
 dmem_req_write_o
@@ -75,5 +90,6 @@ dmem_rsp_err_i
 Verification must cover immediate ALU, register ALU, write-after-read
 dependencies through the register file timing, LUI, AUIPC, taken and not-taken
 branches, JAL/JALR link writeback, redirect flush, load data extension, store
-request formatting, LSU fault suppression, x0 suppression, illegal suppression,
-unsupported suppression, and fetch PC stepping.
+request formatting, LSU fault/trap behavior, CSR read/write old-value
+writeback, ECALL trap entry, MRET redirect, interrupt redirect, x0 suppression,
+illegal trap behavior, and fetch PC stepping.

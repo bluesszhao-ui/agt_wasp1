@@ -27,12 +27,17 @@ advance, and checks expected register writeback.
 | SW/SB | Store request address, size, lane data, and byte strobes |
 | Misaligned load | Request suppression and `lsu_fault_o` assertion |
 | Memory response error | Request visibility, writeback suppression, and `lsu_fault_o` assertion |
+| CSRRW | CSR old-value writeback and CSR state update |
+| CSRRS read | CSR readback without changing state when rs1 is x0 |
+| ECALL trap | Trap metadata, CSR trap entry, and redirect to `mtvec` |
+| MRET | Redirect to `mepc` and mstatus restore path |
+| Timer IRQ | CSR-enabled timer interrupt trap and redirect |
 | x0 write | x0 writeback suppression |
-| Illegal | Illegal instruction suppresses writeback |
-| ECALL unsupported | Unsupported class suppresses writeback |
+| Illegal | Illegal instruction trap and writeback suppression |
 
 ## 3. Exit Criteria
 
 All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
-load, store, LSU fault, suppression, and PC stepping coverage.
+load, store, LSU fault, CSR, trap, interrupt, suppression, and PC stepping
+coverage.

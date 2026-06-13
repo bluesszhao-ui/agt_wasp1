@@ -4,9 +4,9 @@
 //
 // This milestone wires the verified pipeline skeleton, decoder, register file,
 // ALU, and writeback helper into one small executable path. It intentionally
-// supports integer ALU, upper-immediate, branch/jump redirect, and a simple
-// single-cycle load/store data path for now; CSR, trap, and full hazard
-// integration are staged separately.
+// supports integer ALU, upper-immediate, branch/jump redirect, CSR/trap, and a
+// simple single-cycle load/store data path for now. Full hazard integration is
+// staged separately.
 module core_int_datapath (
   input  logic        clk_i,              // Core pipeline/register clock.
   input  logic        rst_ni,             // Active-low asynchronous reset.
@@ -28,6 +28,8 @@ module core_int_datapath (
   output logic [3:0]  dmem_req_wstrb_o,   // Data memory byte write strobes.
   input  logic [31:0] dmem_rsp_rdata_i,   // Data memory read response data.
   input  logic        dmem_rsp_err_i,     // Data memory response error.
+  input  logic        timer_irq_i,        // Machine timer interrupt pending.
+  input  logic        external_irq_i,     // Machine external interrupt pending.
 
   output logic        commit_valid_o,     // Register writeback happened this cycle.
   output logic [4:0]  commit_rd_o,        // Committed destination register.
@@ -37,6 +39,13 @@ module core_int_datapath (
   output logic [31:0] ex_instr_o,         // Execute/writeback slot instruction.
   output logic        illegal_o,          // Decode reported illegal instruction.
   output logic        lsu_fault_o,        // Load/store misalignment or response fault.
+  output logic        trap_valid_o,       // Trap entry selected for current EX slot.
+  output logic        trap_interrupt_o,   // Trap is an interrupt when asserted.
+  output logic [4:0]  trap_cause_o,       // Trap cause without interrupt MSB.
+  output logic [31:0] trap_tval_o,        // Trap value written to mtval.
+  output logic [31:0] trap_pc_o,          // Trap PC written to mepc.
+  output logic        mret_taken_o,       // MRET redirect selected.
+  output logic [31:0] csr_rdata_o,        // CSR read data observed by writeback.
   output logic        unsupported_o       // Instruction class is not integrated yet.
 );
   import core_types_pkg::*;
@@ -88,10 +97,30 @@ module core_int_datapath (
   logic [31:0] branch_target;     // Branch helper redirect target.
   logic [31:0] branch_link;       // Branch helper link value, ex_pc + 4.
   logic        redirect_valid;    // Redirect request after fault/illegal gating.
+  logic        pipe_redirect_valid;// Final redirect request into core_pipe.
+  logic [31:0] pipe_redirect_pc;   // Final redirect target into core_pipe.
   logic [31:0] lsu_load_data;     // Load data after byte/half extension.
   logic        lsu_misaligned;    // Load/store alignment fault from LSU.
   logic        lsu_fault;         // Combined local/memory LSU helper fault.
   logic        lsu_active_fault;  // LSU fault qualified by a load/store op.
+  logic [31:0] csr_wdata;         // CSR write data from rs1 or zero-extended zimm.
+  logic [31:0] csr_rdata;         // CSR old value returned for rd writeback.
+  logic        csr_illegal;       // CSR access fault from core_csr.
+  logic [31:0] mtvec;             // Trap vector base from core_csr.
+  logic [31:0] mepc;              // MRET target from core_csr.
+  logic        mie_global;        // Global M-mode interrupt enable.
+  logic        mtie;              // Timer interrupt enable.
+  logic        meie;              // External interrupt enable.
+  logic        mtip;              // Timer interrupt pending reflection.
+  logic        meip;              // External interrupt pending reflection.
+  logic        trap_valid;        // Trap selected by core_trap.
+  logic        trap_interrupt;    // Trap is interrupt.
+  logic [4:0]  trap_cause;        // Trap cause without interrupt MSB.
+  logic [31:0] trap_tval;         // Trap value for mtval.
+  logic [31:0] trap_pc;           // Trap PC for mepc.
+  logic        mret_taken;        // MRET redirect selected.
+  logic        trap_redirect;     // Trap/MRET redirect selected by core_trap.
+  logic [31:0] trap_redirect_pc;  // Trap/MRET redirect target.
   logic [31:0] auipc_result;      // PC-relative AUIPC result.
   core_wb_sel_e wb_sel;           // Writeback source selector.
   logic        wb_rd_write;       // Final write intent before x0/fault suppression.
@@ -114,8 +143,8 @@ module core_int_datapath (
     .fetch_stall_i(1'b0),
     .decode_stall_i(1'b0),
     .execute_bubble_i(1'b0),
-    .redirect_valid_i(redirect_valid),
-    .redirect_pc_i(branch_target),
+    .redirect_valid_i(pipe_redirect_valid),
+    .redirect_pc_i(pipe_redirect_pc),
     .id_valid_o(id_valid),
     .id_pc_o(id_pc),
     .id_instr_o(id_instr),
@@ -219,10 +248,73 @@ module core_int_datapath (
     .fault_o(lsu_fault)
   );
 
+  assign csr_wdata = dec_csr_cmd[2] ? dec_imm : rs1_data;
+
+  core_csr csr_u (
+    .clk_i(clk_i),
+    .rst_ni(rst_ni),
+    .csr_valid_i(ex_valid && dec_csr && !ex_fetch_fault && !dec_illegal),
+    .csr_cmd_i(dec_csr_cmd),
+    .csr_addr_i(dec_csr_addr),
+    .csr_wdata_i(csr_wdata),
+    .csr_rdata_o(csr_rdata),
+    .csr_illegal_o(csr_illegal),
+    .retire_i(ex_valid && !write_fault && !trap_valid),
+    .trap_valid_i(trap_valid),
+    .trap_interrupt_i(trap_interrupt),
+    .trap_cause_i(trap_cause),
+    .trap_pc_i(trap_pc),
+    .trap_tval_i(trap_tval),
+    .mret_i(ex_valid && mret_taken),
+    .timer_irq_i(timer_irq_i),
+    .external_irq_i(external_irq_i),
+    .mtvec_o(mtvec),
+    .mepc_o(mepc),
+    .mie_global_o(mie_global),
+    .mtie_o(mtie),
+    .meie_o(meie),
+    .mtip_o(mtip),
+    .meip_o(meip)
+  );
+
+  core_trap trap_u (
+    .valid_i(ex_valid),
+    .pc_i(ex_pc),
+    .instr_i(ex_instr),
+    .instr_misaligned_i(1'b0),
+    .instr_fault_addr_i(32'h0000_0000),
+    .illegal_instr_i(dec_illegal),
+    .csr_illegal_i(csr_illegal),
+    .ecall_i(dec_ecall),
+    .ebreak_i(dec_ebreak),
+    .load_i(dec_load),
+    .store_i(dec_store),
+    .lsu_misaligned_i(lsu_misaligned),
+    .lsu_fault_addr_i(dmem_req_addr_o),
+    .mret_i(dec_mret),
+    .mie_global_i(mie_global),
+    .mtie_i(mtie),
+    .meie_i(meie),
+    .mtip_i(mtip),
+    .meip_i(meip),
+    .mtvec_i(mtvec),
+    .mepc_i(mepc),
+    .trap_valid_o(trap_valid),
+    .trap_interrupt_o(trap_interrupt),
+    .trap_cause_o(trap_cause),
+    .trap_tval_o(trap_tval),
+    .trap_pc_o(trap_pc),
+    .mret_taken_o(mret_taken),
+    .redirect_valid_o(trap_redirect),
+    .redirect_pc_o(trap_redirect_pc)
+  );
+
   assign auipc_result = ex_pc + dec_imm;
   assign lsu_active_fault = (dec_load || dec_store) && lsu_fault;
   assign redirect_valid = ex_valid && branch_taken && !ex_fetch_fault &&
                           !dec_illegal && !lsu_active_fault;
+  assign pipe_redirect_valid = trap_redirect || redirect_valid;
+  assign pipe_redirect_pc = trap_redirect ? trap_redirect_pc : branch_target;
 
   // Select writeback source for the instruction classes integrated in this
   // milestone. Unsupported classes are allowed through decode for observability
@@ -233,6 +325,8 @@ module core_int_datapath (
       wb_sel = CORE_WB_IMM;
     end else if (dec_load) begin
       wb_sel = CORE_WB_LOAD;
+    end else if (dec_csr) begin
+      wb_sel = CORE_WB_CSR;
     end else if (dec_jal || dec_jalr) begin
       wb_sel = CORE_WB_PC4;
     end else begin
@@ -240,22 +334,23 @@ module core_int_datapath (
     end
   end
 
-  assign unsupported = dec_csr || dec_ecall || dec_ebreak || dec_mret;
+  assign unsupported = 1'b0;
   assign wb_rd_write = dec_writes_rd && (dec_alu_valid || dec_lui ||
-                       dec_auipc || dec_jal || dec_jalr || dec_load);
+                       dec_auipc || dec_jal || dec_jalr || dec_load ||
+                       dec_csr);
   assign write_fault = ex_fetch_fault || dec_illegal || unsupported ||
-                       lsu_active_fault;
+                       lsu_active_fault || csr_illegal;
 
   core_wb wb_u (
     .wb_valid_i(ex_valid),
     .rd_i(dec_rd),
     .rd_write_i(wb_rd_write),
     .wb_sel_i(wb_sel),
-    .trap_i(1'b0),
+    .trap_i(trap_valid || mret_taken),
     .fault_i(write_fault),
     .alu_result_i(dec_auipc ? auipc_result : alu_result),
     .load_data_i(lsu_load_data),
-    .csr_rdata_i(32'h0000_0000),
+    .csr_rdata_i(csr_rdata),
     .pc_plus4_i(branch_link),
     .imm_u_i(dec_imm),
     .rf_we_o(rf_we),
@@ -271,6 +366,13 @@ module core_int_datapath (
   assign ex_instr_o = ex_instr;
   assign illegal_o = ex_valid && dec_illegal;
   assign lsu_fault_o = ex_valid && lsu_active_fault;
+  assign trap_valid_o = trap_valid;
+  assign trap_interrupt_o = trap_interrupt;
+  assign trap_cause_o = trap_cause;
+  assign trap_tval_o = trap_tval;
+  assign trap_pc_o = trap_pc;
+  assign mret_taken_o = mret_taken;
+  assign csr_rdata_o = csr_rdata;
   assign unsupported_o = ex_valid && unsupported;
 
   // These decoded controls are intentionally unused in this staged datapath.

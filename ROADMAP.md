@@ -38,7 +38,7 @@ PASS       Current verification target passes
 | `core/core_hazard` | PASS | Load-use stalls, EX/WB forwarding, priority, x0, and random dependency tests pass |
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
 | `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
-| `core/core_int_datapath` | PASS | Executable integer/load-store datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, LSU faults, and suppression paths passes |
+| `core/core_int_datapath` | PASS | Executable datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, CSR, traps, timer IRQ, and suppression paths passes |
 | `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
@@ -51,7 +51,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Integrate CSR/trap/interrupt behavior into the executable core datapath
+1. Integrate hazard/forwarding control into the executable core datapath
 ```
 
 ## Commit Policy Going Forward
