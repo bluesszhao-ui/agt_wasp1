@@ -4,8 +4,9 @@
 //
 // This milestone wires the verified pipeline skeleton, decoder, register file,
 // ALU, and writeback helper into one small executable path. It intentionally
-// supports integer ALU, upper-immediate, and branch/jump redirect behavior for
-// now; memory, CSR, trap, and full hazard integration are staged separately.
+// supports integer ALU, upper-immediate, branch/jump redirect, and a simple
+// single-cycle load/store data path for now; CSR, trap, and full hazard
+// integration are staged separately.
 module core_int_datapath (
   input  logic        clk_i,              // Core pipeline/register clock.
   input  logic        rst_ni,             // Active-low asynchronous reset.
@@ -19,6 +20,15 @@ module core_int_datapath (
   input  logic [31:0] if_rsp_instr_i,     // Fetched instruction word.
   input  logic        if_rsp_fault_i,     // Fetch fault associated with response.
 
+  output logic        dmem_req_valid_o,   // Data memory request valid.
+  output logic [31:0] dmem_req_addr_o,    // Data memory byte address.
+  output logic        dmem_req_write_o,   // Data memory store qualifier.
+  output logic [1:0]  dmem_req_size_o,    // Data memory access size.
+  output logic [31:0] dmem_req_wdata_o,   // Data memory store data aligned to lanes.
+  output logic [3:0]  dmem_req_wstrb_o,   // Data memory byte write strobes.
+  input  logic [31:0] dmem_rsp_rdata_i,   // Data memory read response data.
+  input  logic        dmem_rsp_err_i,     // Data memory response error.
+
   output logic        commit_valid_o,     // Register writeback happened this cycle.
   output logic [4:0]  commit_rd_o,        // Committed destination register.
   output logic [31:0] commit_data_o,      // Committed writeback data.
@@ -26,6 +36,7 @@ module core_int_datapath (
   output logic [31:0] ex_pc_o,            // Execute/writeback slot PC.
   output logic [31:0] ex_instr_o,         // Execute/writeback slot instruction.
   output logic        illegal_o,          // Decode reported illegal instruction.
+  output logic        lsu_fault_o,        // Load/store misalignment or response fault.
   output logic        unsupported_o       // Instruction class is not integrated yet.
 );
   import core_types_pkg::*;
@@ -77,6 +88,10 @@ module core_int_datapath (
   logic [31:0] branch_target;     // Branch helper redirect target.
   logic [31:0] branch_link;       // Branch helper link value, ex_pc + 4.
   logic        redirect_valid;    // Redirect request after fault/illegal gating.
+  logic [31:0] lsu_load_data;     // Load data after byte/half extension.
+  logic        lsu_misaligned;    // Load/store alignment fault from LSU.
+  logic        lsu_fault;         // Combined local/memory LSU helper fault.
+  logic        lsu_active_fault;  // LSU fault qualified by a load/store op.
   logic [31:0] auipc_result;      // PC-relative AUIPC result.
   core_wb_sel_e wb_sel;           // Writeback source selector.
   logic        wb_rd_write;       // Final write intent before x0/fault suppression.
@@ -183,9 +198,31 @@ module core_int_datapath (
     .link_o(branch_link)
   );
 
+  core_lsu lsu_u (
+    .base_i(rs1_data),
+    .imm_i(dec_imm),
+    .store_data_i(rs2_data),
+    .size_i(dec_lsu_size),
+    .unsigned_i(dec_lsu_unsigned),
+    .load_i(ex_valid && dec_load && !ex_fetch_fault && !dec_illegal),
+    .store_i(ex_valid && dec_store && !ex_fetch_fault && !dec_illegal),
+    .rsp_rdata_i(dmem_rsp_rdata_i),
+    .rsp_err_i(dmem_rsp_err_i),
+    .req_valid_o(dmem_req_valid_o),
+    .req_addr_o(dmem_req_addr_o),
+    .req_write_o(dmem_req_write_o),
+    .req_size_o(dmem_req_size_o),
+    .req_wdata_o(dmem_req_wdata_o),
+    .req_wstrb_o(dmem_req_wstrb_o),
+    .load_data_o(lsu_load_data),
+    .misaligned_o(lsu_misaligned),
+    .fault_o(lsu_fault)
+  );
+
   assign auipc_result = ex_pc + dec_imm;
+  assign lsu_active_fault = (dec_load || dec_store) && lsu_fault;
   assign redirect_valid = ex_valid && branch_taken && !ex_fetch_fault &&
-                          !dec_illegal;
+                          !dec_illegal && !lsu_active_fault;
 
   // Select writeback source for the instruction classes integrated in this
   // milestone. Unsupported classes are allowed through decode for observability
@@ -194,6 +231,8 @@ module core_int_datapath (
     wb_sel = CORE_WB_ALU;
     if (dec_lui) begin
       wb_sel = CORE_WB_IMM;
+    end else if (dec_load) begin
+      wb_sel = CORE_WB_LOAD;
     end else if (dec_jal || dec_jalr) begin
       wb_sel = CORE_WB_PC4;
     end else begin
@@ -201,11 +240,11 @@ module core_int_datapath (
     end
   end
 
-  assign unsupported = dec_load || dec_store || dec_csr || dec_ecall ||
-                       dec_ebreak || dec_mret;
+  assign unsupported = dec_csr || dec_ecall || dec_ebreak || dec_mret;
   assign wb_rd_write = dec_writes_rd && (dec_alu_valid || dec_lui ||
-                       dec_auipc || dec_jal || dec_jalr);
-  assign write_fault = ex_fetch_fault || dec_illegal || unsupported;
+                       dec_auipc || dec_jal || dec_jalr || dec_load);
+  assign write_fault = ex_fetch_fault || dec_illegal || unsupported ||
+                       lsu_active_fault;
 
   core_wb wb_u (
     .wb_valid_i(ex_valid),
@@ -215,7 +254,7 @@ module core_int_datapath (
     .trap_i(1'b0),
     .fault_i(write_fault),
     .alu_result_i(dec_auipc ? auipc_result : alu_result),
-    .load_data_i(32'h0000_0000),
+    .load_data_i(lsu_load_data),
     .csr_rdata_i(32'h0000_0000),
     .pc_plus4_i(branch_link),
     .imm_u_i(dec_imm),
@@ -231,6 +270,7 @@ module core_int_datapath (
   assign ex_pc_o = ex_pc;
   assign ex_instr_o = ex_instr;
   assign illegal_o = ex_valid && dec_illegal;
+  assign lsu_fault_o = ex_valid && lsu_active_fault;
   assign unsupported_o = ex_valid && unsupported;
 
   // These decoded controls are intentionally unused in this staged datapath.
@@ -238,7 +278,7 @@ module core_int_datapath (
   logic unused_decode_controls;
   assign unused_decode_controls = id_valid ^ id_pc[0] ^ id_instr[0] ^
                                   id_fetch_fault ^ dec_uses_rs1 ^
-                                  dec_uses_rs2 ^ dec_lsu_size[0] ^
-                                  dec_lsu_unsigned ^ dec_csr_cmd[0] ^
-                                  dec_csr_addr[0] ^ dec_imm_sel[0];
+                                  dec_uses_rs2 ^ lsu_misaligned ^
+                                  dec_csr_cmd[0] ^ dec_csr_addr[0] ^
+                                  dec_imm_sel[0];
 endmodule

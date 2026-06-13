@@ -3,8 +3,8 @@
 ## 1. Scope
 
 `core_int_datapath` is a staged integration block. It is not the final core top;
-it exists to verify the first executable integer datapath before memory, CSR,
-trap, and hazard logic are integrated.
+it exists to verify the first executable integer and load/store datapath before
+CSR, trap, and hazard logic are integrated.
 
 ## 2. Block Diagram
 
@@ -27,14 +27,21 @@ trap, and hazard logic are integrated.
  +------+-------+             v
         |              +--------------+      +---------------+
         +------------->| core_alu     |      | core_branch   |
-                       +------+-------+      +-------+-------+
-                              |                      |
-                              v                      v
-                       +--------------+       redirect/flush
-                       | core_wb      |------------+
-                       +------+-------+            |
-                              |                    v
-                              v              core_pipe redirect
+        |              +------+-------+      +-------+-------+
+        |                     |                      |
+        |                     v                      v
+        |              +--------------+       redirect/flush
+        +------------->| core_lsu     |------------+
+        |              +------+-------+            |
+        |                     |                    v
+        |              dmem req/rsp          core_pipe redirect
+        |                     |
+        |                     v
+        |              +--------------+
+        +------------->| core_wb      |
+                       +------+-------+
+                              |
+                              v
                          regfile write
                          commit observe
 ```
@@ -58,6 +65,7 @@ Writeback source selection:
 ```text
 LUI       -> CORE_WB_IMM
 JAL/JALR  -> CORE_WB_PC4
+load      -> CORE_WB_LOAD
 AUIPC     -> ALU result ex_pc + imm
 ALU ops   -> ALU result
 ```
@@ -77,6 +85,20 @@ not-taken    -> no redirect and no register writeback
 Redirect is gated by `ex_valid`, fetch fault, and illegal decode status. When a
 redirect is asserted, `core_pipe` flushes younger IF/ID and EX/WB state on the
 next active clock edge and reloads the fetch PC with the branch target.
+
+Load/store selection:
+
+```text
+effective address = rs1_data + decoded immediate
+load              -> issue read request and write formatted load data to rd
+store             -> issue write request with lane-shifted data and byte strobes
+misaligned access -> no data request, no register writeback, lsu_fault_o=1
+response error    -> request is observable, no register writeback, lsu_fault_o=1
+```
+
+The staged data-memory interface is single-cycle and response-data based. It is
+intended as the integration boundary for the later D-cache/AHB path, where
+stall and response handshake state will be added.
 
 ## 4. Sequential State Diagram
 
@@ -102,6 +124,9 @@ Each execute/writeback cycle:
   register operands are read
   ALU/writeback data is computed
   branch/JAL/JALR target is computed
+  load/store request and load writeback data are computed
+  if load/store fault:
+    architectural writeback is suppressed
   if branch/JAL/JALR redirects:
     core_pipe blocks response acceptance for the redirect cycle
     core_pipe flushes younger slots and loads target PC

@@ -13,6 +13,7 @@ core_decode
 core_regfile
 core_alu
 core_branch
+core_lsu
 core_wb
 ```
 
@@ -27,6 +28,8 @@ LUI
 AUIPC
 conditional branch redirect
 JAL/JALR link writeback and redirect
+LB/LBU/LH/LHU/LW load writeback
+SB/SH/SW store request formatting
 ```
 
 ## 3. Unsupported Instruction Scope
@@ -35,7 +38,6 @@ The following instruction classes are decoded but suppress architectural
 writeback in this milestone:
 
 ```text
-load/store
 CSR/system/trap
 illegal instruction
 fetch fault
@@ -57,11 +59,21 @@ ex_pc_o
 ex_instr_o
 illegal_o
 unsupported_o
+lsu_fault_o
+dmem_req_valid_o
+dmem_req_addr_o
+dmem_req_write_o
+dmem_req_size_o
+dmem_req_wdata_o
+dmem_req_wstrb_o
+dmem_rsp_rdata_i
+dmem_rsp_err_i
 ```
 
 ## 5. Verification Requirements
 
 Verification must cover immediate ALU, register ALU, write-after-read
 dependencies through the register file timing, LUI, AUIPC, taken and not-taken
-branches, JAL/JALR link writeback, redirect flush, x0 suppression, illegal
-suppression, unsupported suppression, and fetch PC stepping.
+branches, JAL/JALR link writeback, redirect flush, load data extension, store
+request formatting, LSU fault suppression, x0 suppression, illegal suppression,
+unsupported suppression, and fetch PC stepping.
