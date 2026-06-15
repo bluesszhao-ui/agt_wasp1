@@ -40,7 +40,8 @@ PASS       Current verification target passes
 | `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
 | `core/core_int_datapath` | PASS | Executable datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, CSR, traps, timer IRQ, load-use hazard, and suppression paths passes |
 | `core` | PASS | First top-level wrapper around `core_int_datapath` passes lint and wrapper/integrated simulation |
-| `frontend` | TODO | PC/fetch/redirect |
+| `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
+| `frontend` | TODO | Remaining fetch/redirect/ibuf/top integration |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
 | `tile` | TODO | Core/frontend/cache integration |
@@ -51,7 +52,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Start `frontend` PC/fetch/redirect module specs, RTL, and verification
+1. Implement and verify `frontend_fetch`
 ```
 
 ## Commit Policy Going Forward

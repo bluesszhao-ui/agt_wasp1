@@ -638,6 +638,29 @@ def render_ahb_dma_l3() -> None:
 def main() -> None:
     diagrams = [
         (
+            "frontend/docs/images/frontend_pc_state.png",
+            "FRONTEND_PC STATE",
+            [
+                Node("reset", 70, 220, 190, 90, ("RESET", "PC=BOOT", "VALID=0"), BLUE),
+                Node("valid", 350, 220, 210, 90, ("VALID", "REQUEST PC"), GREEN),
+                Node("advance", 650, 90, 220, 90, ("ADVANCE", "PC=PC+4"), YELLOW),
+                Node("hold", 650, 350, 220, 90, ("HOLD", "STALL/!READY"), GRAY),
+                Node("redir", 960, 220, 220, 90, ("REDIRECT", "PC=TARGET"), PINK),
+            ],
+            [
+                Edge("reset", "valid", "RST RELEASE"),
+                Edge("valid", "advance", "VALID & READY & !STALL"),
+                Edge("advance", "valid", "NEXT"),
+                Edge("valid", "hold", "STALL OR !READY"),
+                Edge("hold", "valid", "UNSTALL/READY"),
+                Edge("valid", "redir", "REDIRECT"),
+                Edge("hold", "redir", "REDIRECT"),
+                Edge("advance", "redir", "REDIRECT WINS"),
+                Edge("redir", "valid", "NEXT"),
+            ],
+            ["RESET HAS ASYNC PRIORITY", "RUNTIME PRIORITY: REDIRECT THEN FETCH_FIRE THEN HOLD", "MISALIGNED FLAG = OR(PC[1:0])"],
+        ),
+        (
             "core/docs/images/core_state.png",
             "CORE TOP WRAPPER",
             [
