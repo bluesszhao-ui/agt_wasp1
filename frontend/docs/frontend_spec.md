@@ -32,6 +32,16 @@ stall/backpressure hold
 misaligned PC indication
 ```
 
+The implemented `frontend_fetch` submodule provides:
+
+```text
+PC request to instruction-memory request translation
+one outstanding instruction fetch
+misaligned PC local fault response
+flush-based stale response drop
+memory error propagation
+```
+
 ## 4. ISA Assumptions
 
 wasp1 implements RV32I without the compressed extension. Sequential instruction

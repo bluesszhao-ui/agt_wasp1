@@ -638,6 +638,31 @@ def render_ahb_dma_l3() -> None:
 def main() -> None:
     diagrams = [
         (
+            "frontend/docs/images/frontend_fetch_state.png",
+            "FRONTEND_FETCH FSM",
+            [
+                Node("reset", 70, 220, 190, 90, ("RESET", "IDLE"), BLUE),
+                Node("idle", 340, 220, 210, 90, ("IDLE", "NO OUTSTAND"), GREEN),
+                Node("local", 610, 70, 230, 90, ("LOCAL FAULT", "MISALIGNED"), PINK),
+                Node("wait", 610, 220, 230, 90, ("WAIT_RSP", "PC_Q VALID"), YELLOW),
+                Node("kill", 610, 380, 230, 90, ("KILL", "DROP RSP"), PINK),
+                Node("deliver", 950, 150, 220, 90, ("DELIVER", "INSTR VALID"), GREEN),
+                Node("drop", 950, 340, 220, 90, ("DROP", "RSP READY"), GRAY),
+            ],
+            [
+                Edge("reset", "idle", "RST RELEASE"),
+                Edge("idle", "local", "PC_MISALIGNED & READY"),
+                Edge("local", "idle", "SAME CYCLE"),
+                Edge("idle", "wait", "REQ_VALID & REQ_READY"),
+                Edge("wait", "deliver", "RSP_VALID & !KILL & !FLUSH"),
+                Edge("deliver", "idle", "INSTR_READY"),
+                Edge("wait", "kill", "FLUSH"),
+                Edge("kill", "drop", "RSP_VALID"),
+                Edge("drop", "idle", "CONSUMED"),
+            ],
+            ["ONE OUTSTANDING REQUEST", "FLUSH SUPPRESSES NEW REQUESTS AND KILLS OUTSTANDING RESPONSE", "MISALIGNED PC DOES NOT ISSUE MEMORY REQUEST"],
+        ),
+        (
             "frontend/docs/images/frontend_pc_state.png",
             "FRONTEND_PC STATE",
             [

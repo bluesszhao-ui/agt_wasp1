@@ -41,6 +41,7 @@ PASS       Current verification target passes
 | `core/core_int_datapath` | PASS | Executable datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, CSR, traps, timer IRQ, load-use hazard, and suppression paths passes |
 | `core` | PASS | First top-level wrapper around `core_int_datapath` passes lint and wrapper/integrated simulation |
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
+| `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
 | `frontend` | TODO | Remaining fetch/redirect/ibuf/top integration |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
@@ -52,7 +53,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify `frontend_fetch`
+1. Implement and verify `frontend_ibuf`
 ```
 
 ## Commit Policy Going Forward
