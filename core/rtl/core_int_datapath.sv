@@ -4,9 +4,8 @@
 //
 // This milestone wires the verified pipeline skeleton, decoder, register file,
 // ALU, and writeback helper into one small executable path. It intentionally
-// supports integer ALU, upper-immediate, branch/jump redirect, CSR/trap, and a
-// simple single-cycle load/store data path for now. Full hazard integration is
-// staged separately.
+// supports integer ALU, upper-immediate, branch/jump redirect, CSR/trap,
+// single-cycle load/store requests, and load-use hazard control.
 module core_int_datapath (
   input  logic        clk_i,              // Core pipeline/register clock.
   input  logic        rst_ni,             // Active-low asynchronous reset.

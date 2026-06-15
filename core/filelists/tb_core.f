@@ -13,3 +13,4 @@ rtl/core_wb.sv
 rtl/core_pipe.sv
 rtl/core_int_datapath.sv
 rtl/core.sv
+tb/tb_core.sv

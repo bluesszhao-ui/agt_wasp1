@@ -638,6 +638,26 @@ def render_ahb_dma_l3() -> None:
 def main() -> None:
     diagrams = [
         (
+            "core/docs/images/core_state.png",
+            "CORE TOP WRAPPER",
+            [
+                Node("port", 50, 210, 190, 90, ("PUBLIC", "CORE PORTS"), BLUE),
+                Node("core", 340, 170, 260, 170, ("CORE", "NO LOCAL FSM", "PASS THROUGH"), GREEN),
+                Node("dp", 720, 150, 280, 210, ("CORE_INT_DATAPATH", "PIPE CSR LSU", "TRAP HAZARD"), YELLOW),
+                Node("obs", 1060, 80, 180, 90, ("OBSERVE", "COMMIT/TRAP"), GRAY),
+                Node("mem", 1060, 250, 180, 90, ("IF/DMEM", "REQ/RSP"), GRAY),
+                Node("irq", 1060, 420, 180, 90, ("IRQ", "TIMER/EXT"), PINK),
+            ],
+            [
+                Edge("port", "core", "CLK RST BOOT"),
+                Edge("core", "dp", "DIRECT MAP"),
+                Edge("dp", "obs", "STATE OBS"),
+                Edge("dp", "mem", "IF DMEM"),
+                Edge("irq", "dp", "PENDING"),
+            ],
+            ["CORE OWNS NO SEQUENTIAL STATE", "DATAPATH STATE DIAGRAM DEFINES PIPELINE/TRAP BEHAVIOR"],
+        ),
+        (
             "core/docs/images/core_pipe_state.png",
             "CORE_PIPE STATE",
             [

@@ -2,60 +2,77 @@
 
 ## 1. Scope
 
-`core` is planned as a simple in-order RV32I + Zicsr machine-mode core.
+`core` is the first implemented top-level wrapper for the wasp1 in-order RV32I
++ Zicsr machine-mode core. This milestone intentionally keeps the wrapper thin:
+it instantiates `core_int_datapath` and exposes the core boundary expected by
+later frontend, cache, tile, debug, and SoC integration.
 
-## 2. Planned Block Diagram
-
-```text
-       frontend response
-              |
-              v
-      +---------------+
-      | core_pipe     |
-      | IF/ID/EX-WB   |
-      +-------+-------+
-              |
-     +--------+---------+
-     |                  |
-     v                  v
- +----------+      +-----------+
- | decode   |----->| regfile   |
- +----+-----+      +-----+-----+
-      |                  |
-      v                  v
- +----------+      +-----------+
- | ALU      |<-----| operands  |
- +----+-----+      +-----------+
-      |
-      +---- branch / jump
-      |
-      +---- LSU request
-      |
-      +---- CSR / trap path
-```
-
-## 3. Implementation Staging
-
-The core is implemented submodule by submodule:
+## 2. Block Diagram
 
 ```text
-1. core_alu
-2. core_regfile
-3. core_decode
-4. core_branch
-5. core_csr
-6. core_lsu
-7. core_trap
-8. core_hazard
-9. core_wb
-10. core_pipe
-11. core top integration
++---------------------------------------------------------------+
+| core                                                          |
+|                                                               |
+|  clk/rst/boot_pc                                              |
+|        |                                                      |
+|        v                                                      |
+|  +-------------------+                                        |
+|  | core_int_datapath |                                        |
+|  |                   |                                        |
+|  | pipe/decode/rf    |---- commit/ex/trap/hazard observation  |
+|  | alu/branch/lsu    |---- data-memory request/response       |
+|  | csr/trap/hazard   |---- instruction request/response       |
+|  +-------------------+                                        |
+|                                                               |
++---------------------------------------------------------------+
 ```
 
-Each submodule receives its own spec, design spec, testbench, and verification
-report when it has a standalone behavioral contract.
+PNG diagram:
 
-## 4. Target Support
+```text
+core/docs/images/core_state.png
+```
+
+## 3. Implementation
+
+`core` currently has one child instance:
+
+```text
+datapath_u: core_int_datapath
+```
+
+The wrapper performs no combinational transformation and owns no registers. All
+architectural state, pipeline movement, trap CSR updates, load/store request
+generation, and hazard control are implemented inside `core_int_datapath` and
+its verified submodules.
+
+## 4. Interface Mapping
+
+| `core` interface group | Connected child ports | Notes |
+| --- | --- | --- |
+| Clock/reset/boot | `clk_i`, `rst_ni`, `boot_pc_i` | Direct pass-through. |
+| Instruction fetch | `if_req_*`, `if_rsp_*` | Direct pass-through to the staged frontend/cache interface. |
+| Data memory | `dmem_req_*`, `dmem_rsp_*` | Direct pass-through to the staged cache/tile interface. |
+| Interrupts | `timer_irq_i`, `external_irq_i` | Direct pass-through into machine CSR/trap logic. |
+| Commit/execute observation | `commit_*`, `ex_*` | Direct pass-through for verification and future retire/debug hooks. |
+| Trap/CSR observation | `trap_*`, `mret_taken_o`, `csr_rdata_o` | Direct pass-through for verification and future debug hooks. |
+| Hazard observation | `hazard_*` | Direct pass-through from the integrated hazard unit. |
+| Unsupported observation | `unsupported_o` | Direct pass-through from integrated decode/writeback gating. |
+
+## 5. Sequential State Diagram
+
+`core` has no wrapper-owned sequential state and no wrapper-owned FSM. Its
+sequential behavior is the composition of `core_int_datapath`, especially
+`core_pipe`, `core_csr`, and `core_regfile`.
+
+The wrapper diagram is therefore an L1 connection/state ownership diagram rather
+than an FSM. The child datapath L3 state diagram remains:
+
+```text
+core/docs/images/core_int_datapath_state.png
+```
+
+## 6. Target Support
 
 Core RTL is target-neutral synthesizable logic and must lint for:
 
@@ -64,3 +81,7 @@ generic simulation
 WASP1_TARGET_IC
 WASP1_TARGET_FPGA_XILINX_VIRTEX7
 ```
+
+The wrapper does not contain target-specific logic. Target-specific differences,
+when required later, must remain inside documented wrappers or primitives and
+must not change programmer-visible core behavior.

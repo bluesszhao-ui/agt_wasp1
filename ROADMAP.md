@@ -39,7 +39,7 @@ PASS       Current verification target passes
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
 | `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
 | `core/core_int_datapath` | PASS | Executable datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, CSR, traps, timer IRQ, load-use hazard, and suppression paths passes |
-| `core` | TODO | Remaining RV32I + Zicsr 3-stage core integration |
+| `core` | PASS | First top-level wrapper around `core_int_datapath` passes lint and wrapper/integrated simulation |
 | `frontend` | TODO | PC/fetch/redirect |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
@@ -51,7 +51,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Wrap the executable datapath into the first `core` top-level module
+1. Start `frontend` PC/fetch/redirect module specs, RTL, and verification
 ```
 
 ## Commit Policy Going Forward
