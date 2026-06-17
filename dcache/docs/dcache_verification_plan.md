@@ -3,7 +3,7 @@
 ## 1. Goals
 
 Verify D-cache leaves and integrations module by module. Current milestones
-verify `dcache_tag`, `dcache_data`, and `dcache_refill`.
+verify `dcache_tag`, `dcache_data`, `dcache_refill`, and `dcache_store`.
 
 ## 2. Planned Coverage
 
@@ -68,7 +68,20 @@ deterministic-random access streams
 | Flush abort | Flush active refill | No completed line emitted |
 | Random stream | Random stalls/errors | Reference model matches DUT |
 
-## 6. Time Base
+## 6. dcache_store
+
+`tb_dcache_store` models the downstream memory path and covers:
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Byte store | Verify size/strobe pass-through | One data write and clean completion |
+| Halfword store | Verify request/output backpressure | Payload remains stable under stalls |
+| Word store error | Verify downstream error propagation | `done_error_o` asserted |
+| Zero-strobe passthrough | Preserve captured strobe value | Request and completion strobe remain zero |
+| Flush abort | Flush active store | No completion emitted |
+| Random stream | Random sizes/strobes/stalls/errors | Reference expectations match DUT |
+
+## 7. Time Base
 
 Testbenches use:
 

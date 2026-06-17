@@ -87,6 +87,16 @@ sticky refill error reporting
 flush abort
 ```
 
+`dcache_store` provides:
+
+```text
+one downstream write-through store transaction per accepted start
+request and response backpressure handling
+pass-through address, size, write data, and byte strobes
+downstream write error reporting
+flush abort
+```
+
 ## 6. Target Requirements
 
 D-cache RTL must support:
