@@ -44,7 +44,8 @@ PASS       Current verification target passes
 | `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
 | `frontend/frontend_ibuf` | PASS | FIFO ordering, full/empty, simultaneous push/pop, flush, metadata, and random handshakes pass |
 | `frontend` | PASS | PC/fetch/ibuf top integration, direct redirect flush, stall, errors, and random latency tests pass |
-| `icache` | TODO | Direct-mapped I-cache |
+| `icache/icache_tag` | PASS | Direct-mapped tag/valid lookup, refill update, conflict, invalidate, error, and random tests pass |
+| `icache` | TODO | Remaining data/refill/control/top integration |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
 | `tile` | TODO | Core/frontend/cache integration |
 | `debug` | TODO | RISC-V External Debug Spec 0.13.x target |
@@ -54,7 +55,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify `icache`
+1. Implement and verify `icache_data`
 ```
 
 ## Commit Policy Going Forward
