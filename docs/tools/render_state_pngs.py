@@ -720,6 +720,32 @@ def main() -> None:
             ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "FLUSH CLEARS COUNT AND POINTERS", "PUSH_READY = !FULL && !FLUSH", "POP_VALID = !EMPTY && !FLUSH", "NO EMPTY SAME-CYCLE BYPASS"],
         ),
         (
+            "frontend/docs/images/frontend_state.png",
+            "FRONTEND TOP INTEGRATION",
+            [
+                Node("ctrl", 60, 220, 230, 110, ("IF", "BOOT STALL", "REDIRECT"), BLUE),
+                Node("pc", 380, 220, 230, 110, ("SEQ", "CLK_I/RST_NI", "FRONTEND_PC"), GREEN),
+                Node("fetch", 700, 220, 250, 110, ("SEQ+COMB", "CLK_I/RST_NI", "FRONTEND_FETCH"), YELLOW),
+                Node("ibuf", 1040, 220, 240, 110, ("SEQ+COMB", "CLK_I/RST_NI", "FRONTEND_IBUF"), YELLOW),
+                Node("core", 1370, 220, 220, 110, ("IF", "CORE SIDE", "INSTR RSP"), GREEN),
+                Node("imem", 700, 460, 250, 100, ("IF", "IMEM_IF", "REQ/RSP"), GRAY),
+                Node("flush", 1040, 60, 240, 100, ("COMB", "REDIRECT", "FLUSH FANOUT"), PINK),
+            ],
+            [
+                Edge("ctrl", "pc", "BOOT STALL REDIR"),
+                Edge("pc", "fetch", "PC VALID/READY"),
+                Edge("fetch", "ibuf", "FETCH RSP"),
+                Edge("ibuf", "core", "INSTR VALID/READY"),
+                Edge("fetch", "imem", "REQ/RSP"),
+                Edge("ctrl", "flush", "REDIRECT_VALID"),
+                Edge("flush", "fetch", "DROP STALE"),
+                Edge("flush", "ibuf", "CLEAR QUEUE"),
+            ],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "WRAPPER OWNS NO EXTRA REGISTERS", "REDIRECT RETARGETS PC AND FLUSHES FETCH/IBUF", "IMEM_IF CONNECTS TO LATER ICACHE"],
+            1700,
+            760,
+        ),
+        (
             "core/docs/images/core_state.png",
             "CORE TOP WRAPPER",
             [

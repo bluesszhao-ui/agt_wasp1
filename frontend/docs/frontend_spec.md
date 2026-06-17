@@ -52,13 +52,46 @@ full/empty status
 flush-based queue clear
 ```
 
-## 4. ISA Assumptions
+The implemented `frontend` top provides:
+
+```text
+frontend_pc, frontend_fetch, and frontend_ibuf integration
+single-source redirect capture and flush
+instruction memory/cache request interface
+buffered core-side instruction response interface
+```
+
+`frontend_redirect` remains a planned arbitration leaf for the later stage where
+branch, trap, debug, and possible external redirect sources are connected at the
+same boundary.
+
+## 4. Top-Level Interface Requirements
+
+The `frontend` top must expose:
+
+| Signal | Direction | Description |
+| --- | --- | --- |
+| `clk_i` | input | Frontend clock. |
+| `rst_ni` | input | Active-low asynchronous reset. |
+| `boot_pc_i` | input | Reset PC, normally OTP base. |
+| `stall_i` | input | Suppresses new PC request generation. |
+| `redirect_valid_i` | input | Redirect request and flush qualifier. |
+| `redirect_pc_i` | input | Redirect target PC. |
+| `instr_valid_o` | output | Buffered instruction response is valid. |
+| `instr_ready_i` | input | Core side accepts the instruction response. |
+| `instr_pc_o` | output | PC associated with the instruction response. |
+| `instr_o` | output | Instruction word. |
+| `instr_fault_o` | output | Fetch fault flag. |
+| `instr_misaligned_o` | output | Fetch fault is due to a misaligned PC. |
+| `imem_if` | initiator | Instruction memory/cache request-response interface. |
+
+## 5. ISA Assumptions
 
 wasp1 implements RV32I without the compressed extension. Sequential instruction
 fetch advances by 4 bytes. Misaligned targets must be observable so later fetch
 or trap logic can preserve architectural exception behavior.
 
-## 5. Target Requirements
+## 6. Target Requirements
 
 Frontend RTL must be target-neutral synthesizable SystemVerilog and lint for:
 

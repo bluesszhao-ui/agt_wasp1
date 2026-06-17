@@ -43,7 +43,7 @@ PASS       Current verification target passes
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
 | `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
 | `frontend/frontend_ibuf` | PASS | FIFO ordering, full/empty, simultaneous push/pop, flush, metadata, and random handshakes pass |
-| `frontend` | TODO | Remaining redirect/top integration |
+| `frontend` | PASS | PC/fetch/ibuf top integration, direct redirect flush, stall, errors, and random latency tests pass |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
 | `tile` | TODO | Core/frontend/cache integration |
@@ -54,7 +54,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify `frontend` top integration
+1. Implement and verify `icache`
 ```
 
 ## Commit Policy Going Forward
