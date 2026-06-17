@@ -42,6 +42,16 @@ flush-based stale response drop
 memory error propagation
 ```
 
+The implemented `frontend_ibuf` submodule provides:
+
+```text
+two-entry instruction response buffering
+FIFO ordering from fetch response to core side
+fault and misaligned-PC metadata preservation
+full/empty status
+flush-based queue clear
+```
+
 ## 4. ISA Assumptions
 
 wasp1 implements RV32I without the compressed extension. Sequential instruction

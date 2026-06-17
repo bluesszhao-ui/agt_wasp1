@@ -42,7 +42,8 @@ PASS       Current verification target passes
 | `core` | PASS | First top-level wrapper around `core_int_datapath` passes lint and wrapper/integrated simulation |
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
 | `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
-| `frontend` | TODO | Remaining fetch/redirect/ibuf/top integration |
+| `frontend/frontend_ibuf` | PASS | FIFO ordering, full/empty, simultaneous push/pop, flush, metadata, and random handshakes pass |
+| `frontend` | TODO | Remaining redirect/top integration |
 | `icache` | TODO | Direct-mapped I-cache |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
 | `tile` | TODO | Core/frontend/cache integration |
@@ -53,7 +54,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify `frontend_ibuf`
+1. Implement and verify `frontend` top integration
 ```
 
 ## Commit Policy Going Forward

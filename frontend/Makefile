@@ -3,10 +3,12 @@ VERILATOR ?= verilator
 RTL_FILELIST := filelists/frontend.f
 TB_FRONTEND_PC_FILELIST := filelists/tb_frontend_pc.f
 TB_FRONTEND_FETCH_FILELIST := filelists/tb_frontend_fetch.f
+TB_FRONTEND_IBUF_FILELIST := filelists/tb_frontend_ibuf.f
 FRONTEND_PC_TOP := tb_frontend_pc
 FRONTEND_FETCH_TOP := tb_frontend_fetch
+FRONTEND_IBUF_TOP := tb_frontend_ibuf
 
-.PHONY: all lint lint-ic lint-fpga-v7 sim sim-frontend-pc clean
+.PHONY: all lint lint-ic lint-fpga-v7 sim sim-frontend-pc sim-frontend-fetch sim-frontend-ibuf clean
 
 all: lint
 
@@ -18,6 +20,9 @@ lint:
 	$(VERILATOR) --lint-only -sv --top-module frontend_fetch \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module frontend_ibuf \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	@cat logs/lint.log
 
 lint-ic:
@@ -27,6 +32,10 @@ lint-ic:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module frontend_fetch \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module frontend_ibuf \
 		+define+WASP1_TARGET_IC \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
@@ -42,9 +51,13 @@ lint-fpga-v7:
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module frontend_ibuf \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	@cat logs/lint_fpga_v7.log
 
-sim: sim-frontend-pc sim-frontend-fetch
+sim: sim-frontend-pc sim-frontend-fetch sim-frontend-ibuf
 
 sim-frontend-pc:
 	@mkdir -p build logs
@@ -63,6 +76,15 @@ sim-frontend-fetch:
 		-f $(TB_FRONTEND_FETCH_FILELIST) > logs/tb_frontend_fetch_build.log 2>&1
 	@./build/obj_$(FRONTEND_FETCH_TOP)/V$(FRONTEND_FETCH_TOP) > logs/tb_frontend_fetch.log 2>&1
 	@cat logs/tb_frontend_fetch.log
+
+sim-frontend-ibuf:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(FRONTEND_IBUF_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(FRONTEND_IBUF_TOP) \
+		-f $(TB_FRONTEND_IBUF_FILELIST) > logs/tb_frontend_ibuf_build.log 2>&1
+	@./build/obj_$(FRONTEND_IBUF_TOP)/V$(FRONTEND_IBUF_TOP) > logs/tb_frontend_ibuf.log 2>&1
+	@cat logs/tb_frontend_ibuf.log
 
 clean:
 	@rm -rf build/* logs/* wave/*
