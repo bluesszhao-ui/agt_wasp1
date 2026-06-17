@@ -777,6 +777,29 @@ def main() -> None:
             ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "PRIORITY: RESET THEN INVALIDATE THEN REFILL", "REFILL_ERROR KEEPS LINE INVALID", "LOOKUP_HIT REQUIRES LOOKUP_VALID"],
         ),
         (
+            "icache/docs/images/icache_data_state.png",
+            "ICACHE_DATA LINE STORAGE",
+            [
+                Node("lookup_if", 60, 230, 210, 90, ("IF", "LOOKUP", "ADDR"), BLUE),
+                Node("decode", 350, 120, 250, 90, ("COMB", "INDEX WORD", "DECODE"), YELLOW),
+                Node("ram", 690, 230, 250, 100, ("SEQ", "CLK_I", "LINE RAM"), GREEN),
+                Node("mux", 1030, 120, 240, 90, ("COMB", "LINE READ", "WORD MUX"), YELLOW),
+                Node("rsp", 1320, 120, 210, 90, ("IF", "LOOKUP", "DATA OUT"), GREEN),
+                Node("refill", 350, 430, 250, 90, ("IF", "REFILL", "LINE WRITE"), BLUE),
+            ],
+            [
+                Edge("lookup_if", "decode", "ADDR"),
+                Edge("decode", "ram", "INDEX"),
+                Edge("ram", "mux", "LINE"),
+                Edge("decode", "mux", "WORD OFFSET"),
+                Edge("mux", "rsp", "WORD/LINE"),
+                Edge("refill", "ram", "VALID LINE"),
+            ],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I", "RST_NI DOES NOT CLEAR DATA RAM", "TAG VALID BITS CONTROL DATA USABILITY", "WORD OFFSET ZERO SELECTS BITS 31:0"],
+            1600,
+            760,
+        ),
+        (
             "core/docs/images/core_state.png",
             "CORE TOP WRAPPER",
             [

@@ -1,3 +1,3 @@
 +incdir+../common/rtl
-rtl/icache_tag.sv
 rtl/icache_data.sv
+tb/tb_icache_data.sv

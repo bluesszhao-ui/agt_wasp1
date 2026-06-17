@@ -31,7 +31,7 @@ support invalidation for reset/control/debug flows
 avoid programmer-visible behavior differences across IC and FPGA targets
 ```
 
-## 4. Current Implemented Leaf
+## 4. Current Implemented Leaves
 
 `icache_tag` provides:
 
@@ -42,6 +42,16 @@ hit/miss indication
 refill tag update
 refill-error invalid handling
 global invalidate
+```
+
+`icache_data` provides:
+
+```text
+direct-mapped line storage
+whole-line refill writes
+lookup index decode
+little-endian 32-bit word selection
+complete line readback for cache control
 ```
 
 ## 5. Target Requirements

@@ -2,9 +2,10 @@
 
 ## 1. Scope
 
-`icache` is currently implemented through its first leaf submodule,
-`icache_tag`. The data array, refill controller, uncached path, and complete
-top-level I-cache wrapper are staged after this leaf is verified.
+`icache` is currently implemented through its first two leaf submodules,
+`icache_tag` and `icache_data`. The refill controller, uncached path, control
+FSM, and complete top-level I-cache wrapper are staged after these leaves are
+verified.
 
 ## 2. Planned Block Diagram
 
@@ -53,7 +54,7 @@ Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
 | Submodule | Status | Notes |
 | --- | --- | --- |
 | `icache_tag` | Implemented | Direct-mapped tag/valid lookup, refill update, invalidate. |
-| `icache_data` | Planned | Cache-line data storage and word select. |
+| `icache_data` | Implemented | Cache-line data storage and 32-bit word select. |
 | `icache_ctrl` | Planned | Hit/miss control and frontend response sequencing. |
 | `icache_refill` | Planned | Downstream line refill request/response sequencing. |
 | `icache_uncached` | Planned | Optional uncached instruction fetch path if needed. |
@@ -62,8 +63,9 @@ Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
 ## 4. State Ownership
 
 At this milestone, I-cache sequential state exists in `icache_tag` valid/tag
-storage. The state diagram is documented in:
+storage and `icache_data` line storage. The state diagrams are documented in:
 
 ```text
 icache/docs/images/icache_tag_state.png
+icache/docs/images/icache_data_state.png
 ```
