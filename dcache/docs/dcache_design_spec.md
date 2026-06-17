@@ -4,7 +4,7 @@
 
 `dcache` will integrate direct-mapped tag/data leaves, a load-refill sequencer,
 a write-through store sequencer, and a control FSM. Current implemented leaves
-are `dcache_tag` and `dcache_data`.
+are `dcache_tag`, `dcache_data`, and `dcache_refill`.
 
 ## 2. Planned Block Diagram
 
@@ -69,7 +69,7 @@ Current D-cache clock/reset domain: clk=clk_i, rst=rst_ni
 | --- | --- | --- |
 | `dcache_tag` | Implemented | Direct-mapped tag/valid lookup, refill update, invalidate. |
 | `dcache_data` | Implemented | Cache-line storage, load word select, store-hit byte merge. |
-| `dcache_refill` | Planned | Downstream word-read line refill for load misses. |
+| `dcache_refill` | Implemented | Downstream word-read line refill for load misses. |
 | `dcache_store` | Planned | One downstream write-through transaction with backpressure. |
 | `dcache_ctrl` | Planned | Load/store hit/miss policy and response sequencing. |
 | `dcache` | Planned | Top-level D-cache integration. |
@@ -99,11 +99,12 @@ this initial design.
 
 At this milestone, D-cache sequential state exists in `dcache_tag` valid/tag
 storage and `dcache_data` line storage. Later milestones add FSM state in
-`dcache_ctrl`, `dcache_refill`, and `dcache_store`.
+`dcache_ctrl` and `dcache_store`. `dcache_refill` already owns refill FSM state.
 
 State diagrams are documented in:
 
 ```text
 dcache/docs/images/dcache_tag_state.png
 dcache/docs/images/dcache_data_state.png
+dcache/docs/images/dcache_refill_fsm.png
 ```

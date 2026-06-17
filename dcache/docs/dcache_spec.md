@@ -76,6 +76,17 @@ store-hit byte-lane merge updates
 refill-over-store deterministic priority
 ```
 
+`dcache_refill` provides:
+
+```text
+line-aligned load-miss refill start acceptance
+one downstream data word read per line word
+request and response backpressure handling
+little-endian cache-line assembly
+sticky refill error reporting
+flush abort
+```
+
 ## 6. Target Requirements
 
 D-cache RTL must support:

@@ -3,7 +3,7 @@
 ## 1. Goals
 
 Verify D-cache leaves and integrations module by module. Current milestones
-verify `dcache_tag` and `dcache_data`.
+verify `dcache_tag`, `dcache_data`, and `dcache_refill`.
 
 ## 2. Planned Coverage
 
@@ -54,7 +54,21 @@ deterministic-random access streams
 | Refill/store priority | Simultaneous update | Refill line wins |
 | Random stream | Mixed refill/store/lookup | Reference model matches DUT |
 
-## 5. Time Base
+## 5. dcache_refill
+
+`tb_dcache_refill` models the downstream memory path and covers:
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Normal refill | Read one complete line | Completed line matches reference |
+| Request backpressure | Hold downstream `req_ready` low | Request valid/address remain stable |
+| Response wait states | Delay downstream responses | No early line completion |
+| Output backpressure | Hold `line_ready_i` low | Completed line remains stable |
+| Error beat | One response has error | `line_error_o` asserted |
+| Flush abort | Flush active refill | No completed line emitted |
+| Random stream | Random stalls/errors | Reference model matches DUT |
+
+## 6. Time Base
 
 Testbenches use:
 
