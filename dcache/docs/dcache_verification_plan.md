@@ -2,8 +2,8 @@
 
 ## 1. Goals
 
-Verify D-cache leaves and integrations module by module. The first milestone
-verifies `dcache_tag`.
+Verify D-cache leaves and integrations module by module. Current milestones
+verify `dcache_tag` and `dcache_data`.
 
 ## 2. Planned Coverage
 
@@ -39,7 +39,22 @@ deterministic-random access streams
 | Invalidate | Clear all valid bits | Previously hit line misses |
 | Random stream | Mixed refill/error/invalidate/lookup | Reference model matches DUT |
 
-## 4. Time Base
+## 4. dcache_data
+
+`tb_dcache_data` mirrors cache-line storage in a reference model and covers:
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Whole-line refill | Write all words in a line | Lookup returns refilled line |
+| Word select | Read each word offset | Correct 32-bit word returned |
+| Byte merge | Store one byte lane | Only selected byte changes |
+| Half/word merge | Store multi-byte masks | Selected lanes change together |
+| Zero strobe | Store with no lanes selected | Line remains unchanged |
+| Conflict refill | Same index, different line | New line replaces old contents |
+| Refill/store priority | Simultaneous update | Refill line wins |
+| Random stream | Mixed refill/store/lookup | Reference model matches DUT |
+
+## 5. Time Base
 
 Testbenches use:
 

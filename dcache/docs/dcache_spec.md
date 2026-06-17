@@ -65,6 +65,17 @@ refill-error invalid handling
 global invalidate
 ```
 
+`dcache_data` provides:
+
+```text
+direct-mapped line storage
+whole-line refill writes
+lookup index decode
+little-endian 32-bit word selection
+store-hit byte-lane merge updates
+refill-over-store deterministic priority
+```
+
 ## 6. Target Requirements
 
 D-cache RTL must support:

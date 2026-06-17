@@ -3,8 +3,8 @@
 ## 1. Scope
 
 `dcache` will integrate direct-mapped tag/data leaves, a load-refill sequencer,
-a write-through store sequencer, and a control FSM. This milestone establishes
-the planned architecture and implements `dcache_tag` as the first verified leaf.
+a write-through store sequencer, and a control FSM. Current implemented leaves
+are `dcache_tag` and `dcache_data`.
 
 ## 2. Planned Block Diagram
 
@@ -67,8 +67,8 @@ Current D-cache clock/reset domain: clk=clk_i, rst=rst_ni
 
 | Submodule | Status | Notes |
 | --- | --- | --- |
-| `dcache_tag` | This milestone | Direct-mapped tag/valid lookup, refill update, invalidate. |
-| `dcache_data` | Planned | Cache-line storage, load word select, store-hit byte merge. |
+| `dcache_tag` | Implemented | Direct-mapped tag/valid lookup, refill update, invalidate. |
+| `dcache_data` | Implemented | Cache-line storage, load word select, store-hit byte merge. |
 | `dcache_refill` | Planned | Downstream word-read line refill for load misses. |
 | `dcache_store` | Planned | One downstream write-through transaction with backpressure. |
 | `dcache_ctrl` | Planned | Load/store hit/miss policy and response sequencing. |
@@ -97,12 +97,13 @@ this initial design.
 
 ## 5. State Ownership
 
-At this milestone, D-cache sequential state exists only in `dcache_tag`
-valid/tag storage. Later milestones add `dcache_data` line storage and FSM state
-in `dcache_ctrl`, `dcache_refill`, and `dcache_store`.
+At this milestone, D-cache sequential state exists in `dcache_tag` valid/tag
+storage and `dcache_data` line storage. Later milestones add FSM state in
+`dcache_ctrl`, `dcache_refill`, and `dcache_store`.
 
 State diagrams are documented in:
 
 ```text
 dcache/docs/images/dcache_tag_state.png
+dcache/docs/images/dcache_data_state.png
 ```
