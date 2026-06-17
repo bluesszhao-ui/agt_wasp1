@@ -54,6 +54,17 @@ little-endian 32-bit word selection
 complete line readback for cache control
 ```
 
+`icache_refill` provides:
+
+```text
+line-aligned refill start acceptance
+one downstream word read per line word
+request and response backpressure handling
+little-endian cache-line assembly
+sticky refill error reporting
+flush abort
+```
+
 ## 5. Target Requirements
 
 I-cache RTL must support:
