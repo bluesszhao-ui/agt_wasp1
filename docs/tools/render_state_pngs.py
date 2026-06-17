@@ -972,6 +972,31 @@ def main() -> None:
             760,
         ),
         (
+            "dcache/docs/images/dcache_tag_state.png",
+            "DCACHE_TAG VALID TAG STATE",
+            [
+                Node("reset", 70, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "RESET INVALID"), BLUE),
+                Node("invalid", 350, 230, 230, 90, ("SEQ", "CLK_I/RST_NI", "LINE INVALID"), GRAY),
+                Node("valid", 700, 230, 230, 90, ("SEQ", "CLK_I/RST_NI", "LINE VALID"), GREEN),
+                Node("lookup", 1040, 120, 240, 90, ("COMB", "LOOKUP", "TAG MATCH"), YELLOW),
+                Node("miss", 1040, 340, 240, 90, ("COMB", "LOOKUP", "MISS"), PINK),
+                Node("inv", 700, 500, 230, 90, ("SEQ", "CLK_I/RST_NI", "INVALIDATE"), PINK),
+            ],
+            [
+                Edge("reset", "invalid", "RST RELEASE"),
+                Edge("invalid", "valid", "REFILL OK"),
+                Edge("valid", "invalid", "REFILL ERROR"),
+                Edge("valid", "valid", "REFILL NEW TAG"),
+                Edge("valid", "lookup", "VALID && TAG EQ"),
+                Edge("invalid", "miss", "!VALID"),
+                Edge("valid", "miss", "TAG NE"),
+                Edge("valid", "inv", "INVALIDATE"),
+                Edge("invalid", "inv", "INVALIDATE"),
+                Edge("inv", "invalid", "NEXT"),
+            ],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "PRIORITY: RESET THEN INVALIDATE THEN REFILL", "REFILL_ERROR KEEPS LINE INVALID", "LOOKUP_HIT REQUIRES LOOKUP_VALID"],
+        ),
+        (
             "core/docs/images/core_state.png",
             "CORE TOP WRAPPER",
             [
