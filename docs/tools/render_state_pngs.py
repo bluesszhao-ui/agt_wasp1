@@ -780,6 +780,181 @@ def render_icache_ctrl_l3() -> None:
     canvas.write_png(Path("icache/docs/images/icache_ctrl_fsm.png"))
 
 
+def render_dcache_ctrl_l3() -> None:
+    canvas = Canvas(2300, 1300)
+    canvas.grid()
+    canvas.text(40, 34, "DCACHE_CTRL L3 LOAD STORE CONTROL FSM", scale=3, color=BLACK)
+    canvas.box_text(
+        40,
+        90,
+        [
+            "GREEN TEXT : JUMP CONDITION",
+            "GRAY BOX   : REGISTER OR UPDATE ACTION",
+            "SEQ        : CLK_I WITH RST_NI",
+            "COMB       : STATE FREE CLASSIFY OR MUX",
+            "IF         : VALID READY PORT",
+            "PRIORITY   : RESET > FLUSH > NORMAL",
+        ],
+        "LEGEND",
+    )
+
+    canvas.state(120, 560, 170, 95, ("SEQ", "IDLE"), GREEN)
+    canvas.state(430, 440, 250, 105, ("COMB", "REQ", "CLASSIFY"), YELLOW)
+    canvas.state(420, 170, 240, 95, ("IF", "CORE", "REQ/RSP"), BLUE)
+    canvas.state(730, 440, 240, 95, ("IF", "TAG DATA", "LOOKUP"), BLUE)
+    canvas.state(1040, 250, 240, 95, ("SEQ", "LOAD", "REFILL REQ"), YELLOW)
+    canvas.state(1380, 250, 250, 95, ("SEQ", "LOAD", "REFILL WAIT"), YELLOW)
+    canvas.state(1380, 55, 250, 95, ("IF", "REFILL", "START/LINE"), BLUE)
+    canvas.state(1690, 250, 260, 95, ("COMB", "REFILL", "UPDATE WORD"), GREEN)
+    canvas.state(1040, 780, 240, 95, ("SEQ", "STORE", "REQ"), YELLOW)
+    canvas.state(1380, 780, 250, 95, ("SEQ", "STORE", "WAIT"), YELLOW)
+    canvas.state(1380, 975, 250, 95, ("IF", "STORE", "START/DONE"), BLUE)
+    canvas.state(1690, 780, 260, 95, ("COMB", "STORE HIT", "UPDATE"), GREEN)
+    canvas.state(2020, 515, 190, 95, ("SEQ", "RESP"), GREEN)
+    canvas.state(2000, 700, 240, 95, ("COMB", "RSP", "DATA ERR"), GREEN)
+    canvas.state(1030, 520, 260, 105, ("COMB", "FLUSH", "ABORT"), PINK)
+
+    canvas.path_arrow([(290, 608), (430, 492)], "REQ_FIRE")
+    canvas.path_arrow([(540, 265), (540, 440)], "REQ FIELDS")
+    canvas.path_arrow([(680, 492), (730, 492)], "LOOKUP")
+    canvas.path_arrow([(730, 535), (610, 610), (430, 545)], "TAG_HIT DATA")
+    canvas.path_arrow([(680, 465), (1040, 298)], "LOAD MISS")
+    canvas.path_arrow([(680, 520), (1040, 828)], "STORE")
+    canvas.path_arrow([(680, 492), (2020, 562)], "INVALID OR LOAD HIT")
+    canvas.path_arrow([(1280, 298), (1380, 298)], "START_READY")
+    canvas.path_arrow([(1505, 250), (1505, 150)], "REFILL START")
+    canvas.path_arrow([(1505, 150), (1505, 250)], "LINE_VALID")
+    canvas.path_arrow([(1630, 298), (1690, 298)], "LINE_FIRE")
+    canvas.path_arrow([(1950, 298), (2020, 562)], "RSP_WORD ERR")
+    canvas.path_arrow([(1280, 828), (1380, 828)], "START_READY")
+    canvas.path_arrow([(1505, 875), (1505, 975)], "STORE START")
+    canvas.path_arrow([(1505, 975), (1505, 875)], "DONE_VALID")
+    canvas.path_arrow([(1630, 828), (1690, 828)], "DONE_FIRE")
+    canvas.path_arrow([(1950, 828), (2020, 562)], "RSP_ERR")
+    canvas.path_arrow([(2115, 610), (2115, 700)], "RSP_VALID")
+    canvas.path_arrow([(2115, 795), (2115, 1120), (205, 1120), (205, 655)], "RSP_READY")
+
+    canvas.path_arrow([(1160, 345), (1160, 520)], "FLUSH")
+    canvas.path_arrow([(1505, 345), (1210, 520)], "FLUSH")
+    canvas.path_arrow([(1160, 780), (1160, 625)], "FLUSH")
+    canvas.path_arrow([(1505, 780), (1210, 625)], "FLUSH")
+    canvas.path_arrow([(2020, 562), (1290, 572)], "FLUSH")
+    canvas.path_arrow([(1030, 572), (290, 608)], "NEXT")
+
+    canvas.box_text(
+        330,
+        300,
+        [
+            "&& STATE == IDLE",
+            "&& CORE_REQ_VALID",
+            "&& CORE_REQ_READY",
+            "ACTION CAPTURE ADDR/SIZE",
+            "ACTION CAPTURE WDATA/WSTRB",
+        ],
+        "REQUEST ACCEPT",
+    )
+    canvas.box_text(
+        720,
+        210,
+        [
+            "OR REQ_INSTR",
+            "OR SIZE == 3",
+            "OR HALF && ADDR[0]",
+            "OR WORD && ADDR[1:0]!=0",
+            "ACTION RSP_ERR_Q = 1",
+        ],
+        "INVALID REQUEST",
+    )
+    canvas.box_text(
+        700,
+        575,
+        [
+            "&& !REQ_WRITE",
+            "&& TAG_HIT_I",
+            "ACTION RSP_DATA_Q = DATA_WORD_I",
+            "ACTION RSP_ERR_Q = 0",
+        ],
+        "LOAD HIT",
+    )
+    canvas.box_text(
+        940,
+        115,
+        [
+            "&& !REQ_WRITE",
+            "&& !TAG_HIT_I",
+            "ACTION REFILL_START_ADDR=REQ_ADDR_Q",
+            "HOLD VALID UNTIL READY",
+        ],
+        "LOAD MISS",
+    )
+    canvas.box_text(
+        1660,
+        115,
+        [
+            "&& LINE_VALID && LINE_READY",
+            "ACTION TAG_REFILL_VALID=1",
+            "ACTION DATA_REFILL_VALID=1",
+            "ACTION RSP_ERR_Q=LINE_ERROR",
+        ],
+        "REFILL ACCEPT",
+    )
+    canvas.box_text(
+        890,
+        920,
+        [
+            "&& REQ_WRITE",
+            "ACTION STORE_START_ADDR=REQ_ADDR_Q",
+            "ACTION STORE_START_WDATA=REQ_WDATA_Q",
+            "ACTION STORE_HIT_Q=TAG_HIT_I",
+        ],
+        "STORE START",
+    )
+    canvas.box_text(
+        1660,
+        920,
+        [
+            "&& STORE_DONE_VALID",
+            "&& STORE_DONE_READY",
+            "&& STORE_HIT_Q",
+            "&& !STORE_DONE_ERROR",
+            "ACTION DATA_STORE_VALID=1",
+        ],
+        "STORE HIT UPDATE",
+    )
+    canvas.box_text(
+        1880,
+        360,
+        [
+            "LOAD: RSP_DATA = HIT OR REFILL WORD",
+            "STORE: RSP_DATA = 0",
+            "ERROR: INVALID OR REFILL/STORE ERROR",
+            "HOLD UNTIL CORE_RSP_READY",
+        ],
+        "RESPONSE",
+    )
+    canvas.box_text(
+        820,
+        650,
+        [
+            "&& FLUSH_I",
+            "ACTION STATE_Q = IDLE",
+            "ACTION SUPPRESS RSP_VALID",
+            "ACTION SUPPRESS UPDATE PULSES",
+            "ACTION FORWARD REFILL/STORE FLUSH",
+        ],
+        "FLUSH PRIORITY",
+    )
+
+    canvas.action_label(60, 690, ["CORE_REQ_READY = IDLE && !FLUSH", "LOOKUP_VALID = CORE_REQ_VALID && IDLE"])
+    canvas.action_label(1340, 380, ["REFILL_LINE_READY = LOAD_WAIT", "TAG ERROR = LINE_ERROR"])
+    canvas.action_label(1340, 705, ["STORE_DONE_READY = STORE_WAIT", "STORE MISS DOES NOT ALLOCATE"])
+    canvas.action_label(1680, 395, ["WORD_INDEX = REQ_ADDR_Q[3:2]", "SELECT REFILL WORD"])
+    canvas.action_label(1680, 705, ["UPDATE ONLY STORE HIT", "AND DOWNSTREAM OK"])
+
+    canvas.text(40, 1215, "NOTE: THIS PNG IS GENERATED BY DOCS/TOOLS/RENDER_STATE_PNGS.PY", scale=2, color=DARK_GRAY)
+    canvas.write_png(Path("dcache/docs/images/dcache_ctrl_fsm.png"))
+
+
 def main() -> None:
     diagrams = [
         (
@@ -1093,6 +1268,51 @@ def main() -> None:
             ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "REQ ENCODING: WRITE DATA, REQ_INSTR=0", "ADDR/SIZE/WDATA/WSTRB HELD UNTIL DONE", "FLUSH ABORTS WITHOUT DONE_VALID"],
             1820,
             760,
+        ),
+        (
+            "dcache/docs/images/dcache_ctrl_fsm.png",
+            "DCACHE_CTRL L3 LOAD STORE CONTROL FSM",
+            [
+                Node("idle", 70, 430, 170, 95, ("SEQ", "CLK_I/RST_NI", "IDLE"), GREEN),
+                Node("class", 360, 230, 270, 100, ("COMB", "REQUEST", "CLASSIFY"), YELLOW),
+                Node("lookup", 360, 590, 270, 100, ("IF", "TAG DATA", "LOOKUP"), BLUE),
+                Node("lreq", 760, 230, 250, 95, ("SEQ", "CLK_I/RST_NI", "LOAD REFILL REQ"), YELLOW),
+                Node("lwait", 1120, 230, 260, 95, ("SEQ", "CLK_I/RST_NI", "LOAD REFILL WAIT"), YELLOW),
+                Node("refill", 1120, 30, 270, 100, ("COMB", "REFILL", "UPDATE WORD"), GREEN),
+                Node("sreq", 760, 590, 250, 95, ("SEQ", "CLK_I/RST_NI", "STORE REQ"), YELLOW),
+                Node("swait", 1120, 590, 260, 95, ("SEQ", "CLK_I/RST_NI", "STORE WAIT"), YELLOW),
+                Node("store", 1120, 790, 270, 100, ("COMB", "STORE", "HIT UPDATE"), GREEN),
+                Node("resp", 1540, 430, 190, 95, ("SEQ", "CLK_I/RST_NI", "RESP"), GREEN),
+                Node("rspmux", 1540, 230, 250, 95, ("COMB", "RESPONSE", "DATA ERROR"), GREEN),
+                Node("core", 1880, 430, 220, 95, ("IF", "CORE", "REQ/RSP"), BLUE),
+                Node("flush", 770, 430, 250, 95, ("COMB", "FLUSH", "ABORT"), PINK),
+            ],
+            [
+                Edge("idle", "class", "REQ_FIRE"),
+                Edge("class", "lookup", "LOOKUP_ADDR"),
+                Edge("lookup", "class", "TAG_HIT DATA_WORD"),
+                Edge("class", "resp", "INVALID OR LOAD HIT"),
+                Edge("class", "lreq", "LOAD MISS"),
+                Edge("lreq", "lwait", "REFILL_START_READY"),
+                Edge("lwait", "refill", "LINE_VALID"),
+                Edge("refill", "resp", "WORD/ERR CAPTURE"),
+                Edge("class", "sreq", "STORE"),
+                Edge("sreq", "swait", "STORE_START_READY"),
+                Edge("swait", "store", "STORE_DONE"),
+                Edge("store", "resp", "ERR CAPTURE"),
+                Edge("resp", "rspmux", "RSP_VALID"),
+                Edge("rspmux", "core", "RSP_READY"),
+                Edge("core", "idle", "NEXT REQ"),
+                Edge("lreq", "flush", "FLUSH"),
+                Edge("lwait", "flush", "FLUSH"),
+                Edge("sreq", "flush", "FLUSH"),
+                Edge("swait", "flush", "FLUSH"),
+                Edge("resp", "flush", "FLUSH"),
+                Edge("flush", "idle", "NEXT"),
+            ],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "LOAD MISS ALLOCATES THROUGH REFILL", "STORE MISS WRITES THROUGH WITHOUT ALLOCATE", "STORE HIT UPDATES DATA ONLY IF DONE && !ERROR", "FLUSH SUPPRESSES RESPONSE AND UPDATE"],
+            2160,
+            980,
         ),
         (
             "core/docs/images/core_state.png",
@@ -1489,6 +1709,7 @@ def main() -> None:
     render_core_pipe_l3()
     render_ahb_dma_l3()
     render_icache_ctrl_l3()
+    render_dcache_ctrl_l3()
 
 
 if __name__ == "__main__":

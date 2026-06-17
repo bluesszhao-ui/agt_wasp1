@@ -53,6 +53,7 @@ PASS       Current verification target passes
 | `dcache/dcache_data` | PASS | Direct-mapped line storage, word select, store-hit byte merge, conflict, priority, and random tests pass |
 | `dcache/dcache_refill` | PASS | Line-aligned data refill FSM, word requests, backpressure, errors, flush, and random tests pass |
 | `dcache/dcache_store` | PASS | Write-through store sequencer, backpressure, errors, flush, and random tests pass |
+| `dcache/dcache_ctrl` | PASS | Load/store hit/miss policy, write-through/no-write-allocate, flush, errors, and random tests pass |
 | `dcache` | SPEC | Direct-mapped write-through/no-write-allocate policy documented; remaining leaves planned |
 | `tile` | TODO | Core/frontend/cache integration |
 | `debug` | TODO | RISC-V External Debug Spec 0.13.x target |
@@ -62,7 +63,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Implement and verify `dcache_ctrl`
+1. Integrate and verify top-level `dcache`
 ```
 
 ## Commit Policy Going Forward

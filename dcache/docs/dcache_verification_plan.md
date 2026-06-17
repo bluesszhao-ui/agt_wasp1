@@ -3,7 +3,8 @@
 ## 1. Goals
 
 Verify D-cache leaves and integrations module by module. Current milestones
-verify `dcache_tag`, `dcache_data`, `dcache_refill`, and `dcache_store`.
+verify `dcache_tag`, `dcache_data`, `dcache_refill`, `dcache_store`, and
+`dcache_ctrl`.
 
 ## 2. Planned Coverage
 
@@ -81,7 +82,23 @@ deterministic-random access streams
 | Flush abort | Flush active store | No completion emitted |
 | Random stream | Random sizes/strobes/stalls/errors | Reference expectations match DUT |
 
-## 7. Time Base
+## 7. dcache_ctrl
+
+`tb_dcache_ctrl` models tag/data/refill/store leaves and covers:
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Load hit | Return cached data word | Core response data matches `data_word_i` |
+| Load miss | Allocate through refill | Refill starts, tag/data update, selected word response |
+| Refill error | Propagate downstream load error | Core response error and tag refill error asserted |
+| Store hit | Write through and update cache | Store starts, successful done pulses data update |
+| Store miss | Enforce no-write-allocate | Store starts, no tag/data allocation |
+| Store error | Avoid corrupting cached hit line | Core response error, no data update |
+| Invalid request | Reject illegal instruction/size/alignment | Error response, no subordinate work |
+| Flush abort | Abort active load/store work | No response or update emitted |
+| Random stream | Mixed load/store/invalid/stalls/errors | Reference expectations match DUT |
+
+## 8. Time Base
 
 Testbenches use:
 

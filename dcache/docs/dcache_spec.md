@@ -97,6 +97,19 @@ downstream write error reporting
 flush abort
 ```
 
+`dcache_ctrl` provides:
+
+```text
+core load/store request acceptance
+load hit response from cached data
+load miss refill allocation and response
+store write-through sequencing on hit and miss
+successful store-hit cache data update
+store miss no-write-allocate policy enforcement
+invalid request fault response
+flush abort forwarding to refill/store leaves
+```
+
 ## 6. Target Requirements
 
 D-cache RTL must support:
