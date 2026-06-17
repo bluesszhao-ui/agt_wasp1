@@ -48,7 +48,7 @@ PASS       Current verification target passes
 | `icache/icache_data` | PASS | Direct-mapped line storage, word select, conflict, write timing, and random tests pass |
 | `icache/icache_refill` | PASS | Line-aligned refill FSM, word requests, backpressure, errors, flush, and random tests pass |
 | `icache/icache_ctrl` | PASS | Hit/miss control, invalid request faults, refill update, flush, backpressure, and random tests pass |
-| `icache` | TODO | Remaining top integration |
+| `icache` | PASS | Integrated tag/data/control/refill wrapper, miss-to-hit, conflict, error, invalidate, flush, and random tests pass |
 | `dcache` | TODO | Direct-mapped write-through D-cache |
 | `tile` | TODO | Core/frontend/cache integration |
 | `debug` | TODO | RISC-V External Debug Spec 0.13.x target |
@@ -58,7 +58,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Integrate and verify top-level `icache`
+1. Start `dcache` architecture/spec work
 ```
 
 ## Commit Policy Going Forward

@@ -5,3 +5,4 @@ rtl/icache_data.sv
 rtl/icache_refill.sv
 rtl/icache_ctrl.sv
 rtl/icache.sv
+tb/tb_icache.sv

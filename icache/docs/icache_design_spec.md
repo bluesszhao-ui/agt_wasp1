@@ -2,56 +2,66 @@
 
 ## 1. Scope
 
-`icache` is currently implemented through `icache_tag`, `icache_data`,
-`icache_refill`, and `icache_ctrl`. The complete top-level I-cache wrapper is
-staged after these leaves are verified.
+`icache` integrates `icache_tag`, `icache_data`, `icache_refill`, and
+`icache_ctrl` into the first complete instruction-cache wrapper.
 
-## 2. Planned Block Diagram
+## 2. Integrated Block Diagram
 
 ```text
 Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
 Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
 
- IF frontend req/rsp
+ IF front_if req/rsp
         |
         v
- +-----------------------+
- | icache_ctrl           |
- | COMB control          |
- +----+-------------+----+
-      |
-      v
- +-----------------------+
- | icache_ctrl state     |
- | SEQ clk=clk_i rst=rst_ni |
- +----+-------------+----+
-      |             |
-      v             v
- +-----------+  +-----------+
- | tag COMB  |  |data COMB  |
- | compare   |  |word select|
- +-----+-----+  +-----+-----+
-       |              |
-       v              v
- +-----------+  +-----------+
- | tag SEQ   |  |data SEQ   |
- | valid/tag |  |line RAM   |
- +-----+-----+  +-----+-----+
-       \           /
-        v         v
-      +-------------+
-      |refill COMB  |
-      |req/rsp ctrl |
-      +------+------+
-             |
-             v
-      +-------------+
-      |refill SEQ   |
-      |FSM/line buf |
-      +------+------+
-             |
-             v
-      IF downstream memory path
+ +----------------------------+
+ | IF icache front_if.target  |
+ +-------------+--------------+
+               |
+               v
+ +----------------------------+
+ | COMB icache_ctrl outputs   |
+ | lookup/refill/rsp controls |
+ +-------------+--------------+
+               |
+               v
+ +----------------------------+
+ | SEQ icache_ctrl            |
+ | clk=clk_i rst=rst_ni       |
+ | request/miss/response FSM  |
+ +---+--------------------+---+
+     |                    |
+     v                    v
+ +-----------+        +-----------+
+ | COMB tag  |        | COMB data |
+ | compare   |        |word select|
+ +-----+-----+        +-----+-----+
+       |                    |
+       v                    v
+ +-----------+        +-----------+
+ | SEQ tag   |        | SEQ data  |
+ | clk/rst   |        | clk=clk_i |
+ | valid/tag |        | line RAM  |
+ +-----+-----+        +-----+-----+
+       ^                    ^
+       |                    |
+       +---------+----------+
+                 |
+                 v
+       +--------------------+
+       | COMB refill update |
+       | tag/data write bus |
+       +---------+----------+
+                 |
+                 v
+       +--------------------+
+       | SEQ icache_refill  |
+       | clk=clk_i rst=rst_ni |
+       | beat/line/error FSM|
+       +---------+----------+
+                 |
+                 v
+        IF mem_if downstream
 ```
 
 ## 3. Current Implementation Status
@@ -62,14 +72,14 @@ Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
 | `icache_data` | Implemented | Cache-line data storage and 32-bit word select. |
 | `icache_ctrl` | Implemented | Hit/miss control, refill start/update, and frontend response sequencing. |
 | `icache_refill` | Implemented | Downstream word-read refill FSM and line assembly. |
-| `icache` | Planned | Top-level I-cache integration. |
+| `icache` | Implemented | Top-level integration of control, tag, data, and refill leaves. |
 
 ## 4. State Ownership
 
 At this milestone, I-cache sequential state exists in `icache_tag` valid/tag
 storage, `icache_data` line storage, `icache_refill` FSM/line assembly state,
-and `icache_ctrl` hit/miss/response FSM state. The state diagrams are
-documented in:
+and `icache_ctrl` hit/miss/response FSM state. The top wrapper owns no
+additional registers. The state diagrams are documented in:
 
 ```text
 icache/docs/images/icache_tag_state.png

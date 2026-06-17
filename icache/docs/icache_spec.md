@@ -14,7 +14,6 @@ icache_tag
 icache_data
 icache_ctrl
 icache_refill
-icache_uncached
 ```
 
 ## 3. Functional Requirements
@@ -29,6 +28,16 @@ refill cache lines from the downstream memory path
 propagate downstream refill errors as instruction fetch faults
 support invalidation for reset/control/debug flows
 avoid programmer-visible behavior differences across IC and FPGA targets
+```
+
+The integrated `icache` top provides:
+
+```text
+frontend mem_req_rsp_if target port
+downstream mem_req_rsp_if initiator port
+flush input for active request/refill abort
+invalidate input for clearing tag valid state
+real tag/data/control/refill leaf interconnect
 ```
 
 ## 4. Current Implemented Leaves
