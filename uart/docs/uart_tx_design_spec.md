@@ -7,21 +7,24 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
  data_valid_i/data_i
         |
         v
  +-------------+
- | frame load  |  {stop, data[7:0], start}
+ | COMB frame  |  {stop, data[7:0], start}
  +------+------+
         |
         v
  +-------------+    baud_tick_i
- | shifter_q   |<----------------+
+ | SEQ shifter |<----------------+
  +------+------+                 |
         |                        |
         v                        |
       tx_o                +------+------+
-                          | bit_count_q |
+                          | SEQ bit_cnt |
                           +-------------+
 ```
 

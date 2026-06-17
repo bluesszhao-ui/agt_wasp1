@@ -8,14 +8,17 @@ execute stage.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  rs1_i --------+---------------------+
- rs2_i -------->| branch comparator  |
+ rs2_i -------->| COMB branch cmp    |
  branch_op_i -->| eq/ne/signed/uns   |
                 +----------+---------+
                            |
  pc_i ----+                v
  imm_i ---+-------> +-------------+
-                  ->| target mux  |----> target_o
+                  ->| COMB target |----> target_o
  jal_i -----------> | JAL/JALR/BR |
  jalr_i ----------> +------+------+
  branch_i ---------------> |

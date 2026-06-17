@@ -7,16 +7,19 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
  clk_i / rst_ni
       |
       v
  +-------------+
- | count_q     |<--- enable_i
+ | SEQ count_q |<--- enable_i
  +------+------+     divisor_i
         |
         v
  +-------------+
- | compare     |---- tick_o
+ | COMB compare|---- tick_o
  | count == N  |
  +-------------+
 ```

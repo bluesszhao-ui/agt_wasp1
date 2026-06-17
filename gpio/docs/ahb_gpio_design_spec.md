@@ -11,11 +11,14 @@ interrupt generation.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  hsel_i ----------+----------------+
- haddr_i -------->| address phase  |
+ haddr_i -------->| SEQ addr phase |
  htrans_i ------->| range/alignment|
  hwrite_i ------->| word-only check|
  hsize_i -------->| capture regs   |
@@ -23,7 +26,7 @@ interrupt generation.
                           |
                           v
                  +----------------+
- hwdata_i ------>| register write |
+ hwdata_i ------>| SEQ reg write  |
                  | OUT DIR IRQCFG |
                  +--------+-------+
                           |

@@ -7,11 +7,14 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  exception inputs ----+
- ecall/ebreak --------+--> sync priority encoder --+
+ ecall/ebreak --------+--> COMB sync priority -----+
  lsu faults ----------+                             |
                                                    v
- irq pending/enables ---> irq qualify --------> redirect/trap mux ---> trap outputs
+ irq pending/enables ---> COMB irq qualify ---> COMB redirect/trap mux ---> trap outputs
                                                    |
  mret_i / mepc_i ----------------------------------+
  mtvec_i ------------------------------------------+

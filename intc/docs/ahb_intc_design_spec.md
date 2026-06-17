@@ -7,23 +7,26 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  irq_src_i ----> +-------------+
-                 | 2-stage sync|
+                 | SEQ 2-stage |
                  +------+------+
                         |
                         v
                  +-------------+
-                 | pending_q   |<--- W1C / complete
+                 | SEQ pending_q|<--- W1C / complete
                  +------+------+
                         |
      +------------------+-------------------+
      |                                      |
      v                                      v
  +-------------+                     +-------------+
- | enable_q    |                     | priority_q  |
+ | SEQ enable_q|                     | SEQ priority|
  +------+------+                     +------+------+
         |                                   |
         +---------------+-------------------+

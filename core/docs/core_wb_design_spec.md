@@ -8,12 +8,15 @@ planned simple in-order core pipeline.
 ## 2. Block Diagram
 
 ```text
- alu/load/csr/pc4/imm data ---> source mux ----> rf_wdata
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
+ alu/load/csr/pc4/imm data ---> COMB source mux ----> rf_wdata
                                      ^
                                      |
                                 wb_sel_i
 
- valid/rd_write/rd/trap/fault ---> write qualifier ---> rf_we
+ valid/rd_write/rd/trap/fault ---> COMB write qualifier ---> rf_we
  rd_i ------------------------------------------------> rf_waddr
 ```
 

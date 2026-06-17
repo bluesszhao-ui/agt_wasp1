@@ -7,11 +7,14 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  lhs_i --------+
                |
  rhs_i ----+   v
           | +----------------+
- op_i ----->| operation mux  |
+ op_i ----->| COMB op mux    |
             | add/sub/logic  |
             | shift/compare  |
             +--------+-------+

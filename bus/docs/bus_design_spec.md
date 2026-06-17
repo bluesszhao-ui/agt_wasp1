@@ -30,6 +30,9 @@ default error slave
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+AHB timing domain where SEQ appears: clk=hclk_i, rst=hresetn_i
+
                          +-------------------+
  core AHB master ------->|                   |
                          | ahb_arbiter_2m    |

@@ -10,11 +10,14 @@ an AHB-Lite master interface for memory-to-memory word copies.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  s_hsel_i --------+----------------+
- s_haddr_i ------>| register slave |
+ s_haddr_i ------>| SEQ+COMB slave|
  s_htrans_i ----->| range/alignment|
  s_hwrite_i ----->| word-only check|
  s_hwdata_i ----->| SRC DST LEN    |
@@ -22,7 +25,7 @@ an AHB-Lite master interface for memory-to-memory word copies.
                           |
                           v
                  +----------------+
-                 | DMA control FSM|
+                 | SEQ DMA FSM    |
                  | idle/read/write|
                  +--------+-------+
                           |

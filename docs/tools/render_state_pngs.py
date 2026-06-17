@@ -326,18 +326,20 @@ def render_core_pipe_l3() -> None:
         [
             "GREEN TEXT : JUMP CONDITION",
             "GRAY BOX   : REGISTER ACTION",
+            "SEQ        : CLK_I WITH RST_NI",
+            "COMB       : STATE-FREE CONTROL",
             "PRIORITY   : REDIRECT > BUBBLE > ADVANCE",
         ],
         "LEGEND",
     )
 
-    canvas.state(130, 320, 140, 90, ("RESET",), BLUE)
-    canvas.state(420, 300, 180, 110, ("FETCH", "REQ"), GREEN)
-    canvas.state(760, 300, 190, 110, ("IF/ID", "SLOT"), YELLOW)
-    canvas.state(1120, 300, 190, 110, ("EX/WB", "SLOT"), YELLOW)
-    canvas.state(780, 620, 220, 110, ("REDIRECT", "FLUSH"), PINK)
-    canvas.state(1190, 620, 220, 110, ("EXEC", "BUBBLE"), PINK)
-    canvas.state(1500, 300, 190, 110, ("HOLD", "STALL"), GRAY)
+    canvas.state(130, 320, 140, 90, ("SEQ", "RESET"), BLUE)
+    canvas.state(420, 300, 180, 110, ("SEQ", "FETCH", "REQ"), GREEN)
+    canvas.state(760, 300, 190, 110, ("SEQ", "IF/ID"), YELLOW)
+    canvas.state(1120, 300, 190, 110, ("SEQ", "EX/WB"), YELLOW)
+    canvas.state(780, 620, 220, 110, ("COMB", "REDIRECT", "FLUSH"), PINK)
+    canvas.state(1190, 620, 220, 110, ("COMB", "EXEC", "BUBBLE"), PINK)
+    canvas.state(1500, 300, 190, 110, ("SEQ", "HOLD", "STALL"), GRAY)
 
     canvas.path_arrow([(270, 365), (420, 355)], "RST_N=1")
     canvas.path_arrow([(600, 355), (760, 355)], "FETCH_FIRE")
@@ -416,20 +418,22 @@ def render_ahb_dma_l3() -> None:
         [
             "GREEN TEXT : JUMP CONDITION",
             "GRAY BOX   : REGISTER ACTION",
+            "SEQ        : HCLK_I WITH HRESETN_I",
+            "COMB       : STATE-FREE CONTROL",
             "MAIN PATH  : LEFT TO RIGHT",
             "ERROR PATH : DROPS TO LOWER RED AREA",
         ],
         "LEGEND",
     )
 
-    canvas.state(100, 430, 150, 95, ("IDLE",), GREEN)
-    canvas.state(390, 430, 210, 95, ("READ", "ADDR"), YELLOW)
-    canvas.state(720, 430, 210, 95, ("READ", "DATA"), YELLOW)
-    canvas.state(1060, 430, 220, 95, ("WRITE", "ADDR"), YELLOW)
-    canvas.state(1410, 430, 220, 95, ("WRITE", "RESP"), YELLOW)
-    canvas.state(1800, 360, 170, 95, ("DONE",), GREEN)
-    canvas.state(1800, 710, 170, 95, ("ERROR",), PINK)
-    canvas.state(1980, 535, 170, 95, ("IRQ",), GRAY)
+    canvas.state(100, 430, 150, 95, ("SEQ", "IDLE"), GREEN)
+    canvas.state(390, 430, 210, 95, ("SEQ", "READ", "ADDR"), YELLOW)
+    canvas.state(720, 430, 210, 95, ("SEQ", "READ", "DATA"), YELLOW)
+    canvas.state(1060, 430, 220, 95, ("SEQ", "WRITE", "ADDR"), YELLOW)
+    canvas.state(1410, 430, 220, 95, ("SEQ", "WRITE", "RESP"), YELLOW)
+    canvas.state(1800, 360, 170, 95, ("SEQ", "DONE"), GREEN)
+    canvas.state(1800, 710, 170, 95, ("SEQ", "ERROR"), PINK)
+    canvas.state(1980, 535, 170, 95, ("COMB", "IRQ"), GRAY)
 
     canvas.path_arrow([(250, 477), (390, 477)], "START OK")
     canvas.path_arrow([(600, 477), (720, 477)], "HREADY")
@@ -564,17 +568,19 @@ def render_ahb_dma_l3() -> None:
         90,
         [
             "ONE CYCLE AHB RESPONSE MODEL",
+            "SEQ : HCLK_I WITH HRESETN_I",
+            "COMB: STATE-FREE MUX/DECODE",
             "CAPTURE ADDRESS PHASE AT CYCLE N",
             "RETURN RESPONSE AT CYCLE N+1",
         ],
         "LEGEND",
     )
-    reg.state(110, 360, 180, 90, ("IDLE", "NO SEL"), GRAY)
-    reg.state(390, 360, 240, 90, ("CAPTURE", "ADDR CTRL"), BLUE)
-    reg.state(760, 190, 220, 90, ("READ", "MUX"), GREEN)
-    reg.state(760, 360, 220, 90, ("ERROR", "HRESP"), PINK)
-    reg.state(760, 530, 220, 90, ("WRITE", "REGS"), GREEN)
-    reg.state(1160, 360, 220, 90, ("RESPOND", "N+1"), YELLOW)
+    reg.state(110, 360, 180, 90, ("SEQ", "IDLE"), GRAY)
+    reg.state(390, 360, 240, 90, ("SEQ", "CAPTURE"), BLUE)
+    reg.state(760, 190, 220, 90, ("COMB", "READ MUX"), GREEN)
+    reg.state(760, 360, 220, 90, ("COMB", "ERROR"), PINK)
+    reg.state(760, 530, 220, 90, ("SEQ", "WRITE REGS"), GREEN)
+    reg.state(1160, 360, 220, 90, ("SEQ", "RESPOND"), YELLOW)
 
     reg.path_arrow([(290, 405), (390, 405)], "S_HSEL && HTRANS[1]")
     reg.path_arrow([(630, 405), (760, 235)], "READ OK")
@@ -730,11 +736,11 @@ def main() -> None:
             "core/docs/images/core_csr_state.png",
             "CORE_CSR STATE",
             [
-                Node("reset", 70, 120, 200, 100, ("RESET", "CSR DEFAULTS"), BLUE),
-                Node("normal", 390, 120, 220, 100, ("NORMAL", "CSR WRITE"), GREEN),
-                Node("trap", 760, 90, 250, 120, ("TRAP ENTRY", "SAVE MIE MEPC", "CAUSE TVAL"), PINK),
-                Node("mret", 760, 280, 250, 110, ("MRET", "RESTORE MIE"), YELLOW),
-                Node("count", 380, 330, 250, 100, ("COUNTERS", "CYCLE INSTRET"), GRAY),
+                Node("reset", 70, 120, 200, 100, ("SEQ", "CLK_I/RST_NI", "CSR RESET"), BLUE),
+                Node("normal", 390, 120, 220, 100, ("SEQ+COMB", "CLK_I/RST_NI", "CSR WRITE"), GREEN),
+                Node("trap", 760, 90, 250, 120, ("SEQ", "CLK_I/RST_NI", "TRAP ENTRY"), PINK),
+                Node("mret", 760, 280, 250, 110, ("SEQ", "CLK_I/RST_NI", "MRET"), YELLOW),
+                Node("count", 380, 330, 250, 100, ("SEQ", "CLK_I/RST_NI", "COUNTERS"), GRAY),
             ],
             [
                 Edge("reset", "normal", "RST RELEASE"),
@@ -744,25 +750,25 @@ def main() -> None:
                 Edge("trap", "normal", "NEXT"),
                 Edge("mret", "normal", "NEXT"),
             ],
-            ["TRAP OVERRIDES MRET", "LEGAL CSR WRITES APPLY MASKS", "INSTRET INCREMENTS ON RETIRE"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "TRAP OVERRIDES MRET", "LEGAL CSR WRITES APPLY MASKS", "INSTRET INCREMENTS ON RETIRE"],
         ),
         (
             "core/docs/images/core_int_datapath_state.png",
             "CORE_INT_DATAPATH STATE",
             [
-                Node("fetch", 40, 250, 170, 80, ("FETCH", "RSP"), GREEN),
-                Node("pipe", 270, 250, 190, 80, ("CORE_PIPE", "EX SLOT"), YELLOW),
-                Node("decode", 520, 110, 190, 80, ("DECODE", "CONTROL"), BLUE),
-                Node("hazard", 520, 10, 190, 70, ("HAZARD", "STALL/BUBBLE"), PINK),
-                Node("reg", 520, 360, 190, 80, ("REGFILE", "RS1 RS2"), BLUE),
-                Node("alu", 780, 180, 160, 80, ("ALU", "RESULT"), YELLOW),
-                Node("branch", 780, 330, 190, 80, ("BRANCH", "TARGET"), GREEN),
-                Node("lsu", 780, 500, 190, 80, ("LSU", "LOAD STORE"), YELLOW),
-                Node("csr", 780, 640, 190, 80, ("CSR", "M MODE"), GREEN),
-                Node("wb", 1060, 180, 160, 80, ("WB", "COMMIT"), GREEN),
-                Node("suppress", 1040, 330, 190, 80, ("SUPPRESS", "FAULT/UNSUP"), PINK),
-                Node("redirect", 1040, 500, 190, 80, ("REDIRECT", "FLUSH"), PINK),
-                Node("trap", 1040, 640, 190, 80, ("TRAP", "MTVEC/MEPC"), PINK),
+                Node("fetch", 40, 250, 170, 80, ("IF", "FETCH RSP"), GREEN),
+                Node("pipe", 270, 250, 190, 80, ("SEQ", "CLK_I/RST_NI", "CORE_PIPE"), YELLOW),
+                Node("decode", 520, 110, 190, 80, ("COMB", "DECODE"), BLUE),
+                Node("hazard", 520, 10, 190, 70, ("COMB", "HAZARD"), PINK),
+                Node("reg", 520, 360, 190, 80, ("SEQ", "CLK_I/RST_NI", "REGFILE"), BLUE),
+                Node("alu", 780, 180, 160, 80, ("COMB", "ALU"), YELLOW),
+                Node("branch", 780, 330, 190, 80, ("COMB", "BRANCH"), GREEN),
+                Node("lsu", 780, 500, 190, 80, ("COMB", "LSU"), YELLOW),
+                Node("csr", 780, 640, 190, 80, ("SEQ+COMB", "CLK_I/RST_NI", "CSR"), GREEN),
+                Node("wb", 1060, 180, 160, 80, ("COMB", "WB"), GREEN),
+                Node("suppress", 1040, 330, 190, 80, ("COMB", "SUPPRESS"), PINK),
+                Node("redirect", 1040, 500, 190, 80, ("COMB", "REDIRECT"), PINK),
+                Node("trap", 1040, 640, 190, 80, ("COMB", "TRAP"), PINK),
             ],
             [
                 Edge("fetch", "pipe", "ACCEPT"),
@@ -789,16 +795,16 @@ def main() -> None:
                 Edge("decode", "suppress", "ILLEGAL/UNSUP"),
                 Edge("suppress", "wb", "NO WRITE"),
             ],
-            ["SUPPORTED NOW: ALU LUI AUIPC BRANCH JAL JALR LOAD STORE CSR TRAP IRQ LOAD-USE HAZARD", "FULL FORWARDING MUX AND CACHE STALLS ARE STAGED LATER"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "SUPPORTED: ALU BRANCH LOAD STORE CSR TRAP IRQ LOAD-USE HAZARD", "FULL FORWARDING MUX AND CACHE STALLS ARE STAGED LATER"],
         ),
         (
             "core/docs/images/core_regfile_state.png",
             "CORE_REGFILE STATE",
             [
-                Node("reset", 90, 230, 190, 90, ("RESET", "X1-X31=0"), BLUE),
-                Node("hold", 380, 230, 210, 90, ("HOLD", "NO WRITE"), GRAY),
-                Node("write", 700, 230, 220, 90, ("WRITE", "RD!=X0"), GREEN),
-                Node("bypass", 1010, 230, 190, 90, ("BYPASS", "SAME CYCLE"), YELLOW),
+                Node("reset", 90, 230, 190, 90, ("SEQ", "CLK_I/RST_NI", "RESET"), BLUE),
+                Node("hold", 380, 230, 210, 90, ("SEQ", "CLK_I/RST_NI", "HOLD"), GRAY),
+                Node("write", 700, 230, 220, 90, ("SEQ", "CLK_I/RST_NI", "WRITE"), GREEN),
+                Node("bypass", 1010, 230, 190, 90, ("COMB", "BYPASS"), YELLOW),
             ],
             [
                 Edge("reset", "hold", "RST RELEASE"),
@@ -807,19 +813,19 @@ def main() -> None:
                 Edge("write", "bypass", "READ MATCH"),
                 Edge("bypass", "hold", "NEXT"),
             ],
-            ["X0 IS NOT STORED", "READ PRIORITY IS X0 THEN BYPASS THEN ARRAY"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "X0 IS NOT STORED", "READ PRIORITY IS X0 THEN BYPASS THEN ARRAY"],
         ),
         (
             "dma/docs/images/ahb_dma_fsm.png",
             "AHB_DMA FSM",
             [
-                Node("idle", 70, 230, 180, 90, ("IDLE", "BUSY=0"), GREEN),
-                Node("ra", 330, 120, 190, 90, ("READ", "ADDR"), YELLOW),
-                Node("rd", 610, 120, 190, 90, ("READ", "DATA"), YELLOW),
-                Node("wa", 610, 330, 190, 90, ("WRITE", "ADDR"), YELLOW),
-                Node("wr", 330, 330, 190, 90, ("WRITE", "RESP"), YELLOW),
-                Node("err", 900, 230, 190, 90, ("ERROR", "STICKY"), PINK),
-                Node("done", 900, 380, 190, 90, ("DONE", "IRQ"), GREEN),
+                Node("idle", 70, 230, 180, 90, ("SEQ", "HCLK/RSTN", "IDLE"), GREEN),
+                Node("ra", 330, 120, 190, 90, ("SEQ", "HCLK/RSTN", "READ ADDR"), YELLOW),
+                Node("rd", 610, 120, 190, 90, ("SEQ", "HCLK/RSTN", "READ DATA"), YELLOW),
+                Node("wa", 610, 330, 190, 90, ("SEQ", "HCLK/RSTN", "WRITE ADDR"), YELLOW),
+                Node("wr", 330, 330, 190, 90, ("SEQ", "HCLK/RSTN", "WRITE RESP"), YELLOW),
+                Node("err", 900, 230, 190, 90, ("SEQ", "HCLK/RSTN", "ERROR"), PINK),
+                Node("done", 900, 380, 190, 90, ("SEQ", "HCLK/RSTN", "DONE"), GREEN),
             ],
             [
                 Edge("idle", "ra", "START OK"),
@@ -834,17 +840,17 @@ def main() -> None:
                 Edge("done", "idle", "CLEAR"),
                 Edge("err", "idle", "CLEAR"),
             ],
-            ["ONE WORD READ THEN ONE WORD WRITE", "NO BURSTS", "DONE OR ERROR CAN ASSERT IRQ"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "ONE WORD READ THEN ONE WORD WRITE", "NO BURSTS", "DONE OR ERROR CAN ASSERT IRQ"],
         ),
         (
             "uart/docs/images/ahb_uart_state.png",
             "AHB_UART STATE",
             [
-                Node("reset", 70, 230, 180, 90, ("RESET", "FIFO EMPTY"), BLUE),
-                Node("reg", 330, 230, 210, 90, ("AHB REG", "CAPTURE RESP"), GRAY),
-                Node("tx", 640, 120, 210, 90, ("TX FIFO", "POP TO TX"), GREEN),
-                Node("rx", 640, 340, 210, 90, ("RX FIFO", "PUSH RX"), GREEN),
-                Node("irq", 960, 230, 210, 90, ("IRQ_STATUS", "LATCH W1C"), PINK),
+                Node("reset", 70, 230, 180, 90, ("SEQ", "HCLK/RSTN", "RESET"), BLUE),
+                Node("reg", 330, 230, 210, 90, ("SEQ", "HCLK/RSTN", "AHB REG"), GRAY),
+                Node("tx", 640, 120, 210, 90, ("SEQ", "HCLK/RSTN", "TX FIFO"), GREEN),
+                Node("rx", 640, 340, 210, 90, ("SEQ", "HCLK/RSTN", "RX FIFO"), GREEN),
+                Node("irq", 960, 230, 210, 90, ("SEQ", "HCLK/RSTN", "IRQ_STATUS"), PINK),
             ],
             [
                 Edge("reset", "reg", "RST RELEASE"),
@@ -854,18 +860,18 @@ def main() -> None:
                 Edge("rx", "irq", "RX AVAIL"),
                 Edge("irq", "reg", "W1C/NEXT"),
             ],
-            ["SERIAL BIT FSM IS IN UART_TX AND UART_RX", "AHB PATH IS ONE CYCLE RESPONSE"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "SERIAL BIT FSM IS IN UART_TX AND UART_RX", "AHB PATH IS ONE CYCLE RESPONSE"],
         ),
         (
             "uart/docs/images/uart_rx_fsm.png",
             "UART_RX FSM",
             [
-                Node("idle", 80, 230, 180, 90, ("RX_IDLE", "WAIT LOW"), GREEN),
-                Node("start", 350, 230, 200, 90, ("RX_START", "CONFIRM"), YELLOW),
-                Node("data", 640, 230, 200, 90, ("RX_DATA", "8 BITS"), YELLOW),
-                Node("stop", 930, 230, 200, 90, ("RX_STOP", "CHECK HIGH"), YELLOW),
-                Node("valid", 930, 420, 200, 80, ("VALID", "PULSE"), GREEN),
-                Node("err", 640, 420, 200, 80, ("FRAME_ERR", "PULSE"), PINK),
+                Node("idle", 80, 230, 180, 90, ("SEQ", "CLK_I/RST_NI", "RX_IDLE"), GREEN),
+                Node("start", 350, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "RX_START"), YELLOW),
+                Node("data", 640, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "RX_DATA"), YELLOW),
+                Node("stop", 930, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "RX_STOP"), YELLOW),
+                Node("valid", 930, 420, 200, 80, ("SEQ", "CLK_I/RST_NI", "VALID"), GREEN),
+                Node("err", 640, 420, 200, 80, ("SEQ", "CLK_I/RST_NI", "FRAME_ERR"), PINK),
             ],
             [
                 Edge("idle", "start", "RX=0"),
@@ -877,16 +883,16 @@ def main() -> None:
                 Edge("valid", "idle", "NEXT"),
                 Edge("err", "idle", "NEXT"),
             ],
-            ["RESET OR DISABLE RETURNS TO RX_IDLE", "DATA IS SAMPLED LSB FIRST"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "RESET OR DISABLE RETURNS TO RX_IDLE", "DATA IS SAMPLED LSB FIRST"],
         ),
         (
             "uart/docs/images/uart_tx_state.png",
             "UART_TX STATE",
             [
-                Node("idle", 120, 230, 200, 90, ("TX_IDLE", "READY=1"), GREEN),
-                Node("load", 450, 230, 200, 90, ("LOAD", "10 BIT FRAME"), YELLOW),
-                Node("shift", 780, 230, 220, 90, ("TX_SHIFT", "SHIFT ON TICK"), YELLOW),
-                Node("done", 780, 420, 220, 80, ("DONE", "TX HIGH"), GREEN),
+                Node("idle", 120, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "TX_IDLE"), GREEN),
+                Node("load", 450, 230, 200, 90, ("SEQ", "CLK_I/RST_NI", "LOAD"), YELLOW),
+                Node("shift", 780, 230, 220, 90, ("SEQ", "CLK_I/RST_NI", "TX_SHIFT"), YELLOW),
+                Node("done", 780, 420, 220, 80, ("SEQ", "CLK_I/RST_NI", "DONE"), GREEN),
             ],
             [
                 Edge("idle", "load", "VALID"),
@@ -895,16 +901,16 @@ def main() -> None:
                 Edge("shift", "done", "LAST BIT"),
                 Edge("done", "idle", "NEXT"),
             ],
-            ["DISABLE FORCES TX_IDLE", "FRAME IS START DATA STOP", "DATA SHIFTS LSB FIRST"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "DISABLE FORCES TX_IDLE", "FRAME IS START DATA STOP", "DATA SHIFTS LSB FIRST"],
         ),
         (
             "uart/docs/images/uart_baud_counter_state.png",
             "UART_BAUD COUNTER",
             [
-                Node("reset", 110, 230, 180, 90, ("RESET", "COUNT=0"), BLUE),
-                Node("disabled", 400, 230, 210, 90, ("DISABLED", "COUNT=0"), GRAY),
-                Node("count", 710, 230, 210, 90, ("COUNT", "INC"), YELLOW),
-                Node("tick", 1010, 230, 170, 90, ("TICK", "PULSE"), GREEN),
+                Node("reset", 110, 230, 180, 90, ("SEQ", "CLK_I/RST_NI", "RESET"), BLUE),
+                Node("disabled", 400, 230, 210, 90, ("SEQ", "CLK_I/RST_NI", "DISABLED"), GRAY),
+                Node("count", 710, 230, 210, 90, ("SEQ", "CLK_I/RST_NI", "COUNT"), YELLOW),
+                Node("tick", 1010, 230, 170, 90, ("SEQ", "CLK_I/RST_NI", "TICK"), GREEN),
             ],
             [
                 Edge("reset", "disabled", "RST RELEASE"),
@@ -913,18 +919,18 @@ def main() -> None:
                 Edge("tick", "count", "NEXT"),
                 Edge("count", "disabled", "DISABLE"),
             ],
-            ["DIVISOR ZERO MAPS TO ONE", "TICK IS ONE CLOCK CYCLE"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: CLK_I WITH RST_NI", "DIVISOR ZERO MAPS TO ONE", "TICK IS ONE CLOCK CYCLE"],
         ),
         (
             "otp/docs/images/ahb_otp_state.png",
             "AHB_OTP PROGRAM STATE",
             [
-                Node("erased", 80, 220, 190, 90, ("ERASED", "ALL 1S"), GREEN),
-                Node("locked", 360, 100, 190, 90, ("LOCKED", "NO PROGRAM"), PINK),
-                Node("armed", 360, 340, 190, 90, ("ARMED", "KEY OK"), YELLOW),
-                Node("prog", 660, 340, 210, 90, ("PROGRAM", "WORD &= WDATA"), YELLOW),
-                Node("done", 960, 250, 180, 90, ("DONE", "STATUS"), GREEN),
-                Node("err", 660, 100, 210, 90, ("ERROR", "STATUS"), PINK),
+                Node("erased", 80, 220, 190, 90, ("SEQ", "HCLK/RSTN", "ERASED"), GREEN),
+                Node("locked", 360, 100, 190, 90, ("SEQ", "HCLK/RSTN", "LOCKED"), PINK),
+                Node("armed", 360, 340, 190, 90, ("SEQ", "HCLK/RSTN", "ARMED"), YELLOW),
+                Node("prog", 660, 340, 210, 90, ("SEQ", "HCLK/RSTN", "PROGRAM"), YELLOW),
+                Node("done", 960, 250, 180, 90, ("SEQ", "HCLK/RSTN", "DONE"), GREEN),
+                Node("err", 660, 100, 210, 90, ("SEQ", "HCLK/RSTN", "ERROR"), PINK),
             ],
             [
                 Edge("erased", "armed", "KEY"),
@@ -936,16 +942,16 @@ def main() -> None:
                 Edge("done", "armed", "CLEAR"),
                 Edge("err", "armed", "CLEAR"),
             ],
-            ["OPEN RTL PROGRAMS IN ONE RESPONSE CYCLE", "0 TO 1 REQUEST IS REJECTED"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "OPEN RTL PROGRAMS IN ONE RESPONSE CYCLE", "0 TO 1 REQUEST IS REJECTED"],
         ),
         (
             "timer/docs/images/ahb_timer_state.png",
             "AHB_TIMER STATE",
             [
-                Node("reset", 80, 230, 190, 90, ("RESET", "CMP=FFFF"), BLUE),
-                Node("disabled", 360, 230, 220, 90, ("DISABLED", "MTIME HOLD"), GRAY),
-                Node("enabled", 690, 230, 220, 90, ("ENABLED", "MTIME++"), YELLOW),
-                Node("pending", 1000, 230, 190, 90, ("PENDING", "IRQ LEVEL"), PINK),
+                Node("reset", 80, 230, 190, 90, ("SEQ", "HCLK/RSTN", "RESET"), BLUE),
+                Node("disabled", 360, 230, 220, 90, ("SEQ", "HCLK/RSTN", "DISABLED"), GRAY),
+                Node("enabled", 690, 230, 220, 90, ("SEQ", "HCLK/RSTN", "ENABLED"), YELLOW),
+                Node("pending", 1000, 230, 190, 90, ("SEQ", "HCLK/RSTN", "PENDING"), PINK),
             ],
             [
                 Edge("reset", "disabled", "RST RELEASE"),
@@ -955,16 +961,16 @@ def main() -> None:
                 Edge("pending", "enabled", "CMP FUTURE"),
                 Edge("pending", "disabled", "DISABLE"),
             ],
-            ["IRQ = PENDING AND IRQ_ENABLE", "SOFTWARE CLEARS BY FUTURE MTIMECMP"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "IRQ = PENDING AND IRQ_ENABLE", "SOFTWARE CLEARS BY FUTURE MTIMECMP"],
         ),
         (
             "gpio/docs/images/ahb_gpio_state.png",
             "AHB_GPIO IRQ STATE",
             [
-                Node("sync", 90, 210, 210, 90, ("INPUT", "2 STAGE SYNC"), BLUE),
-                Node("detect", 390, 210, 220, 90, ("DETECT", "LEVEL EDGE"), YELLOW),
-                Node("latched", 700, 210, 220, 90, ("IRQ_STATUS", "LATCHED"), PINK),
-                Node("clear", 1010, 210, 180, 90, ("W1C", "CLEAR"), GREEN),
+                Node("sync", 90, 210, 210, 90, ("SEQ", "HCLK/RSTN", "INPUT SYNC"), BLUE),
+                Node("detect", 390, 210, 220, 90, ("COMB", "DETECT", "LEVEL EDGE"), YELLOW),
+                Node("latched", 700, 210, 220, 90, ("SEQ", "HCLK/RSTN", "IRQ_STATUS"), PINK),
+                Node("clear", 1010, 210, 180, 90, ("SEQ", "HCLK/RSTN", "W1C CLEAR"), GREEN),
             ],
             [
                 Edge("sync", "detect", "SAMPLE"),
@@ -972,17 +978,17 @@ def main() -> None:
                 Edge("latched", "clear", "WRITE 1"),
                 Edge("clear", "detect", "NEXT"),
             ],
-            ["DATA_OUT/DIR ARE NORMAL REGISTERS", "GPIO_IRQ_O IS OR OF ENABLED STATUS"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "DATA_OUT/DIR ARE NORMAL REGISTERS", "GPIO_IRQ_O IS OR OF ENABLED STATUS"],
         ),
         (
             "intc/docs/images/ahb_intc_state.png",
             "AHB_INTC STATE",
             [
-                Node("sync", 80, 230, 190, 90, ("IRQ SYNC", "2 STAGE"), BLUE),
-                Node("pend", 350, 230, 210, 90, ("PENDING", "SET BITS"), PINK),
-                Node("best", 650, 230, 220, 90, ("BEST SRC", "> THRESH"), YELLOW),
-                Node("claim", 960, 150, 190, 90, ("CLAIM", "READ ID"), GREEN),
-                Node("comp", 960, 330, 190, 90, ("COMPLETE", "CLEAR ID"), GREEN),
+                Node("sync", 80, 230, 190, 90, ("SEQ", "HCLK/RSTN", "IRQ SYNC"), BLUE),
+                Node("pend", 350, 230, 210, 90, ("SEQ", "HCLK/RSTN", "PENDING"), PINK),
+                Node("best", 650, 230, 220, 90, ("COMB", "BEST SRC"), YELLOW),
+                Node("claim", 960, 150, 190, 90, ("SEQ", "HCLK/RSTN", "CLAIM"), GREEN),
+                Node("comp", 960, 330, 190, 90, ("SEQ", "HCLK/RSTN", "COMPLETE"), GREEN),
             ],
             [
                 Edge("sync", "pend", "HIGH"),
@@ -991,17 +997,17 @@ def main() -> None:
                 Edge("claim", "comp", "WRITE ID"),
                 Edge("comp", "pend", "CLEAR"),
             ],
-            ["LOWEST ID WINS TIES", "MEIP ASSERTS WHEN BEST SOURCE EXISTS"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "LOWEST ID WINS TIES", "MEIP ASSERTS WHEN BEST SOURCE EXISTS"],
         ),
         (
             "bus/docs/images/ahb_fabric_2m_state.png",
             "AHB_FABRIC_2M STATE",
             [
-                Node("reset", 60, 230, 180, 90, ("RESET", "NO SELECT"), BLUE),
-                Node("grant", 310, 230, 220, 90, ("ARBITER", "GRANT M0/M1"), YELLOW),
-                Node("decode", 620, 230, 210, 90, ("DECODER", "HSEL"), GREEN),
-                Node("slave", 920, 120, 220, 90, ("SLAVE RESP", "MAPPED"), GREEN),
-                Node("def", 920, 340, 220, 90, ("DEFAULT", "ERROR"), PINK),
+                Node("reset", 60, 230, 180, 90, ("SEQ", "HCLK/RSTN", "RESET"), BLUE),
+                Node("grant", 310, 230, 220, 90, ("SEQ+COMB", "HCLK/RSTN", "ARBITER"), YELLOW),
+                Node("decode", 620, 230, 210, 90, ("COMB", "DECODER"), GREEN),
+                Node("slave", 920, 120, 220, 90, ("IF", "SLAVE RESP"), GREEN),
+                Node("def", 920, 340, 220, 90, ("COMB", "DEFAULT"), PINK),
             ],
             [
                 Edge("reset", "grant", "REQ"),
@@ -1011,17 +1017,17 @@ def main() -> None:
                 Edge("slave", "grant", "RESP", bend=(760, 80)),
                 Edge("def", "grant", "RESP", bend=(760, 560)),
             ],
-            ["FABRIC STATE IS COMPOSED FROM ARBITER AND DEFAULT SLAVE", "HREADY LOW HOLDS GRANT"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "FABRIC STATE IS COMPOSED FROM ARBITER STATE", "HREADY LOW HOLDS GRANT"],
         ),
         (
             "bus/docs/images/ahb_arbiter_2m_state.png",
             "AHB_ARBITER_2M GRANT STATE",
             [
-                Node("reset", 80, 220, 190, 90, ("RESET", "NO GRANT"), BLUE),
-                Node("idle", 350, 220, 190, 90, ("IDLE", "NO REQ"), GRAY),
-                Node("m0", 650, 120, 190, 90, ("GRANT M0", "CORE"), GREEN),
-                Node("m1", 650, 340, 190, 90, ("GRANT M1", "DMA"), GREEN),
-                Node("hold", 960, 230, 190, 90, ("HOLD", "HREADY=0"), YELLOW),
+                Node("reset", 80, 220, 190, 90, ("SEQ", "HCLK/RSTN", "RESET"), BLUE),
+                Node("idle", 350, 220, 190, 90, ("SEQ", "HCLK/RSTN", "IDLE"), GRAY),
+                Node("m0", 650, 120, 190, 90, ("SEQ", "HCLK/RSTN", "GRANT M0"), GREEN),
+                Node("m1", 650, 340, 190, 90, ("SEQ", "HCLK/RSTN", "GRANT M1"), GREEN),
+                Node("hold", 960, 230, 190, 90, ("SEQ", "HCLK/RSTN", "HOLD"), YELLOW),
             ],
             [
                 Edge("reset", "idle", "RST RELEASE"),
@@ -1034,17 +1040,17 @@ def main() -> None:
                 Edge("hold", "m0", "READY M0"),
                 Edge("hold", "m1", "READY M1"),
             ],
-            ["LAST_GRANT_Q PROVIDES ROUND ROBIN", "RESPONSE ROUTING FOLLOWS HELD GRANT"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "LAST_GRANT_Q PROVIDES ROUND ROBIN", "RESPONSE ROUTING FOLLOWS HELD GRANT"],
         ),
         (
             "sram/docs/images/ahb_sram_state.png",
             "AHB_SRAM RESPONSE STATE",
             [
-                Node("idle", 100, 230, 190, 90, ("IDLE", "NO XFER"), GRAY),
-                Node("cap", 390, 230, 220, 90, ("CAPTURE", "ADDR CTRL"), BLUE),
-                Node("read", 710, 120, 210, 90, ("READ RESP", "HRDATA"), GREEN),
-                Node("write", 710, 340, 210, 90, ("WRITE RESP", "MERGE LANES"), GREEN),
-                Node("err", 1010, 230, 170, 90, ("ERROR", "HRESP"), PINK),
+                Node("idle", 100, 230, 190, 90, ("SEQ", "HCLK/RSTN", "IDLE"), GRAY),
+                Node("cap", 390, 230, 220, 90, ("SEQ", "HCLK/RSTN", "CAPTURE"), BLUE),
+                Node("read", 710, 120, 210, 90, ("COMB", "READ RESP"), GREEN),
+                Node("write", 710, 340, 210, 90, ("SEQ+COMB", "HCLK/RSTN", "WRITE RESP"), GREEN),
+                Node("err", 1010, 230, 170, 90, ("COMB", "ERROR RESP"), PINK),
             ],
             [
                 Edge("idle", "cap", "SELECTED"),
@@ -1055,7 +1061,7 @@ def main() -> None:
                 Edge("write", "idle", "NEXT"),
                 Edge("err", "idle", "NEXT"),
             ],
-            ["ONE CYCLE AHB RESPONSE MODEL", "HREADY IS ALWAYS HIGH"],
+            ["LEGEND: SEQ=CLOCKED STATE, COMB=STATE-FREE LOGIC, IF=INTERFACE", "CLOCK DOMAIN: HCLK_I WITH HRESETN_I", "ONE CYCLE AHB RESPONSE MODEL", "HREADY IS ALWAYS HIGH"],
         ),
     ]
     for args in diagrams:

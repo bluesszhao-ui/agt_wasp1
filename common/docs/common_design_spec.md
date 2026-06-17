@@ -11,6 +11,9 @@ module interfaces consistent and avoid repeated local definitions.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+Clock/reset domains are module-local and shown in each block spec.
+
 +------------------------------------------------------------------+
 |                              common                              |
 |                                                                  |

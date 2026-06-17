@@ -7,11 +7,14 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
  csr_addr_i/cmd/wdata
           |
           v
  +------------------+      timer_irq_i
- | CSR read/write   |<-----external_irq_i
+ | SEQ+COMB CSR     |<-----external_irq_i
  | decode and masks |
  +---+----------+---+
      |          |

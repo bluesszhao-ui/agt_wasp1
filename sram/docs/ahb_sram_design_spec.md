@@ -12,11 +12,14 @@ stable AHB-facing behavior.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  hsel_i ----------+----------------+
- haddr_i -------->| address phase  |
+ haddr_i -------->| SEQ addr phase |
  htrans_i ------->| valid/range/   |
  hwrite_i ------->| alignment check|
  hsize_i -------->| capture regs   |
@@ -25,7 +28,7 @@ stable AHB-facing behavior.
                           | one-cycle AHB response/data phase
                           v
                  +----------------+
- hwdata_i ------>| byte lane      |
+ hwdata_i ------>| COMB byte lane |
                  | write merge    |
                  +--------+-------+
                           |

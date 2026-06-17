@@ -10,11 +10,14 @@ serial logic, TX/RX FIFOs, RX overrun tracking, and interrupt status.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  hsel_i ----------+----------------+
- haddr_i -------->| address phase  |
+ haddr_i -------->| SEQ addr phase |
  htrans_i ------->| range/alignment|
  hwrite_i ------->| word-only check|
  hsize_i -------->| capture regs   |
@@ -22,7 +25,7 @@ serial logic, TX/RX FIFOs, RX overrun tracking, and interrupt status.
                           |
                           v
                  +----------------+
- hwdata_i ------>| UART registers |
+ hwdata_i ------>| SEQ UART regs  |
                  | CTRL BAUD IRQ  |
                  +--------+-------+
                           |

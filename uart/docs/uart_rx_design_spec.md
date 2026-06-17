@@ -8,22 +8,25 @@ the received byte.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
  uart_rx_i
     |
     v
  +----------+    baud_tick_i    +----------+
- | RX_IDLE  |------------------>| RX_START |
+ | SEQ IDLE |------------------>| SEQ START|
  +----------+                   +----+-----+
                                      |
                                      v
                                 +----------+
-                                | RX_DATA  |
+                                | SEQ DATA |
                                 | bit_idx  |
                                 +----+-----+
                                      |
                                      v
                                 +----------+
-                                | RX_STOP  |--> data_valid_o/frame_error_o
+                                | SEQ STOP |--> data_valid_o/frame_error_o
                                 +----------+
 ```
 

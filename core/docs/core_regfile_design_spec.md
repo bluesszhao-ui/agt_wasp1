@@ -7,9 +7,12 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
                   +----------------------+
  clk_i ---------->|                      |
- rst_ni --------->|  regs_q x1..x31      |
+ rst_ni --------->|  SEQ regs_q x1..x31  |
  we_i ----------->|  rising-edge write   |
  waddr_i -------->|                      |
  wdata_i -------->|                      |
@@ -17,7 +20,7 @@
                         |          |
                         v          v
  raddr1_i --->+----------------+ +----------------+<--- raddr2_i
-              | x0/bypass/read | | x0/bypass/read |
+              | COMB x0/bypass | | COMB x0/bypass |
  waddr_i ---->| mux            | | mux            |<--- waddr_i
  wdata_i ---->|                | |                |<--- wdata_i
  we_i ------->+-------+--------+ +--------+-------+<--- we_i

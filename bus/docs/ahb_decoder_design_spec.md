@@ -9,6 +9,9 @@ It is a pure combinational block. It does not use a clock or reset.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
               haddr_i[31:0]
                    |
                    v

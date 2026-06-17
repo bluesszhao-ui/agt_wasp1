@@ -8,9 +8,12 @@ pipeline.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  id rs1/rs2 use ----+
                     v
- ex rd/write/load --> dependency compare ---> load-use stall controls
+ ex rd/write/load --> COMB dependency compare ---> load-use stall controls
                     |
  wb rd/write -------+----> EX/WB forwarding selects
 ```

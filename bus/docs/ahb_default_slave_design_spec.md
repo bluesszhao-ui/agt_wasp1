@@ -10,6 +10,10 @@ The first implementation is zero-wait and combinational, but the module exposes
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All response logic in this diagram is COMB. hclk_i/hresetn_i are IF-only
+reserved pins in this revision.
+
  hclk_i --------------------+
  hresetn_i -----------------+  reserved for future registered behavior
                              |

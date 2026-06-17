@@ -10,16 +10,19 @@ connects decode, regfile, ALU, LSU, CSR, trap, hazard, and writeback logic.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
                      redirect_valid/pc
                             |
                             v
- boot_pc ---> fetch PC register ---> frontend request PC
+ boot_pc ---> SEQ fetch PC register ---> frontend request PC
                             |
              frontend response valid/ready
                             |
                             v
                     +---------------+
-                    | IF/ID slot    |
+                    | SEQ IF/ID slot|
                     | pc/instr/flt  |
                     +-------+-------+
                             |

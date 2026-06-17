@@ -11,11 +11,14 @@ program OTP contents.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
               hclk_i / hresetn_i
                       |
                       v
  hsel_i ----------+----------------+
- haddr_i -------->| address phase  |
+ haddr_i -------->| SEQ addr phase |
  htrans_i ------->| range/alignment|
  hwrite_i ------->| region decode  |
  hsize_i -------->| capture regs   |
@@ -25,7 +28,7 @@ program OTP contents.
           |                               |
           v                               v
  +----------------+              +----------------+
- | OTP data array |              | OTP registers  |
+ | SEQ OTP array  |              | SEQ OTP regs   |
  | default all 1s |              | CTRL STATUS    |
  | 1 -> 0 only    |              | ADDR WDATA     |
  +-------+--------+              | RDATA KEY LOCK |

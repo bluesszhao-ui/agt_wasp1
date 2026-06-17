@@ -10,21 +10,24 @@ integration.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=clk_i, rst=rst_ni
+
  frontend rsp
       |
       v
  +-----------+
- | core_pipe |-- ex_pc/ex_instr/ex_valid/fault
+ | SEQ core_pipe |-- ex_pc/ex_instr/ex_valid/fault
  +-----+-----+
        |
        v
  +-------------+      +--------------+
- | core_decode |----->| core_regfile |
+ | COMB decode |----->| SEQ regfile  |
  +------+------+      +------+-------+
         |                    ^
         v                    |
  +--------------+      stall/bubble
- | core_hazard  |-------------+
+ | COMB hazard  |-------------+
  +------+-------+             |
         |                    v
  +--------------+      rs1/rs2 data

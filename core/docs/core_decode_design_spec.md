@@ -7,17 +7,20 @@
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  instr_i[31:0]
       |
       v
  +-------------------+
- | field extraction  |
+ | COMB field extract|
  | opcode/funct/regs |
  +---------+---------+
            |
            v
  +-------------------+       +----------------+
- | opcode/funct case |------>| illegal checks |
+ | COMB opcode case  |------>| COMB illegal   |
  +----+----+----+----+       +--------+-------+
       |    |    |                     |
       |    |    +------ immediates ---+

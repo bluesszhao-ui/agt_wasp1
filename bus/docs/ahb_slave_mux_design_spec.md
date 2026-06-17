@@ -10,6 +10,9 @@ It is a pure combinational block.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  hsel_i[10:0] ---------------------------+
                                          |
  slave_hrdata_i[0]  slave_hready_i[0]  slave_hresp_i[0]

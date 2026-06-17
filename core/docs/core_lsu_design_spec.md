@@ -8,12 +8,15 @@ handshake state.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic
+All logic blocks in this diagram are COMB. No DUT clock/reset is used.
+
  base_i ----+
- imm_i -----+----> effective address ----+----> req_addr_o
+ imm_i -----+----> COMB effective addr --+----> req_addr_o
                                       alignment
                                           |
- store_data_i --> lane shifter -----------+----> req_wdata_o
- size_i -------> strobe generator --------+----> req_wstrb_o
+ store_data_i --> COMB lane shifter ------+----> req_wdata_o
+ size_i -------> COMB strobe gen ---------+----> req_wstrb_o
  load_i/store_i -------------------------------> req_valid_o/req_write_o
 
  rsp_rdata_i --> byte/half/word select --> sign/zero extend --> load_data_o

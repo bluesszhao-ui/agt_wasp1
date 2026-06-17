@@ -15,6 +15,9 @@ shared AHB fabric and routes the shared response back to the granted master.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
+
  m0_haddr/m0_htrans/m0_hwrite/...      m1_haddr/m1_htrans/m1_hwrite/...
                  |                                      |
                  v                                      v
