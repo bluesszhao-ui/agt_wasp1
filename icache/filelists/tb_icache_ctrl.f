@@ -1,6 +1,4 @@
 +incdir+../common/rtl
 ../common/rtl/mem_req_rsp_if.sv
-rtl/icache_tag.sv
-rtl/icache_data.sv
-rtl/icache_refill.sv
 rtl/icache_ctrl.sv
+tb/tb_icache_ctrl.sv

@@ -65,6 +65,17 @@ sticky refill error reporting
 flush abort
 ```
 
+`icache_ctrl` provides:
+
+```text
+frontend fetch request acceptance
+hit response sequencing
+miss refill start sequencing
+refill line acceptance and tag/data update pulses
+invalid request fault responses
+flush abort and refill flush forwarding
+```
+
 ## 5. Target Requirements
 
 I-cache RTL must support:
