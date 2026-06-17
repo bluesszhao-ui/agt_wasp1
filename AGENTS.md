@@ -151,6 +151,18 @@ pure combinational modules should explicitly state that no sequential state
   exists when that distinction matters
 ```
 
+Design-spec block diagrams must explicitly label timing class and clock/reset
+domains:
+
+```text
+SEQ clk=<clock_name> rst=<reset_name>  sequential state or storage
+COMB                                  combinational logic
+IF                                    interface/external connection
+```
+
+Every sequential block in a diagram must show the clock it uses. Multi-clock
+diagrams must label each clock domain separately.
+
 For non-trivial sequential state, include a PNG diagram in `docs/images/` and
 regenerate it with `docs/tools/render_state_pngs.py` when the state behavior
 changes. Keep the text transition description alongside the image.

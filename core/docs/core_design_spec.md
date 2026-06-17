@@ -10,19 +10,22 @@ later frontend, cache, tile, debug, and SoC integration.
 ## 2. Block Diagram
 
 ```text
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
+
 +---------------------------------------------------------------+
 | core                                                          |
 |                                                               |
-|  clk/rst/boot_pc                                              |
+|  IF clk/rst/boot_pc                                           |
 |        |                                                      |
 |        v                                                      |
-|  +-------------------+                                        |
-|  | core_int_datapath |                                        |
-|  |                   |                                        |
-|  | pipe/decode/rf    |---- commit/ex/trap/hazard observation  |
-|  | alu/branch/lsu    |---- data-memory request/response       |
-|  | csr/trap/hazard   |---- instruction request/response       |
-|  +-------------------+                                        |
+|  +------------------------------+                             |
+|  | SEQ+COMB clk_i/rst_ni        |                             |
+|  | core_int_datapath            |                             |
+|  | pipe/decode/rf/alu/branch    |---- IF commit/ex/trap/hazard|
+|  | lsu/csr/trap/hazard          |---- IF dmem req/rsp         |
+|  |                              |---- IF instruction req/rsp  |
+|  +------------------------------+                             |
 |                                                               |
 +---------------------------------------------------------------+
 ```

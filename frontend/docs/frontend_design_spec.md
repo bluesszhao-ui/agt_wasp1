@@ -9,23 +9,28 @@ arbitration, and instruction buffer are staged after these leaves are verified.
 ## 2. Planned Block Diagram
 
 ```text
-                  redirect
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+Current frontend clock/reset domain: clk=clk_i, rst=rst_ni
+
+                  IF redirect
                      |
                      v
-               +-------------+
- boot_pc ----->| frontend_pc |---- pc_valid/pc/misaligned
- stall/ready ->|             |
-               +------+------+ 
+               +-----------------------+
+ IF boot_pc -->| frontend_pc           |---- IF pc_valid/pc/misaligned
+ IF stall/ready| SEQ clk_i/rst_ni      |
+               +-----------+-----------+
                       |
                       v
-               +-------------+
-               | frontend_fetch |
-               +------+------+
+               +-----------------------+
+               | frontend_fetch        |
+               | SEQ+COMB clk_i/rst_ni |
+               +-----------+-----------+
                       |
                       v
-               +-------------+
-               | frontend_ibuf |
-               +-------------+
+               +-----------------------+
+               | frontend_ibuf         |
+               | planned SEQ clk_i     |
+               +-----------------------+
 ```
 
 ## 3. Current Implementation Status

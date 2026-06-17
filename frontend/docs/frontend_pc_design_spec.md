@@ -8,28 +8,29 @@ instruction frontend.
 ## 2. Block Diagram
 
 ```text
- boot_pc_i ------------------------------+
-                                         |
- redirect_valid_i/redirect_pc_i ----+    |
-                                    |    v
- fetch_ready_i ----+           +----+---------+
-                   |           | priority mux |
- stall_i ----------+---------->| reset        |
-                               | redirect     |
-                               | fetch_fire   |
-                               | hold         |
-                               +------+------+
-                                      |
-                                      v
-                               +-------------+
-                               | pc_q        |
-                               | valid_q     |
-                               +------+------+ 
-                                      |
-                    +-----------------+-----------------+
-                    |                 |                 |
-                    v                 v                 v
-                pc_o             pc_valid_o       pc_misaligned_o
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
+
+ IF boot_pc_i -----------------------------+
+                                           |
+ IF redirect_valid_i/redirect_pc_i ----+    |
+                                      |    v
+ IF fetch_ready_i ----+          +----+----------------+
+                      |          | COMB priority mux   |
+ IF stall_i ----------+--------->| reset/redirect/     |
+                                 | fetch_fire/hold     |
+                                 +----------+----------+
+                                            |
+                                            v
+                                 +---------------------+
+                                 | SEQ clk_i/rst_ni    |
+                                 | pc_q, valid_q       |
+                                 +----------+----------+
+                                            |
+                       +--------------------+--------------------+
+                       |                    |                    |
+                       v                    v                    v
+                  IF pc_o              IF pc_valid_o      IF pc_misaligned_o
 ```
 
 PNG state diagram:

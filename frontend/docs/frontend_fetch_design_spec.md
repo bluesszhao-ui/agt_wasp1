@@ -9,26 +9,29 @@ interface and returns instruction responses to the later ibuf/core side.
 ## 2. Block Diagram
 
 ```text
- pc_valid/pc/misaligned
-          |
-          v
- +------------------+
- | accept / classify|---- misaligned ----+
- +--------+---------+                    |
-          | aligned                      v
-          v                       +-------------+
- +------------------+             | local fault |
- | imem req driver  |             +------+------+ 
- +--------+---------+                    |
-          |                              |
-          v                              v
- +------------------+             +-------------+
- | outstanding PC   |------------>| response mux|---- instr_valid/pc/instr/fault
- | state + kill bit |<----flush---|             |
- +--------+---------+             +-------------+
-          |
-          v
- imem response consume/drop
+Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
+Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
+
+ IF pc_valid/pc/misaligned
+           |
+           v
+ +-----------------------+
+ | COMB accept/classify  |---- misaligned ----+
+ +----------+------------+                    |
+           | aligned                          v
+           v                           +------------------+
+ +-----------------------+             | COMB local fault |
+ | COMB imem req driver  |             +---------+--------+
+ +----------+------------+                       |
+           |                                    |
+           v                                    v
+ +-----------------------+             +-------------------+
+ | SEQ clk_i/rst_ni      |------------>| COMB response mux |---- IF instr_valid/pc/instr/fault
+ | state_q, pc_q, kill_q |<----flush---|                   |
+ +----------+------------+             +-------------------+
+           |
+           v
+ IF imem response consume/drop
 ```
 
 PNG state diagram:
