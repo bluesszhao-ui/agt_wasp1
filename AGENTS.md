@@ -163,6 +163,10 @@ IF                                    interface/external connection
 Every sequential block in a diagram must show the clock it uses. Multi-clock
 diagrams must label each clock domain separately.
 
+Do not use combined timing labels. If one module contains both sequential state
+and combinational logic, draw them as separate connected `SEQ` and `COMB`
+blocks with clear signal flow.
+
 For non-trivial sequential state, include a PNG diagram in `docs/images/` and
 regenerate it with `docs/tools/render_state_pngs.py` when the state behavior
 changes. Keep the text transition description alongside the image.

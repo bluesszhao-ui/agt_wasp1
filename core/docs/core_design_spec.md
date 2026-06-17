@@ -20,11 +20,16 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 |        |                                                      |
 |        v                                                      |
 |  +------------------------------+                             |
-|  | SEQ+COMB clk_i/rst_ni        |                             |
-|  | core_int_datapath            |                             |
-|  | pipe/decode/rf/alu/branch    |---- IF commit/ex/trap/hazard|
-|  | lsu/csr/trap/hazard          |---- IF dmem req/rsp         |
-|  |                              |---- IF instruction req/rsp  |
+|  | SEQ clk_i/rst_ni             |                             |
+|  | datapath state               |                             |
+|  | pipe/rf/csr registers        |                             |
+|  +---------------+--------------+                             |
+|                  |                                            |
+|                  v                                            |
+|  +------------------------------+                             |
+|  | COMB datapath control        |---- IF commit/ex/trap/hazard|
+|  | decode/alu/branch/lsu/trap   |---- IF dmem req/rsp         |
+|  | hazard/wb/redirect           |---- IF instruction req/rsp  |
 |  +------------------------------+                             |
 |                                                               |
 +---------------------------------------------------------------+

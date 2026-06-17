@@ -100,6 +100,10 @@ COMB
 IF
 ```
 
+Do not combine timing classes in one diagram block. A module that contains both
+sequential and combinational logic must be drawn as separate connected `SEQ` and
+`COMB` blocks, even if that makes the diagram more detailed.
+
 If a diagram covers multiple clocks, each sequential block must show its own
 clock name and the diagram must include a small clock/reset legend. If a module
 is purely combinational, its design spec block diagram or nearby text must state

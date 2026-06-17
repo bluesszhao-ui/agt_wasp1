@@ -24,14 +24,26 @@ Current frontend clock/reset domain: clk=clk_i, rst=rst_ni
              | IF pc_valid/pc/misaligned
              v
  +------------------------+       IF imem_if
- | frontend_fetch         |<----------------------> instruction cache/memory
- | SEQ+COMB clk_i/rst_ni  |
+ | frontend_fetch COMB    |<----------------------> instruction cache/memory
+ | req/rsp control        |
+ +-----+-------------+----+
+       |             ^
+       v             |
+ +------------------------+
+ | frontend_fetch SEQ     |
+ | clk_i/rst_ni state     |
  +-----------+------------+
              | IF fetch response
              v
  +------------------------+
- | frontend_ibuf          |
- | SEQ+COMB clk_i/rst_ni  |
+ | frontend_ibuf COMB     |
+ | ready/data/status mux  |
+ +-----+-------------+----+
+       |             ^
+       v             |
+ +------------------------+
+ | frontend_ibuf SEQ      |
+ | clk_i/rst_ni FIFO      |
  +-----------+------------+
              | IF instr_valid/ready/pc/instr/fault
              v

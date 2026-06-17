@@ -14,12 +14,18 @@ SEQ clock/reset domain: clk=clk_i, rst=rst_ni
           |
           v
  +------------------+      timer_irq_i
- | SEQ+COMB CSR     |<-----external_irq_i
- | decode and masks |
+ | COMB CSR decode  |<-----external_irq_i
+ | read mux / masks |
  +---+----------+---+
      |          |
      v          v
- CSR regs    mip read image
+ csr write   mip read image
+     |
+     v
+ +------------------+
+ | SEQ CSR regs     |
+ | clk_i/rst_ni     |
+ +---+----------+---+
      |
      +----> csr_rdata_o / csr_illegal_o
      |

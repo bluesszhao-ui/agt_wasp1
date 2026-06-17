@@ -17,13 +17,25 @@ Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
         v
  +-----------------------+
  | icache_ctrl           |
- | planned SEQ+COMB      |
+ | planned COMB control  |
+ +----+-------------+----+
+      |
+      v
+ +-----------------------+
+ | icache_ctrl state     |
+ | planned SEQ clk/rst   |
  +----+-------------+----+
       |             |
       v             v
  +-----------+  +-----------+
- | icache_tag|  |icache_data|
- | SEQ+COMB  |  | planned   |
+ | tag COMB  |  |data COMB  |
+ | compare   |  |word select|
+ +-----+-----+  +-----+-----+
+       |              |
+       v              v
+ +-----------+  +-----------+
+ | tag SEQ   |  |data SEQ   |
+ | valid/tag |  |planned RAM|
  +-----+-----+  +-----+-----+
        \           /
         v         v

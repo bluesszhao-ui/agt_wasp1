@@ -17,10 +17,15 @@ SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
                       |
                       v
  s_hsel_i --------+----------------+
- s_haddr_i ------>| SEQ+COMB slave|
- s_htrans_i ----->| range/alignment|
- s_hwrite_i ----->| word-only check|
- s_hwdata_i ----->| SRC DST LEN    |
+ s_haddr_i ------>| COMB slave     |
+ s_htrans_i ----->| decode/check   |
+ s_hwrite_i ----->| read mux/resp  |
+ s_hwdata_i ----->+--------+-------+
+                          |
+                          v
+                 +----------------+
+                 | SEQ slave regs |
+                 | SRC DST LEN    |
                  +--------+-------+
                           |
                           v
