@@ -18,14 +18,14 @@ timescale: 1ns/1ps
 
 | Time window | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
-| 0ns-20ns | Hold reset active. | Fetch PC equals boot PC; no execute, commit, or trap. | PASS: reset observation matched. |
-| 20ns-46ns | Release reset and feed ADDI sequence. | `x1=5` commits and fetch PC increments. | PASS: first commit and fetch stepping matched. |
+| 0ns-20ns | Hold reset active. | No execute, commit, or trap. | PASS: reset observation matched. |
+| 20ns-46ns | Release reset and feed ADDI sequence. | `x1=5` commits and stream PC model increments. | PASS: first commit and stream stepping matched. |
 | 46ns-56ns | Feed ADD instruction. | `x2=8` commits and ADD enters pipe. | PASS: second commit matched. |
 | 56ns-66ns | Feed base ADDI. | `x3=13` commits and base register is prepared. | PASS: ADD commit matched. |
 | 66ns-86ns | Feed word load. | Data request address `0x300`, word size, readback commit. | PASS: data request and load commit matched. |
 | 86ns-106ns | Feed dependent ADD. | Load-use stall output asserts and one execute bubble is injected. | PASS: hazard and bubble matched. |
 | 106ns-116ns | Feed NOP drain. | Dependent ADD commits loaded value. | PASS: dependent ADD committed `0xCAFE_BABE`. |
-| 116ns-126ns | Feed illegal instruction and fall-through NOP. | Illegal trap redirects fetch to `0x00000000`. | PASS: trap outputs and redirect matched. |
+| 116ns-126ns | Feed illegal instruction and fall-through NOP. | Illegal trap asserts `redirect_pc_o=0x00000000`. | PASS: trap outputs and redirect matched. |
 
 ## 4. Coverage Summary
 

@@ -16,7 +16,7 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 +---------------------------------------------------------------+
 | core                                                          |
 |                                                               |
-|  IF clk/rst/boot_pc                                           |
+|  IF clk/rst, frontend instr stream, irq, data response         |
 |        |                                                      |
 |        v                                                      |
 |  +------------------------------+                             |
@@ -29,7 +29,7 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 |  +------------------------------+                             |
 |  | COMB datapath control        |---- IF commit/ex/trap/hazard|
 |  | decode/alu/branch/lsu/trap   |---- IF dmem req/rsp         |
-|  | hazard/wb/redirect           |---- IF instruction req/rsp  |
+|  | hazard/wb/redirect           |---- IF instr stream/redirect|
 |  +------------------------------+                             |
 |                                                               |
 +---------------------------------------------------------------+
@@ -58,8 +58,9 @@ its verified submodules.
 
 | `core` interface group | Connected child ports | Notes |
 | --- | --- | --- |
-| Clock/reset/boot | `clk_i`, `rst_ni`, `boot_pc_i` | Direct pass-through. |
-| Instruction fetch | `if_req_*`, `if_rsp_*` | Direct pass-through to the staged frontend/cache interface. |
+| Clock/reset | `clk_i`, `rst_ni` | Direct pass-through. |
+| Instruction stream | `instr_valid_i`, `instr_ready_o`, `instr_pc_i`, `instr_i`, `instr_fault_i` | Frontend-owned fetch stream into datapath. |
+| Redirect | `redirect_valid_o`, `redirect_pc_o` | Branch/trap/MRET redirect request back to frontend. |
 | Data memory | `dmem_req_*`, `dmem_rsp_*` | Direct pass-through to the staged cache/tile interface. |
 | Interrupts | `timer_irq_i`, `external_irq_i` | Direct pass-through into machine CSR/trap logic. |
 | Commit/execute observation | `commit_*`, `ex_*` | Direct pass-through for verification and future retire/debug hooks. |

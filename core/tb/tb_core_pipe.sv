@@ -3,18 +3,18 @@
 module tb_core_pipe;
   logic        clk;              // Testbench clock.
   logic        rst_n;            // Testbench active-low reset.
-  logic [31:0] boot_pc;          // Reset PC driven into the DUT.
-  logic        if_req_valid;     // DUT fetch request valid.
-  logic [31:0] if_req_pc;        // DUT fetch request PC.
-  logic        if_rsp_valid;     // Testbench fetch response valid.
-  logic        if_rsp_ready;     // DUT fetch response ready.
-  logic [31:0] if_rsp_instr;     // Testbench fetch response instruction.
-  logic        if_rsp_fault;     // Testbench fetch response fault flag.
+  logic        instr_valid;      // Testbench instruction stream valid.
+  logic        instr_ready;      // DUT instruction stream ready.
+  logic [31:0] instr_pc;         // Testbench instruction stream PC.
+  logic [31:0] instr;            // Testbench instruction stream word.
+  logic        instr_fault;      // Testbench instruction stream fault flag.
   logic        fetch_stall;      // Testbench fetch stall control.
   logic        decode_stall;     // Testbench decode stall control.
   logic        execute_bubble;   // Testbench execute bubble control.
   logic        redirect_valid;   // Testbench redirect control.
   logic [31:0] redirect_pc;      // Testbench redirect target.
+  logic        pipe_redirect_valid;// DUT redirect forwarded to frontend.
+  logic [31:0] pipe_redirect_pc; // DUT redirect target forwarded to frontend.
   logic        id_valid;         // DUT IF/ID valid.
   logic [31:0] id_pc;            // DUT IF/ID PC.
   logic [31:0] id_instr;         // DUT IF/ID instruction.
@@ -24,7 +24,6 @@ module tb_core_pipe;
   logic [31:0] ex_instr;         // DUT EX/WB instruction.
   logic        ex_fetch_fault;   // DUT EX/WB fetch fault.
 
-  logic [31:0] ref_fetch_pc;     // Reference fetch PC.
   logic        ref_id_valid;     // Reference IF/ID valid.
   logic [31:0] ref_id_pc;        // Reference IF/ID PC.
   logic [31:0] ref_id_instr;     // Reference IF/ID instruction.
@@ -33,6 +32,7 @@ module tb_core_pipe;
   logic [31:0] ref_ex_pc;        // Reference EX/WB PC.
   logic [31:0] ref_ex_instr;     // Reference EX/WB instruction.
   logic        ref_ex_fault;     // Reference EX/WB fault flag.
+  logic [31:0] stream_pc;        // Frontend-side PC model for instruction input.
 
   integer pass_count;            // Total passing cycle checks.
   integer fetch_count;           // Fetch accept coverage counter.
@@ -47,18 +47,18 @@ module tb_core_pipe;
   core_pipe dut (
     .clk_i(clk),
     .rst_ni(rst_n),
-    .boot_pc_i(boot_pc),
-    .if_req_valid_o(if_req_valid),
-    .if_req_pc_o(if_req_pc),
-    .if_rsp_valid_i(if_rsp_valid),
-    .if_rsp_ready_o(if_rsp_ready),
-    .if_rsp_instr_i(if_rsp_instr),
-    .if_rsp_fault_i(if_rsp_fault),
+    .instr_valid_i(instr_valid),
+    .instr_ready_o(instr_ready),
+    .instr_pc_i(instr_pc),
+    .instr_i(instr),
+    .instr_fault_i(instr_fault),
     .fetch_stall_i(fetch_stall),
     .decode_stall_i(decode_stall),
     .execute_bubble_i(execute_bubble),
     .redirect_valid_i(redirect_valid),
     .redirect_pc_i(redirect_pc),
+    .redirect_valid_o(pipe_redirect_valid),
+    .redirect_pc_o(pipe_redirect_pc),
     .id_valid_o(id_valid),
     .id_pc_o(id_pc),
     .id_instr_o(id_instr),
@@ -75,10 +75,9 @@ module tb_core_pipe;
   end
 
   // Reset the reference model to the same architectural defaults used by the
-  // DUT: boot PC and invalid NOP-filled pipeline slots.
-  task automatic reset_ref(input logic [31:0] pc);
+  // DUT: invalid NOP-filled pipeline slots.
+  task automatic reset_ref;
     begin
-      ref_fetch_pc = pc;
       ref_id_valid = 1'b0;
       ref_id_pc = 32'h0000_0000;
       ref_id_instr = 32'h0000_0013;
@@ -93,8 +92,7 @@ module tb_core_pipe;
   // Compare every visible pipeline state output against the reference model.
   task automatic check_state(input string name);
     begin
-      if ((if_req_pc !== ref_fetch_pc) ||
-          (id_valid !== ref_id_valid) ||
+      if ((id_valid !== ref_id_valid) ||
           (id_pc !== ref_id_pc) ||
           (id_instr !== ref_id_instr) ||
           (id_fetch_fault !== ref_id_fault) ||
@@ -125,14 +123,14 @@ module tb_core_pipe;
     logic [31:0] old_id_pc;
     logic [31:0] old_id_instr;
     logic old_id_fault;
-    logic [31:0] old_fetch_pc;
     logic exp_ready;
     logic fetch_fire;
     begin
       @(negedge clk);
-      if_rsp_valid = t_rsp_valid;
-      if_rsp_instr = t_instr;
-      if_rsp_fault = t_fault;
+      instr_valid = t_rsp_valid;
+      instr_pc = stream_pc;
+      instr = t_instr;
+      instr_fault = t_fault;
       fetch_stall = t_fetch_stall;
       decode_stall = t_decode_stall;
       execute_bubble = t_execute_bubble;
@@ -141,8 +139,9 @@ module tb_core_pipe;
       #1;
 
       exp_ready = !t_fetch_stall && !t_decode_stall && !t_redirect_valid;
-      if ((if_req_valid !== !t_fetch_stall) || (if_rsp_ready !== exp_ready) ||
-          (if_req_pc !== ref_fetch_pc)) begin
+      if ((instr_ready !== exp_ready) ||
+          (pipe_redirect_valid !== t_redirect_valid) ||
+          (pipe_redirect_pc !== t_redirect_pc)) begin
         $fatal(1, "%s handshake mismatch", name);
       end
 
@@ -150,14 +149,13 @@ module tb_core_pipe;
       old_id_pc = ref_id_pc;
       old_id_instr = ref_id_instr;
       old_id_fault = ref_id_fault;
-      old_fetch_pc = ref_fetch_pc;
       fetch_fire = t_rsp_valid && exp_ready;
 
       @(posedge clk);
       #1;
 
       if (t_redirect_valid) begin
-        ref_fetch_pc = t_redirect_pc;
+        stream_pc = t_redirect_pc;
         ref_id_valid = 1'b0;
         ref_id_pc = 32'h0000_0000;
         ref_id_instr = 32'h0000_0013;
@@ -169,7 +167,7 @@ module tb_core_pipe;
         redirect_count++;
       end else begin
         if (fetch_fire) begin
-          ref_fetch_pc = ref_fetch_pc + 32'd4;
+          stream_pc = stream_pc + 32'd4;
           fetch_count++;
         end
 
@@ -189,7 +187,7 @@ module tb_core_pipe;
 
         if (fetch_fire) begin
           ref_id_valid = 1'b1;
-          ref_id_pc = old_fetch_pc;
+          ref_id_pc = instr_pc;
           ref_id_instr = t_instr;
           ref_id_fault = t_fault;
           if (t_fault) begin
@@ -219,17 +217,18 @@ module tb_core_pipe;
     fault_count = 0;
     random_count = 0;
 
-    boot_pc = 32'h0001_0000;
+    stream_pc = 32'h0001_0000;
     rst_n = 1'b0;
-    if_rsp_valid = 1'b0;
-    if_rsp_instr = 32'h0000_0013;
-    if_rsp_fault = 1'b0;
+    instr_valid = 1'b0;
+    instr_pc = stream_pc;
+    instr = 32'h0000_0013;
+    instr_fault = 1'b0;
     fetch_stall = 1'b0;
     decode_stall = 1'b0;
     execute_bubble = 1'b0;
     redirect_valid = 1'b0;
     redirect_pc = 32'h0000_0000;
-    reset_ref(boot_pc);
+    reset_ref();
 
     repeat (2) @(posedge clk);
     #1;

@@ -5,13 +5,11 @@ module tb_core_int_datapath;
 
   logic        clk;            // Testbench clock.
   logic        rst_n;          // Active-low reset.
-  logic [31:0] boot_pc;        // Reset PC for the integrated datapath.
-  logic        if_req_valid;   // DUT fetch request valid.
-  logic [31:0] if_req_pc;      // DUT fetch request PC.
-  logic        if_rsp_valid;   // Testbench instruction response valid.
-  logic        if_rsp_ready;   // DUT instruction response ready.
-  logic [31:0] if_rsp_instr;   // Testbench instruction response instruction.
-  logic        if_rsp_fault;   // Testbench instruction fetch fault.
+  logic        instr_valid;    // Testbench frontend instruction valid.
+  logic        instr_ready;    // DUT can accept frontend instruction.
+  logic [31:0] instr_pc;       // Testbench frontend instruction PC.
+  logic [31:0] instr;          // Testbench frontend instruction word.
+  logic        instr_fault;    // Testbench frontend instruction fetch fault.
   logic        dmem_req_valid; // DUT data-memory request valid.
   logic [31:0] dmem_req_addr;  // DUT data-memory request address.
   logic        dmem_req_write; // DUT data-memory write qualifier.
@@ -36,6 +34,8 @@ module tb_core_int_datapath;
   logic [31:0] trap_tval;      // DUT trap value.
   logic [31:0] trap_pc;        // DUT trap PC.
   logic        mret_taken;     // DUT MRET redirect selected.
+  logic        redirect_valid; // DUT redirect request toward frontend.
+  logic [31:0] redirect_pc;    // DUT redirect target toward frontend.
   logic [31:0] csr_rdata;      // DUT CSR read data.
   logic        hazard_load_use;// DUT load-use hazard indicator.
   logic        hazard_fwd_rs1_ex;// DUT rs1 EX-forward indicator.
@@ -61,18 +61,16 @@ module tb_core_int_datapath;
   integer hazard_count;        // Load-use stall coverage.
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
-  logic [31:0] exp_fetch_pc;   // Scoreboard expected fetch request PC.
+  logic [31:0] exp_fetch_pc;   // Scoreboard expected frontend stream PC.
 
   core_int_datapath dut (
     .clk_i(clk),
     .rst_ni(rst_n),
-    .boot_pc_i(boot_pc),
-    .if_req_valid_o(if_req_valid),
-    .if_req_pc_o(if_req_pc),
-    .if_rsp_valid_i(if_rsp_valid),
-    .if_rsp_ready_o(if_rsp_ready),
-    .if_rsp_instr_i(if_rsp_instr),
-    .if_rsp_fault_i(if_rsp_fault),
+    .instr_valid_i(instr_valid),
+    .instr_ready_o(instr_ready),
+    .instr_pc_i(instr_pc),
+    .instr_i(instr),
+    .instr_fault_i(instr_fault),
     .dmem_req_valid_o(dmem_req_valid),
     .dmem_req_addr_o(dmem_req_addr),
     .dmem_req_write_o(dmem_req_write),
@@ -97,6 +95,8 @@ module tb_core_int_datapath;
     .trap_tval_o(trap_tval),
     .trap_pc_o(trap_pc),
     .mret_taken_o(mret_taken),
+    .redirect_valid_o(redirect_valid),
+    .redirect_pc_o(redirect_pc),
     .csr_rdata_o(csr_rdata),
     .hazard_load_use_o(hazard_load_use),
     .hazard_fwd_rs1_ex_o(hazard_fwd_rs1_ex),
@@ -206,39 +206,32 @@ module tb_core_int_datapath;
     endcase
   end
 
-  // Drive one fetch response before the next active edge and check the expected
-  // request PC after the edge. Redirect tests override exp_next_pc.
+  // Drive one frontend stream beat before the next active edge and check the
+  // expected stream PC after the edge. Redirect tests override exp_next_pc.
   task automatic drive_instr_expect_next(
-    input logic [31:0] instr,
+    input logic [31:0] t_instr,
     input logic [31:0] exp_next_pc
   );
     begin
       @(negedge clk);
-      if (if_req_pc !== exp_fetch_pc) begin
-        $fatal(1, "fetch PC before drive mismatch got=%08x exp=%08x",
-               if_req_pc, exp_fetch_pc);
-      end
-      if_rsp_valid = 1'b1;
-      if_rsp_instr = instr;
-      if_rsp_fault = 1'b0;
+      instr_valid = 1'b1;
+      instr_pc = exp_fetch_pc;
+      instr = t_instr;
+      instr_fault = 1'b0;
       #1;
-      if (!if_req_valid || !if_rsp_ready) begin
-        $fatal(1, "fetch handshake not ready for instr %08x", instr);
+      if (!instr_ready) begin
+        $fatal(1, "fetch handshake not ready for instr %08x", t_instr);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_next_pc;
-      if (if_req_pc !== exp_fetch_pc) begin
-        $fatal(1, "fetch PC after drive mismatch got=%08x exp=%08x",
-               if_req_pc, exp_fetch_pc);
-      end
       pc_count++;
     end
   endtask
 
-  task automatic drive_instr(input logic [31:0] instr);
+  task automatic drive_instr(input logic [31:0] t_instr);
     begin
-      drive_instr_expect_next(instr, exp_fetch_pc + 32'd4);
+      drive_instr_expect_next(t_instr, exp_fetch_pc + 32'd4);
     end
   endtask
 
@@ -315,17 +308,17 @@ module tb_core_int_datapath;
     begin
       #1;
       if (!trap_valid || trap_interrupt || (trap_cause !== exp_cause) ||
-          (trap_tval !== exp_tval) || (trap_pc !== exp_pc) || if_rsp_ready) begin
-        $fatal(1, "%s trap mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b",
+          (trap_tval !== exp_tval) || (trap_pc !== exp_pc) || instr_ready ||
+          !redirect_valid || (redirect_pc !== exp_target)) begin
+        $fatal(1, "%s trap mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b redir=%0b target=%08x",
                name, trap_valid, trap_interrupt, trap_cause, trap_tval,
-               trap_pc, if_rsp_ready);
+               trap_pc, instr_ready, redirect_valid, redirect_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_target;
-      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
-        $fatal(1, "%s trap redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
-               name, if_req_pc, exp_fetch_pc, ex_valid);
+      if (ex_valid) begin
+        $fatal(1, "%s trap redirect mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       trap_count++;
@@ -343,17 +336,16 @@ module tb_core_int_datapath;
       #1;
       if (!trap_valid || !trap_interrupt || (trap_cause !== exp_cause) ||
           (trap_tval !== 32'h0000_0000) || (trap_pc !== exp_pc) ||
-          if_rsp_ready) begin
-        $fatal(1, "%s irq mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b",
+          instr_ready || !redirect_valid || (redirect_pc !== exp_target)) begin
+        $fatal(1, "%s irq mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b redir=%0b target=%08x",
                name, trap_valid, trap_interrupt, trap_cause, trap_tval,
-               trap_pc, if_rsp_ready);
+               trap_pc, instr_ready, redirect_valid, redirect_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_target;
-      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
-        $fatal(1, "%s irq redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
-               name, if_req_pc, exp_fetch_pc, ex_valid);
+      if (ex_valid) begin
+        $fatal(1, "%s irq redirect mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       trap_count++;
@@ -368,16 +360,16 @@ module tb_core_int_datapath;
   );
     begin
       #1;
-      if (!mret_taken || trap_valid || if_rsp_ready) begin
-        $fatal(1, "%s mret mismatch mret=%0b trap_valid=%0b ready=%0b",
-               name, mret_taken, trap_valid, if_rsp_ready);
+      if (!mret_taken || trap_valid || instr_ready ||
+          !redirect_valid || (redirect_pc !== exp_target)) begin
+        $fatal(1, "%s mret mismatch mret=%0b trap_valid=%0b ready=%0b redir=%0b target=%08x",
+               name, mret_taken, trap_valid, instr_ready, redirect_valid, redirect_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_target;
-      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
-        $fatal(1, "%s mret redirect mismatch pc=%08x exp=%08x ex_valid=%0b",
-               name, if_req_pc, exp_fetch_pc, ex_valid);
+      if (ex_valid) begin
+        $fatal(1, "%s mret redirect mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       trap_count++;
@@ -391,15 +383,14 @@ module tb_core_int_datapath;
   );
     begin
       #1;
-      if (if_rsp_ready) begin
-        $fatal(1, "%s redirect did not block fetch response acceptance", name);
+      if (instr_ready || !redirect_valid || (redirect_pc !== exp_target)) begin
+        $fatal(1, "%s redirect did not block instruction stream acceptance", name);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_target;
-      if (if_req_pc !== exp_fetch_pc || ex_valid) begin
-        $fatal(1, "%s redirect flush mismatch pc=%08x exp=%08x ex_valid=%0b",
-               name, if_req_pc, exp_fetch_pc, ex_valid);
+      if (ex_valid) begin
+        $fatal(1, "%s redirect flush mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       redirect_count++;
@@ -413,16 +404,15 @@ module tb_core_int_datapath;
     begin
       @(negedge clk);
       #1;
-      if (!hazard_load_use || if_rsp_ready || (if_req_pc !== held_pc)) begin
+      if (!hazard_load_use || instr_ready || (exp_fetch_pc !== held_pc)) begin
         $fatal(1, "%s load-use stall mismatch hazard=%0b ready=%0b pc=%08x exp_pc=%08x",
-               name, hazard_load_use, if_rsp_ready, if_req_pc, held_pc);
+               name, hazard_load_use, instr_ready, exp_fetch_pc, held_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = held_pc;
-      if (ex_valid || (if_req_pc !== exp_fetch_pc)) begin
-        $fatal(1, "%s load-use bubble mismatch ex_valid=%0b pc=%08x exp_pc=%08x",
-               name, ex_valid, if_req_pc, exp_fetch_pc);
+      if (ex_valid) begin
+        $fatal(1, "%s load-use bubble mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       hazard_count++;
@@ -448,18 +438,18 @@ module tb_core_int_datapath;
     suppress_count = 0;
     pc_count = 0;
 
-    boot_pc = 32'h0001_0000;
-    exp_fetch_pc = boot_pc;
+    exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
-    if_rsp_valid = 1'b0;
-    if_rsp_instr = 32'h0000_0013;
-    if_rsp_fault = 1'b0;
+    instr_valid = 1'b0;
+    instr_pc = exp_fetch_pc;
+    instr = 32'h0000_0013;
+    instr_fault = 1'b0;
     timer_irq = 1'b0;
     external_irq = 1'b0;
 
     repeat (2) @(posedge clk);
     #1;
-    if (if_req_pc !== boot_pc || ex_valid || commit_valid) begin
+    if (ex_valid || commit_valid) begin
       $fatal(1, "reset state mismatch");
     end
     rst_n = 1'b1;

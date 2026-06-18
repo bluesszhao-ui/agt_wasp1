@@ -51,10 +51,11 @@ Debug halt/resume hooks remain a later `debug` and `tile` integration item.
 ## 4. Interface Requirements
 
 The core connects to surrounding frontend/cache/tile infrastructure through
-lightweight request-response interfaces:
+lightweight interfaces:
 
 ```text
-instruction side: request valid + PC, response valid/ready + instruction/fault
+instruction side: frontend-owned valid/ready instruction stream with PC/fault
+redirect side: branch/trap/MRET redirect valid + target PC back to frontend
 data side: request valid/address/write/size/wdata/wstrb, response rdata/error
 interrupt side: timer_irq_i and external_irq_i
 observation side: commit, execute, trap, CSR, hazard, unsupported indicators
@@ -65,8 +66,9 @@ owned by later frontend/cache/tile modules.
 
 ## 5. Reset and Trap Requirements
 
-Reset PC is supplied by `boot_pc_i`; SoC integration must drive it to the
-executable OTP reset vector.
+Reset PC is supplied to `frontend`, not to `core`. SoC integration must drive
+the frontend boot PC to the executable OTP reset vector, then deliver fetched
+instructions to `core` through the instruction stream.
 
 Trap behavior must update machine CSRs consistently with RISC-V machine mode
 requirements for supported traps and interrupts.

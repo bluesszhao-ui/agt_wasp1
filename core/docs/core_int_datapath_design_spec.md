@@ -13,7 +13,7 @@ integration.
 Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
 SEQ clock/reset domain: clk=clk_i, rst=rst_ni
 
- frontend rsp
+ frontend instruction stream
       |
       v
  +-----------+
@@ -98,7 +98,7 @@ not-taken    -> no redirect and no register writeback
 
 Redirect is gated by `ex_valid`, fetch fault, and illegal decode status. When a
 redirect is asserted, `core_pipe` flushes younger IF/ID and EX/WB state on the
-next active clock edge and reloads the fetch PC with the branch target.
+next active clock edge and forwards the redirect target to `frontend`.
 
 Load/store selection:
 
@@ -152,11 +152,10 @@ The sequential state comes from the instantiated `core_pipe` and
 
 ```text
 Reset:
-  core_pipe fetch PC <- boot_pc_i
   core_pipe IF/ID and EX/WB slots invalid
   core_regfile x1..x31 <- 0
 
-Each accepted fetch response:
+Each accepted frontend instruction stream beat:
   core_pipe captures instruction into IF/ID
   old IF/ID advances to EX/WB
 
@@ -173,11 +172,11 @@ Each execute/writeback cycle:
   if load/store fault:
     architectural writeback is suppressed
   if trap or MRET redirects:
-    core_pipe blocks response acceptance for the redirect cycle
-    core_pipe flushes younger slots and loads mtvec/mepc target PC
+    core_pipe blocks instruction stream acceptance for the redirect cycle
+    core_pipe flushes younger slots and forwards mtvec/mepc target PC
   if branch/JAL/JALR redirects:
-    core_pipe blocks response acceptance for the redirect cycle
-    core_pipe flushes younger slots and loads target PC
+    core_pipe blocks instruction stream acceptance for the redirect cycle
+    core_pipe flushes younger slots and forwards target PC
   if valid and supported and rd!=x0:
     core_regfile writes rd on the next clock edge
 ```

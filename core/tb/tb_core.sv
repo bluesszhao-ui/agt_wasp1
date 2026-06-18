@@ -5,13 +5,11 @@ module tb_core;
 
   logic        clk;             // 100 MHz verification clock.
   logic        rst_n;           // Active-low reset driven by the testbench.
-  logic [31:0] boot_pc;         // Reset PC supplied to the core wrapper.
-  logic        if_req_valid;    // Fetch request valid from the core.
-  logic [31:0] if_req_pc;       // Fetch request PC from the core.
-  logic        if_rsp_valid;    // Instruction response valid into the core.
-  logic        if_rsp_ready;    // Instruction response ready from the core.
-  logic [31:0] if_rsp_instr;    // Instruction word driven by the testbench.
-  logic        if_rsp_fault;    // Instruction fetch fault driven by the testbench.
+  logic        instr_valid;     // Instruction stream valid into the core.
+  logic        instr_ready;     // Instruction stream ready from the core.
+  logic [31:0] instr_pc;        // Instruction stream PC driven by the testbench.
+  logic [31:0] instr;           // Instruction word driven by the testbench.
+  logic        instr_fault;     // Instruction fetch fault driven by the testbench.
   logic        dmem_req_valid;  // Data-memory request valid from the core.
   logic [31:0] dmem_req_addr;   // Data-memory byte address from the core.
   logic        dmem_req_write;  // Data-memory store qualifier from the core.
@@ -36,6 +34,8 @@ module tb_core;
   logic [31:0] trap_tval;       // Core trap value.
   logic [31:0] trap_pc;         // Core trap PC.
   logic        mret_taken;      // Core MRET redirect indicator.
+  logic        redirect_valid;  // Core redirect request toward frontend.
+  logic [31:0] redirect_pc;     // Core redirect target toward frontend.
   logic [31:0] csr_rdata;       // Core CSR readback observation.
   logic        hazard_load_use; // Core load-use hazard observation.
   logic        hazard_fwd_rs1_ex;// Core rs1 EX-forward observation.
@@ -51,18 +51,16 @@ module tb_core;
   integer hazard_count;         // Load-use hazard coverage counter.
   integer trap_count;           // Trap redirect coverage counter.
   integer suppress_count;       // No-write suppression coverage counter.
-  logic [31:0] exp_fetch_pc;    // Scoreboard expected fetch request PC.
+  logic [31:0] exp_fetch_pc;    // Scoreboard expected frontend stream PC.
 
   core dut (
     .clk_i(clk),
     .rst_ni(rst_n),
-    .boot_pc_i(boot_pc),
-    .if_req_valid_o(if_req_valid),
-    .if_req_pc_o(if_req_pc),
-    .if_rsp_valid_i(if_rsp_valid),
-    .if_rsp_ready_o(if_rsp_ready),
-    .if_rsp_instr_i(if_rsp_instr),
-    .if_rsp_fault_i(if_rsp_fault),
+    .instr_valid_i(instr_valid),
+    .instr_ready_o(instr_ready),
+    .instr_pc_i(instr_pc),
+    .instr_i(instr),
+    .instr_fault_i(instr_fault),
     .dmem_req_valid_o(dmem_req_valid),
     .dmem_req_addr_o(dmem_req_addr),
     .dmem_req_write_o(dmem_req_write),
@@ -87,6 +85,8 @@ module tb_core;
     .trap_tval_o(trap_tval),
     .trap_pc_o(trap_pc),
     .mret_taken_o(mret_taken),
+    .redirect_valid_o(redirect_valid),
+    .redirect_pc_o(redirect_pc),
     .csr_rdata_o(csr_rdata),
     .hazard_load_use_o(hazard_load_use),
     .hazard_fwd_rs1_ex_o(hazard_fwd_rs1_ex),
@@ -139,40 +139,32 @@ module tb_core;
     endcase
   end
 
-  // Drive one instruction response and check the fetch PC before and after the
-  // accepted handshake. This keeps the wrapper test tied to the public IF port.
+  // Drive one instruction response from a frontend-side PC model. The core
+  // consumes `{pc,instr,fault}` and emits redirects; it no longer owns fetch PC.
   task automatic drive_instr_expect_next(
-    input logic [31:0] instr,
+    input logic [31:0] t_instr,
     input logic [31:0] exp_next_pc
   );
     begin
       @(negedge clk);
-      if (if_req_pc !== exp_fetch_pc) begin
-        $fatal(1, "fetch PC before drive mismatch got=%08x exp=%08x",
-               if_req_pc, exp_fetch_pc);
-      end
-      if_rsp_valid = 1'b1;
-      if_rsp_instr = instr;
-      if_rsp_fault = 1'b0;
+      instr_valid = 1'b1;
+      instr_pc = exp_fetch_pc;
+      instr = t_instr;
+      instr_fault = 1'b0;
       #1;
-      if (!if_req_valid || !if_rsp_ready) begin
-        $fatal(1, "fetch handshake not ready instr=%08x valid=%0b ready=%0b",
-               instr, if_req_valid, if_rsp_ready);
+      if (!instr_ready) begin
+        $fatal(1, "instruction stream not ready instr=%08x", t_instr);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_next_pc;
-      if (if_req_pc !== exp_fetch_pc) begin
-        $fatal(1, "fetch PC after drive mismatch got=%08x exp=%08x",
-               if_req_pc, exp_fetch_pc);
-      end
       fetch_count++;
     end
   endtask
 
-  task automatic drive_instr(input logic [31:0] instr);
+  task automatic drive_instr(input logic [31:0] t_instr);
     begin
-      drive_instr_expect_next(instr, exp_fetch_pc + 32'd4);
+      drive_instr_expect_next(t_instr, exp_fetch_pc + 32'd4);
     end
   endtask
 
@@ -227,15 +219,15 @@ module tb_core;
     begin
       @(negedge clk);
       #1;
-      if (!hazard_load_use || if_rsp_ready || (if_req_pc !== held_pc)) begin
+      if (!hazard_load_use || instr_ready || (exp_fetch_pc !== held_pc)) begin
         $fatal(1, "%s hazard mismatch hazard=%0b ready=%0b pc=%08x held=%08x",
-               name, hazard_load_use, if_rsp_ready, if_req_pc, held_pc);
+               name, hazard_load_use, instr_ready, exp_fetch_pc, held_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = held_pc;
-      if (ex_valid || (if_req_pc !== held_pc)) begin
-        $fatal(1, "%s bubble mismatch ex_valid=%0b pc=%08x", name, ex_valid, if_req_pc);
+      if (ex_valid) begin
+        $fatal(1, "%s bubble mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       hazard_count++;
@@ -253,17 +245,17 @@ module tb_core;
     begin
       #1;
       if (!trap_valid || trap_interrupt || (trap_cause !== exp_cause) ||
-          (trap_tval !== exp_tval) || (trap_pc !== exp_pc) || if_rsp_ready) begin
-        $fatal(1, "%s trap mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b",
+          (trap_tval !== exp_tval) || (trap_pc !== exp_pc) || instr_ready ||
+          !redirect_valid || (redirect_pc !== exp_target)) begin
+        $fatal(1, "%s trap mismatch valid=%0b intr=%0b cause=%0d tval=%08x pc=%08x ready=%0b redir=%0b target=%08x",
                name, trap_valid, trap_interrupt, trap_cause, trap_tval,
-               trap_pc, if_rsp_ready);
+               trap_pc, instr_ready, redirect_valid, redirect_pc);
       end
       @(posedge clk);
       #1;
       exp_fetch_pc = exp_target;
-      if (if_req_pc !== exp_target || ex_valid) begin
-        $fatal(1, "%s redirect mismatch pc=%08x target=%08x ex_valid=%0b",
-               name, if_req_pc, exp_target, ex_valid);
+      if (ex_valid) begin
+        $fatal(1, "%s redirect mismatch ex_valid=%0b", name, ex_valid);
       end
       pass_count++;
       trap_count++;
@@ -279,18 +271,18 @@ module tb_core;
     trap_count = 0;
     suppress_count = 0;
 
-    boot_pc = 32'h0001_0000;
-    exp_fetch_pc = boot_pc;
+    exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
-    if_rsp_valid = 1'b0;
-    if_rsp_instr = 32'h0000_0013;
-    if_rsp_fault = 1'b0;
+    instr_valid = 1'b0;
+    instr_pc = exp_fetch_pc;
+    instr = 32'h0000_0013;
+    instr_fault = 1'b0;
     timer_irq = 1'b0;
     external_irq = 1'b0;
 
     repeat (2) @(posedge clk);
     #1;
-    if (if_req_pc !== boot_pc || ex_valid || commit_valid || trap_valid) begin
+    if (ex_valid || commit_valid || trap_valid) begin
       $fatal(1, "core reset observation mismatch");
     end
     rst_n = 1'b1;

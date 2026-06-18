@@ -53,8 +53,18 @@ load/store response error
 
 ## 4. Interface Requirements
 
-The frontend side uses the same lightweight fetch request/response interface as
-`core_pipe`.
+The frontend side uses the same lightweight instruction stream and redirect
+interface as `core_pipe`:
+
+```text
+instr_valid_i
+instr_ready_o
+instr_pc_i
+instr_i
+instr_fault_i
+redirect_valid_o
+redirect_pc_o
+```
 
 The module exposes commit observation outputs for staged verification:
 
@@ -99,4 +109,5 @@ dependencies through the register file timing, LUI, AUIPC, taken and not-taken
 branches, JAL/JALR link writeback, redirect flush, load data extension, store
 request formatting, LSU fault/trap behavior, CSR read/write old-value
 writeback, ECALL trap entry, MRET redirect, interrupt redirect, x0 suppression,
-illegal trap behavior, load-use stall/bubble behavior, and fetch PC stepping.
+illegal trap behavior, load-use stall/bubble behavior, frontend PC stepping in
+the testbench model, and redirect target forwarding.

@@ -4,20 +4,17 @@
 //
 // This module establishes the first stable `core` boundary for the SoC.  The
 // current implementation delegates execution to `core_int_datapath`, preserving
-// lightweight valid/ready instruction and data-memory interfaces that later
-// frontend, I-cache, D-cache, tile, and debug integration stages can connect to.
+// a frontend-owned instruction stream interface, data-memory request outputs,
+// and observation hooks that later tile and debug integration stages can use.
 module core (
   input  logic        clk_i,              // Core clock for all sequential state.
   input  logic        rst_ni,             // Active-low asynchronous core reset.
 
-  input  logic [31:0] boot_pc_i,          // Reset fetch PC, normally OTP_BASE.
-
-  output logic        if_req_valid_o,     // Fetch request valid toward frontend.
-  output logic [31:0] if_req_pc_o,        // Fetch request PC in byte address form.
-  input  logic        if_rsp_valid_i,     // Frontend instruction response valid.
-  output logic        if_rsp_ready_o,     // Core can accept the instruction response.
-  input  logic [31:0] if_rsp_instr_i,     // Fetched 32-bit instruction word.
-  input  logic        if_rsp_fault_i,     // Fetch fault for this instruction response.
+  input  logic        instr_valid_i,      // Frontend instruction stream valid.
+  output logic        instr_ready_o,      // Core can accept the instruction stream.
+  input  logic [31:0] instr_pc_i,         // PC associated with instr_i.
+  input  logic [31:0] instr_i,            // Fetched 32-bit instruction word.
+  input  logic        instr_fault_i,      // Fetch fault for this instruction.
 
   output logic        dmem_req_valid_o,   // Data-memory request valid.
   output logic [31:0] dmem_req_addr_o,    // Data-memory byte address.
@@ -45,6 +42,8 @@ module core (
   output logic [31:0] trap_tval_o,        // Trap value written to mtval.
   output logic [31:0] trap_pc_o,          // Trap PC written to mepc.
   output logic        mret_taken_o,       // MRET redirect selected.
+  output logic        redirect_valid_o,   // Redirect request toward frontend.
+  output logic [31:0] redirect_pc_o,      // Redirect target toward frontend.
   output logic [31:0] csr_rdata_o,        // CSR read data observed by writeback.
   output logic        hazard_load_use_o,  // Load-use stall indication.
   output logic        hazard_fwd_rs1_ex_o,// Hazard unit rs1 EX-forward decision.
@@ -56,13 +55,11 @@ module core (
   core_int_datapath datapath_u (
     .clk_i(clk_i),
     .rst_ni(rst_ni),
-    .boot_pc_i(boot_pc_i),
-    .if_req_valid_o(if_req_valid_o),
-    .if_req_pc_o(if_req_pc_o),
-    .if_rsp_valid_i(if_rsp_valid_i),
-    .if_rsp_ready_o(if_rsp_ready_o),
-    .if_rsp_instr_i(if_rsp_instr_i),
-    .if_rsp_fault_i(if_rsp_fault_i),
+    .instr_valid_i(instr_valid_i),
+    .instr_ready_o(instr_ready_o),
+    .instr_pc_i(instr_pc_i),
+    .instr_i(instr_i),
+    .instr_fault_i(instr_fault_i),
     .dmem_req_valid_o(dmem_req_valid_o),
     .dmem_req_addr_o(dmem_req_addr_o),
     .dmem_req_write_o(dmem_req_write_o),
@@ -87,6 +84,8 @@ module core (
     .trap_tval_o(trap_tval_o),
     .trap_pc_o(trap_pc_o),
     .mret_taken_o(mret_taken_o),
+    .redirect_valid_o(redirect_valid_o),
+    .redirect_pc_o(redirect_pc_o),
     .csr_rdata_o(csr_rdata_o),
     .hazard_load_use_o(hazard_load_use_o),
     .hazard_fwd_rs1_ex_o(hazard_fwd_rs1_ex_o),

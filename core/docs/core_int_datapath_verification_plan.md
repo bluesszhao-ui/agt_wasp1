@@ -3,14 +3,14 @@
 ## 1. Strategy
 
 Use a self-checking SystemVerilog program-style testbench. The testbench drives
-one instruction response per cycle, observes commit outputs after each pipeline
-advance, and checks expected register writeback.
+one frontend instruction stream beat per cycle, observes commit outputs after
+each pipeline advance, and checks expected register writeback.
 
 ## 2. Directed Cases
 
 | Case | Intent |
 | --- | --- |
-| Reset | Fetch PC equals boot PC and no commit occurs |
+| Reset | No commit or trap occurs while reset is active |
 | ADDI | Immediate ALU writeback |
 | ADDI dependency | Adjacent write/read dependency through regfile timing |
 | ADD | Register-register ALU writeback |
@@ -32,7 +32,7 @@ advance, and checks expected register writeback.
 | ECALL trap | Trap metadata, CSR trap entry, and redirect to `mtvec` |
 | MRET | Redirect to `mepc` and mstatus restore path |
 | Timer IRQ | CSR-enabled timer interrupt trap and redirect |
-| Load-use hazard | Dependent ID instruction stalls fetch/decode and injects EX bubble |
+| Load-use hazard | Dependent ID instruction stalls stream/decode and injects EX bubble |
 | x0 write | x0 writeback suppression |
 | Illegal | Illegal instruction trap and writeback suppression |
 
@@ -41,4 +41,4 @@ advance, and checks expected register writeback.
 All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
 load, store, LSU fault, CSR, trap, interrupt, load-use hazard, suppression, and
-PC stepping coverage.
+frontend-model PC stepping coverage.

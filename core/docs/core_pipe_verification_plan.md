@@ -3,25 +3,25 @@
 ## 1. Strategy
 
 Use a self-checking SystemVerilog testbench with a cycle-by-cycle reference
-model for fetch PC, IF/ID state, and EX/WB state.
+model for frontend-side stream PC, IF/ID state, and EX/WB state.
 
 ## 2. Directed Cases
 
 | Case | Intent |
 | --- | --- |
-| Reset | Fetch PC equals boot PC and slots are invalid |
-| Fetch A | First response enters IF/ID |
-| Fetch B | IF/ID advances to EX/WB while new response enters IF/ID |
-| Stall hold | Fetch/decode stall holds state and blocks response acceptance |
+| Reset | Pipeline slots are invalid |
+| Fetch A | First instruction stream beat enters IF/ID |
+| Fetch B | IF/ID advances to EX/WB while new stream beat enters IF/ID |
+| Stall hold | Fetch/decode stall holds state and blocks stream acceptance |
 | Bubble hold | Execute bubble clears EX/WB while IF/ID is held |
 | Release advance | Held IF/ID advances after stall release |
 | Fetch fault | Fault metadata enters IF/ID |
 | Fault advance | Fault metadata advances to EX/WB |
-| Redirect flush | Redirect clears both slots and sets fetch PC |
+| Redirect flush | Redirect clears both slots and forwards redirect PC |
 
 ## 3. Random Cases
 
-Run 120 deterministic random cycles over response valid, instruction data,
+Run 120 deterministic random cycles over instruction valid, PC, instruction data,
 fault flag, fetch stall, decode stall, execute bubble, redirect valid, and
 redirect target.
 

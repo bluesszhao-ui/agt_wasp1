@@ -19,7 +19,7 @@ make lint
 
 | Time | Cycle Window | Action | Result |
 | --- | --- | --- | --- |
-| 0ns-21ns | Reset | Hold reset and check boot PC/no commit | Boot PC and no-commit state matched |
+| 0ns-21ns | Reset | Hold reset and check no commit | No-commit state matched |
 | 25ns-55ns | ADDI/dependency | Execute adjacent ADDI instructions | Immediate writeback and dependency passed |
 | 55ns-95ns | Register ALU | Execute ADD/SUB and immediate logical path | Register and immediate ALU commits matched |
 | 95ns-145ns | Upper/link/redirect | Execute LUI/AUIPC/JAL link and first redirect | U-immediate, PC-relative, link, and redirect matched |
@@ -45,7 +45,7 @@ Coverage intent met:
 - LUI and AUIPC writeback.
 - Taken and not-taken branch behavior.
 - JAL and JALR link writeback.
-- Redirect response blocking, younger-instruction flush, and redirected PC.
+- Redirect response blocking, younger-instruction flush, and redirected frontend-model PC.
 - LW/LB/LBU load writeback and byte extension.
 - SW/SB request address, size, data lane, and strobe formatting.
 - Misaligned load trap and response-error LSU fault suppression.
@@ -53,4 +53,4 @@ Coverage intent met:
 - ECALL trap entry, MRET redirect, and timer interrupt trap.
 - Load-use stall and execute bubble.
 - x0 and NOP suppression.
-- Fetch PC stepping.
+- Frontend-model PC stepping.
