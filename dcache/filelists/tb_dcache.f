@@ -6,3 +6,4 @@ rtl/dcache_refill.sv
 rtl/dcache_store.sv
 rtl/dcache_ctrl.sv
 rtl/dcache.sv
+tb/tb_dcache.sv

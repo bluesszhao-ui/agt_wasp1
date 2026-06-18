@@ -98,7 +98,25 @@ deterministic-random access streams
 | Flush abort | Abort active load/store work | No response or update emitted |
 | Random stream | Mixed load/store/invalid/stalls/errors | Reference expectations match DUT |
 
-## 8. Time Base
+## 8. Integrated dcache
+
+`tb_dcache` uses real D-cache leaves and a downstream memory model to cover:
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Load miss to hit | Verify real tag/data/refill/control integration | First access refills, later access hits |
+| Same-line hit | Verify word select from a refilled line | Different word in same line hits |
+| Store hit | Verify write-through plus data-array merge | Downstream write and later load hit returns merged data |
+| Store miss | Verify no-write-allocate through real leaves | Store writes downstream; later load still refills |
+| Store error | Verify failed store hit does not corrupt cache | Later load hit returns old cached data |
+| Conflict replacement | Verify direct-mapped replacement | Conflicting line evicts old tag |
+| Invalid request | Verify top-level no downstream work on local faults | Error response only |
+| Refill error | Verify failed refill leaves line invalid | Later load refills again and recovers |
+| Invalidate | Verify top-level invalidate forwarding | Previously hit line misses after invalidate |
+| Flush abort | Verify load/store abort through real leaves | No response/update remains active |
+| Random stream | Stress repeated fill/hit/store paths | Reference model matches DUT |
+
+## 9. Time Base
 
 Testbenches use:
 

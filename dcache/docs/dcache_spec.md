@@ -110,6 +110,17 @@ invalid request fault response
 flush abort forwarding to refill/store leaves
 ```
 
+The integrated `dcache` top provides:
+
+```text
+real tag/data/control/refill/store leaf interconnection
+one core data request/response port
+one downstream data memory request/response port
+combinational downstream mux between refill and store sequencers
+top-level invalidate forwarding to tag valid bits
+top-level flush forwarding through control to active refill/store work
+```
+
 ## 6. Target Requirements
 
 D-cache RTL must support:

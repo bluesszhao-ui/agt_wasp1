@@ -2,12 +2,11 @@
 
 ## 1. Scope
 
-`dcache` will integrate direct-mapped tag/data leaves, a load-refill sequencer,
-a write-through store sequencer, and a control FSM. Current implemented leaves
-are `dcache_tag`, `dcache_data`, `dcache_refill`, `dcache_store`, and
-`dcache_ctrl`.
+`dcache` integrates direct-mapped tag/data leaves, a load-refill sequencer, a
+write-through store sequencer, and a control FSM. The wrapper owns no sequential
+state beyond the instantiated leaves.
 
-## 2. Planned Block Diagram
+## 2. Block Diagram
 
 ```text
 Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
@@ -51,8 +50,8 @@ Current D-cache clock/reset domain: clk=clk_i, rst=rst_ni
        +---------+----------+
                  |
         +--------+---------+
-        |                  |
-        v                  v
+       |                  |
+       v                  v
  +--------------+   +--------------+
  | SEQ refill   |   | SEQ store    |
  | clk/rst FSM  |   | clk/rst FSM  |
@@ -61,8 +60,18 @@ Current D-cache clock/reset domain: clk=clk_i, rst=rst_ni
         +---------+--------+
                   |
                   v
+        +-------------------+
+        | COMB downstream   |
+        | refill/store mux  |
+        +---------+---------+
+                  |
+                  v
           IF downstream memory
 ```
+
+`dcache_ctrl` guarantees that refill and store sequencers are not active
+together. The top-level downstream mux is therefore purely combinational and
+does not add arbitration state.
 
 ## 3. Planned Submodules
 
@@ -73,7 +82,7 @@ Current D-cache clock/reset domain: clk=clk_i, rst=rst_ni
 | `dcache_refill` | Implemented | Downstream word-read line refill for load misses. |
 | `dcache_store` | Implemented | One downstream write-through transaction with backpressure. |
 | `dcache_ctrl` | Implemented | Load/store hit/miss policy and response sequencing. |
-| `dcache` | Planned | Top-level D-cache integration. |
+| `dcache` | Implemented | Top-level D-cache integration and downstream refill/store mux. |
 
 ## 4. Policy Details
 
@@ -100,7 +109,8 @@ this initial design.
 
 At this milestone, D-cache sequential state exists in `dcache_tag` valid/tag
 storage, `dcache_data` line storage, `dcache_refill` refill FSM state,
-`dcache_store` store FSM state, and `dcache_ctrl` control FSM state.
+`dcache_store` store FSM state, and `dcache_ctrl` control FSM state. The
+`dcache` wrapper adds only combinational interconnect and the downstream mux.
 
 State diagrams are documented in:
 

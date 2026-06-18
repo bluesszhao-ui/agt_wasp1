@@ -6,13 +6,15 @@ TB_DCACHE_DATA_FILELIST := filelists/tb_dcache_data.f
 TB_DCACHE_REFILL_FILELIST := filelists/tb_dcache_refill.f
 TB_DCACHE_STORE_FILELIST := filelists/tb_dcache_store.f
 TB_DCACHE_CTRL_FILELIST := filelists/tb_dcache_ctrl.f
+TB_DCACHE_FILELIST := filelists/tb_dcache.f
 DCACHE_TAG_TOP := tb_dcache_tag
 DCACHE_DATA_TOP := tb_dcache_data
 DCACHE_REFILL_TOP := tb_dcache_refill
 DCACHE_STORE_TOP := tb_dcache_store
 DCACHE_CTRL_TOP := tb_dcache_ctrl
+DCACHE_TOP := tb_dcache
 
-.PHONY: all lint lint-ic lint-fpga-v7 sim sim-dcache-tag sim-dcache-data sim-dcache-refill sim-dcache-store sim-dcache-ctrl clean
+.PHONY: all lint lint-ic lint-fpga-v7 sim sim-dcache-tag sim-dcache-data sim-dcache-refill sim-dcache-store sim-dcache-ctrl sim-dcache clean
 
 all: lint
 
@@ -31,6 +33,9 @@ lint:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module dcache_ctrl \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module dcache \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	@cat logs/lint.log
@@ -54,6 +59,10 @@ lint-ic:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module dcache_ctrl \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module dcache \
 		+define+WASP1_TARGET_IC \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
@@ -81,9 +90,13 @@ lint-fpga-v7:
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module dcache \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	@cat logs/lint_fpga_v7.log
 
-sim: sim-dcache-tag sim-dcache-data sim-dcache-refill sim-dcache-store sim-dcache-ctrl
+sim: sim-dcache-tag sim-dcache-data sim-dcache-refill sim-dcache-store sim-dcache-ctrl sim-dcache
 
 sim-dcache-tag:
 	@mkdir -p build logs
@@ -129,6 +142,15 @@ sim-dcache-ctrl:
 		-f $(TB_DCACHE_CTRL_FILELIST) > logs/tb_dcache_ctrl_build.log 2>&1
 	@./build/obj_$(DCACHE_CTRL_TOP)/V$(DCACHE_CTRL_TOP) > logs/tb_dcache_ctrl.log 2>&1
 	@cat logs/tb_dcache_ctrl.log
+
+sim-dcache:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(DCACHE_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(DCACHE_TOP) \
+		-f $(TB_DCACHE_FILELIST) > logs/tb_dcache_build.log 2>&1
+	@./build/obj_$(DCACHE_TOP)/V$(DCACHE_TOP) > logs/tb_dcache.log 2>&1
+	@cat logs/tb_dcache.log
 
 clean:
 	@rm -rf build/* logs/* wave/*
