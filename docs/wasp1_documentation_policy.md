@@ -91,6 +91,20 @@ COMB = combinational logic, mux, decoder, compare, request encoder, or other
 IF   = interface bundle or external connection point
 ```
 
+Diagram node fill colors must be consistent across the project:
+
+```text
+SEQ  node fill = pale green
+COMB node fill = pale amber/yellow
+IF   node fill = pale blue
+```
+
+The main fill color is reserved for timing class only. Do not use different
+main fill colors to encode reset, idle, done, error, abort, hit, miss, or other
+semantic states. Express those meanings with the node text, edge label, border,
+nearby action label, or a small annotation so readers can always identify the
+circuit type by color alone.
+
 For every `SEQ` block, the diagram must show the clock and reset domain used by
 that state. Preferred labels are:
 

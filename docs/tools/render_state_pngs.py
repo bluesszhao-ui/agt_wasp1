@@ -29,6 +29,13 @@ GRID_MAJOR: Color = (214, 219, 226, 255)
 ACTION_GRAY: Color = (218, 222, 228, 255)
 COND_GREEN: Color = (42, 140, 64, 255)
 
+# Timing-class color policy.  The main fill color of every diagram node is
+# reserved for the circuit timing class, not for semantic state meaning.
+SEQ_FILL: Color = GREEN
+COMB_FILL: Color = YELLOW
+IF_FILL: Color = BLUE
+NEUTRAL_FILL: Color = GRAY
+
 
 FONT = {
     "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
@@ -170,8 +177,21 @@ class Canvas:
             self.text(x + 10, ty, line, scale=1, color=color)
             ty += 16
 
+    def class_fill(self, lines: tuple[str, ...], fallback: Color = NEUTRAL_FILL) -> Color:
+        """Return the uniform fill color for a node's timing class label."""
+        if not lines:
+            return fallback
+        label = lines[0].strip().upper()
+        if label == "SEQ":
+            return SEQ_FILL
+        if label == "COMB":
+            return COMB_FILL
+        if label == "IF":
+            return IF_FILL
+        return fallback
+
     def state(self, x: int, y: int, w: int, h: int, lines: tuple[str, ...], fill: Color = WHITE) -> None:
-        self.ellipse(x, y, w, h, fill, BLACK, 2)
+        self.ellipse(x, y, w, h, self.class_fill(lines, fill), BLACK, 2)
         total_h = len(lines) * 22
         ty = y + (h - total_h) // 2
         for line in lines:
@@ -300,7 +320,7 @@ def render(path: str, title: str, nodes: list[Node], edges: list[Edge], notes: l
         else:
             canvas.arrow(*anchor(src, dst), edge.label)
     for node in nodes:
-        canvas.rect(node.x, node.y, node.w, node.h, node.fill)
+        canvas.rect(node.x, node.y, node.w, node.h, canvas.class_fill(node.lines, node.fill))
         total_h = len(node.lines) * 20
         ty = node.y + (node.h - total_h) // 2
         for line in node.lines:

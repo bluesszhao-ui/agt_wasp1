@@ -49,8 +49,8 @@ Current frontend clock/reset domain: clk=clk_i, rst=rst_ni
              v
         core/tile side
 
- redirect_valid_i also drives COMB/SEQ flush behavior in frontend_fetch and
- frontend_ibuf.
+ redirect_valid_i also drives combinational flush control and sequential clear
+ actions in frontend_fetch and frontend_ibuf.
 ```
 
 PNG integration diagram:
