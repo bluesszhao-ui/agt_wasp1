@@ -31,11 +31,9 @@ This avoids two independent fetch PC owners in the tile and matches the
 Rocket-like separation where frontend owns instruction fetch while the core
 pipeline owns decode/execute/commit and redirect decisions.
 
-The data side is intentionally not connected to `dcache` until the current core
-LSU/data-memory boundary is upgraded. The implemented core data path currently
-has a staged request plus combinational response style, while `dcache` is a
-multi-cycle valid/ready request-response block. The tile must not hide that
-interface mismatch with a lossy adapter.
+The data side uses the valid/ready request-response shape expected by `dcache`.
+The first tile RTL may still stage instruction-side integration first, but the
+D-cache path no longer requires a lossy tile-owned adapter.
 
 ## 3. External Interface Contract
 
@@ -96,24 +94,29 @@ core.redirect_pc_o      -> frontend.redirect_pc_i
 misses to the downstream `imem_if` initiator. `core` never drives an instruction
 memory request directly.
 
-## 5. Data Protocol Precondition
+## 5. Data Protocol Mapping
 
-Before `dcache` is instantiated in `tile`, one of these design changes is
-required and must be specified, implemented, and verified:
+The D-cache-integrated tile maps core data ports into `dcache.core_if`:
 
 ```text
-preferred:
-  add valid/ready request and valid/ready response handshake to core LSU/data
-  memory boundary, including pipeline stall until load response arrives
+core.dmem_req_valid_o -> dcache.core_if.req_valid
+core.dmem_req_ready_i <- dcache.core_if.req_ready
+core.dmem_req_addr_o  -> dcache.core_if.req_addr
+core.dmem_req_write_o -> dcache.core_if.req_write
+core.dmem_req_size_o  -> dcache.core_if.req_size
+core.dmem_req_wdata_o -> dcache.core_if.req_wdata
+core.dmem_req_wstrb_o -> dcache.core_if.req_wstrb
+req_instr             -> 0
 
-acceptable if documented:
-  insert a tile-owned sequential request/response adapter that can never drop,
-  duplicate, or reorder the staged core request stream
+dcache.core_if.rsp_valid -> core.dmem_rsp_valid_i
+dcache.core_if.rsp_ready <- core.dmem_rsp_ready_o
+dcache.core_if.rsp_rdata -> core.dmem_rsp_rdata_i
+dcache.core_if.rsp_err   -> core.dmem_rsp_err_i
 ```
 
-The preferred path is the core LSU handshake upgrade because it makes stalls
-architecturally visible inside the pipeline and keeps tile from owning hidden
-execution state.
+The core holds pipeline state while a data request waits for acceptance or an
+accepted request waits for response, so tile must not insert another hidden
+execution buffer unless a later design spec explicitly documents it.
 
 ## 6. Reset, Flush, And Invalidate
 
@@ -152,7 +155,8 @@ The first fetch-integrated tile milestone does not include:
 ```text
 AHB-Lite conversion
 I/D downstream arbitration
-D-cache connection before core LSU handshake support
+D-cache RTL connection and I/D downstream arbitration may be implemented in a
+later tile milestone
 debug module integration
 cache maintenance CSRs
 clock gating

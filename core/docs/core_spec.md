@@ -57,6 +57,7 @@ lightweight interfaces:
 instruction side: frontend-owned valid/ready instruction stream with PC/fault
 redirect side: branch/trap/MRET redirect valid + target PC back to frontend
 data side: request valid/address/write/size/wdata/wstrb, response rdata/error
+           with req_ready, rsp_valid, and rsp_ready handshake
 interrupt side: timer_irq_i and external_irq_i
 observation side: commit, execute, trap, CSR, hazard, unsupported indicators
 ```

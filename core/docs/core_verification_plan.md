@@ -27,7 +27,7 @@ timescale: 1ns/1ps
 | Reset boundary | Check reset leaves the wrapper idle with no commit/trap. |
 | Instruction interface | Drive frontend-owned valid/ready instruction stream and check PC sequencing in the testbench model. |
 | Commit observation | Execute ALU and load instructions and check writeback outputs. |
-| Data interface | Execute `lw` and check request address, size, and readback commit. |
+| Data interface | Execute `lw` and check request handshake, address, size, and readback commit. |
 | Hazard observation | Execute load-use dependency and check public stall output. |
 | Trap observation | Execute illegal instruction and check trap redirect outputs. |
 | Suppression behavior | Check NOP/no-write slot does not assert commit. |

@@ -42,7 +42,7 @@ SEQ clock/reset domain: clk=clk_i, rst=rst_ni
         +------------->| core_lsu     |------------+
         |              +------+-------+            |
         |                     |                    v
-        |              dmem req/rsp        +---------------+
+        |              dmem valid/ready    +---------------+
         |                     |            | core_trap     |
         |                     v            +-------+-------+
         |              +--------------+            |
@@ -104,15 +104,23 @@ Load/store selection:
 
 ```text
 effective address = rs1_data + decoded immediate
-load              -> issue read request and write formatted load data to rd
-store             -> issue write request with lane-shifted data and byte strobes
+load              -> issue read request, wait for response, write formatted load data to rd
+store             -> issue write request with lane-shifted data/byte strobes and wait for response
 misaligned access -> no data request, no register writeback, lsu_fault_o=1
 response error    -> request is observable, no register writeback, lsu_fault_o=1
 ```
 
-The staged data-memory interface is single-cycle and response-data based. It is
-intended as the integration boundary for the later D-cache/AHB path, where
-stall and response handshake state will be added.
+The data-memory interface uses one in-order outstanding valid/ready transaction:
+
+```text
+request fire  = dmem_req_valid_o && dmem_req_ready_i
+response fire = dmem_rsp_valid_i && dmem_rsp_ready_o
+```
+
+For aligned loads and stores, `core_int_datapath` holds IF/ID and EX/WB while a
+request is not yet accepted or while an accepted request is waiting for a
+response. Load writeback and response-error observation occur only on response
+fire. Misaligned accesses are local faults and do not issue a data request.
 
 CSR/trap selection:
 
@@ -167,8 +175,12 @@ Each execute/writeback cycle:
   load/store request and load writeback data are computed
   CSR read/write data and trap priority are computed
   ID source registers are compared with EX/WB destinations
+  if aligned load/store waits for request or response:
+    core_pipe holds IF/ID and EX/WB
+    dmem_req_valid_o remains asserted until request fire
+    dmem_rsp_ready_o remains asserted while waiting for response
   if load-use hazard:
-    core_pipe holds fetch/decode and injects an EX bubble
+    core_pipe holds fetch/decode and injects an EX bubble after load response
   if load/store fault:
     architectural writeback is suppressed
   if trap or MRET redirects:

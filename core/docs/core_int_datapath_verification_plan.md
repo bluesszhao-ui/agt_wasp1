@@ -27,6 +27,8 @@ each pipeline advance, and checks expected register writeback.
 | SW/SB | Store request address, size, lane data, and byte strobes |
 | Misaligned load | Request suppression and `lsu_fault_o` assertion |
 | Memory response error | Request visibility, writeback suppression, and `lsu_fault_o` assertion |
+| Data response wait | Delay data response after request fire and check pipeline holds until `dmem_rsp_valid_i && dmem_rsp_ready_o` |
+| Data request backpressure | Deassert `dmem_req_ready_i` and check request remains valid while pipeline holds |
 | CSRRW | CSR old-value writeback and CSR state update |
 | CSRRS read | CSR readback without changing state when rs1 is x0 |
 | ECALL trap | Trap metadata, CSR trap entry, and redirect to `mtvec` |
@@ -40,5 +42,6 @@ each pipeline advance, and checks expected register writeback.
 
 All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
-load, store, LSU fault, CSR, trap, interrupt, load-use hazard, suppression, and
-frontend-model PC stepping coverage.
+load, store, LSU fault, data-memory wait state, request backpressure, CSR,
+trap, interrupt, load-use hazard, suppression, and frontend-model PC stepping
+coverage.

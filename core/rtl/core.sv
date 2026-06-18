@@ -17,11 +17,14 @@ module core (
   input  logic        instr_fault_i,      // Fetch fault for this instruction.
 
   output logic        dmem_req_valid_o,   // Data-memory request valid.
+  input  logic        dmem_req_ready_i,   // Data-memory request accepted.
   output logic [31:0] dmem_req_addr_o,    // Data-memory byte address.
   output logic        dmem_req_write_o,   // Store when high, load when low.
   output logic [1:0]  dmem_req_size_o,    // Access size: byte, halfword, or word.
   output logic [31:0] dmem_req_wdata_o,   // Store data aligned to byte lanes.
   output logic [3:0]  dmem_req_wstrb_o,   // Store byte write strobes.
+  input  logic        dmem_rsp_valid_i,   // Data-memory response valid.
+  output logic        dmem_rsp_ready_o,   // Core accepts data-memory response.
   input  logic [31:0] dmem_rsp_rdata_i,   // Data-memory read response data.
   input  logic        dmem_rsp_err_i,     // Data-memory response error.
 
@@ -61,11 +64,14 @@ module core (
     .instr_i(instr_i),
     .instr_fault_i(instr_fault_i),
     .dmem_req_valid_o(dmem_req_valid_o),
+    .dmem_req_ready_i(dmem_req_ready_i),
     .dmem_req_addr_o(dmem_req_addr_o),
     .dmem_req_write_o(dmem_req_write_o),
     .dmem_req_size_o(dmem_req_size_o),
     .dmem_req_wdata_o(dmem_req_wdata_o),
     .dmem_req_wstrb_o(dmem_req_wstrb_o),
+    .dmem_rsp_valid_i(dmem_rsp_valid_i),
+    .dmem_rsp_ready_o(dmem_rsp_ready_o),
     .dmem_rsp_rdata_i(dmem_rsp_rdata_i),
     .dmem_rsp_err_i(dmem_rsp_err_i),
     .timer_irq_i(timer_irq_i),

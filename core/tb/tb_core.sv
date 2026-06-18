@@ -11,13 +11,16 @@ module tb_core;
   logic [31:0] instr;           // Instruction word driven by the testbench.
   logic        instr_fault;     // Instruction fetch fault driven by the testbench.
   logic        dmem_req_valid;  // Data-memory request valid from the core.
+  logic        dmem_req_ready;  // Data-memory request ready into the core.
   logic [31:0] dmem_req_addr;   // Data-memory byte address from the core.
   logic        dmem_req_write;  // Data-memory store qualifier from the core.
   logic [1:0]  dmem_req_size;   // Data-memory access size from the core.
   logic [31:0] dmem_req_wdata;  // Data-memory store data from the core.
   logic [3:0]  dmem_req_wstrb;  // Data-memory store byte strobes from the core.
-  logic [31:0] dmem_rsp_rdata;  // Combinational data-memory read response.
-  logic        dmem_rsp_err;    // Combinational data-memory error response.
+  logic        dmem_rsp_valid;  // Data-memory response valid into the core.
+  logic        dmem_rsp_ready;  // Data-memory response ready from the core.
+  logic [31:0] dmem_rsp_rdata;  // Data-memory read response.
+  logic        dmem_rsp_err;    // Data-memory error response.
   logic        timer_irq;       // Timer interrupt input to the core.
   logic        external_irq;    // External interrupt input to the core.
   logic        commit_valid;    // Core architectural writeback valid.
@@ -62,11 +65,14 @@ module tb_core;
     .instr_i(instr),
     .instr_fault_i(instr_fault),
     .dmem_req_valid_o(dmem_req_valid),
+    .dmem_req_ready_i(dmem_req_ready),
     .dmem_req_addr_o(dmem_req_addr),
     .dmem_req_write_o(dmem_req_write),
     .dmem_req_size_o(dmem_req_size),
     .dmem_req_wdata_o(dmem_req_wdata),
     .dmem_req_wstrb_o(dmem_req_wstrb),
+    .dmem_rsp_valid_i(dmem_rsp_valid),
+    .dmem_rsp_ready_o(dmem_rsp_ready),
     .dmem_rsp_rdata_i(dmem_rsp_rdata),
     .dmem_rsp_err_i(dmem_rsp_err),
     .timer_irq_i(timer_irq),
@@ -129,9 +135,11 @@ module tb_core;
     enc_load = {imm, rs1, funct3, rd, 7'b0000011};
   endfunction
 
-  // Single-cycle read-only memory response used to verify wrapper pass-through
-  // of load requests. Cache and AHB timing are covered by later modules.
+  // Zero-wait read-only valid/ready memory response used to verify wrapper
+  // pass-through of load requests.
   always_comb begin
+    dmem_req_ready = 1'b1;
+    dmem_rsp_valid = dmem_req_valid;
     dmem_rsp_err = 1'b0;
     unique case (dmem_req_addr)
       32'h0000_0300: dmem_rsp_rdata = 32'hCAFE_BABE;

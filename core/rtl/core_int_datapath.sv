@@ -5,7 +5,7 @@
 // This milestone wires the verified pipeline skeleton, decoder, register file,
 // ALU, and writeback helper into one small executable path. It intentionally
 // supports integer ALU, upper-immediate, branch/jump redirect, CSR/trap,
-// single-cycle load/store requests, and load-use hazard control.
+// valid/ready load/store requests, and load-use hazard control.
 module core_int_datapath (
   input  logic        clk_i,              // Core pipeline/register clock.
   input  logic        rst_ni,             // Active-low asynchronous reset.
@@ -17,11 +17,14 @@ module core_int_datapath (
   input  logic        instr_fault_i,      // Fetch fault associated with instr_i.
 
   output logic        dmem_req_valid_o,   // Data memory request valid.
+  input  logic        dmem_req_ready_i,   // Data memory accepted the request.
   output logic [31:0] dmem_req_addr_o,    // Data memory byte address.
   output logic        dmem_req_write_o,   // Data memory store qualifier.
   output logic [1:0]  dmem_req_size_o,    // Data memory access size.
   output logic [31:0] dmem_req_wdata_o,   // Data memory store data aligned to lanes.
   output logic [3:0]  dmem_req_wstrb_o,   // Data memory byte write strobes.
+  input  logic        dmem_rsp_valid_i,   // Data memory response valid.
+  output logic        dmem_rsp_ready_o,   // Core can accept the response.
   input  logic [31:0] dmem_rsp_rdata_i,   // Data memory read response data.
   input  logic        dmem_rsp_err_i,     // Data memory response error.
   input  logic        timer_irq_i,        // Machine timer interrupt pending.
@@ -135,6 +138,14 @@ module core_int_datapath (
   logic        lsu_misaligned;    // Load/store alignment fault from LSU.
   logic        lsu_fault;         // Combined local/memory LSU helper fault.
   logic        lsu_active_fault;  // LSU fault qualified by a load/store op.
+  logic        lsu_mem_op;        // Current EX slot is an aligned LSU candidate.
+  logic        lsu_req_valid_raw; // LSU helper request before outstanding gating.
+  logic        lsu_req_outstanding_q;// Data request accepted, waiting response.
+  logic        lsu_req_fire;      // Data request handshake completed.
+  logic        lsu_rsp_fire;      // Data response handshake completed.
+  logic        lsu_wait_stall;    // Hold pipeline while LSU request/response waits.
+  logic        lsu_complete;      // LSU op is complete for retire/writeback.
+  logic        retire_valid;      // Current EX instruction can retire this cycle.
   logic [31:0] csr_wdata;         // CSR write data from rs1 or zero-extended zimm.
   logic [31:0] csr_rdata;         // CSR old value returned for rd writeback.
   logic        csr_illegal;       // CSR access fault from core_csr.
@@ -169,6 +180,34 @@ module core_int_datapath (
   logic        hazard_fetch_stall;// Fetch stall from hazard unit.
   logic        hazard_decode_stall;// Decode stall from hazard unit.
   logic        hazard_execute_bubble;// Execute bubble from hazard unit.
+  logic        pipe_fetch_stall;  // Final fetch stall into core_pipe.
+  logic        pipe_decode_stall; // Final decode stall into core_pipe.
+  logic        pipe_execute_bubble;// Final execute bubble into core_pipe.
+
+  assign lsu_mem_op = ex_valid && (dec_load || dec_store) &&
+                      !ex_fetch_fault && !dec_illegal;
+  assign lsu_req_fire = dmem_req_valid_o && dmem_req_ready_i;
+  assign dmem_rsp_ready_o = lsu_req_outstanding_q || lsu_req_fire;
+  assign lsu_rsp_fire = dmem_rsp_valid_i && dmem_rsp_ready_o;
+  assign lsu_complete = !lsu_mem_op || lsu_misaligned || lsu_rsp_fire;
+  assign lsu_wait_stall = lsu_mem_op && !lsu_misaligned && !lsu_rsp_fire;
+  assign retire_valid = ex_valid && lsu_complete;
+  assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall;
+  assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall;
+  assign pipe_execute_bubble = hazard_execute_bubble && !lsu_wait_stall;
+
+  // Track the single outstanding data transaction owned by this in-order
+  // datapath. The pipeline is held while this bit is set, so no second data
+  // request can be issued until the response returns.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      lsu_req_outstanding_q <= 1'b0;
+    end else if (lsu_rsp_fire) begin
+      lsu_req_outstanding_q <= 1'b0;
+    end else if (lsu_req_fire) begin
+      lsu_req_outstanding_q <= 1'b1;
+    end
+  end
 
   core_pipe pipe_u (
     .clk_i(clk_i),
@@ -178,9 +217,9 @@ module core_int_datapath (
     .instr_pc_i(instr_pc_i),
     .instr_i(instr_i),
     .instr_fault_i(instr_fault_i),
-    .fetch_stall_i(hazard_fetch_stall),
-    .decode_stall_i(hazard_decode_stall),
-    .execute_bubble_i(hazard_execute_bubble),
+    .fetch_stall_i(pipe_fetch_stall),
+    .decode_stall_i(pipe_decode_stall),
+    .execute_bubble_i(pipe_execute_bubble),
     .redirect_valid_i(pipe_redirect_valid),
     .redirect_pc_i(pipe_redirect_pc),
     .redirect_valid_o(redirect_valid_o),
@@ -328,11 +367,11 @@ module core_int_datapath (
     .store_data_i(rs2_data),
     .size_i(dec_lsu_size),
     .unsigned_i(dec_lsu_unsigned),
-    .load_i(ex_valid && dec_load && !ex_fetch_fault && !dec_illegal),
-    .store_i(ex_valid && dec_store && !ex_fetch_fault && !dec_illegal),
+    .load_i(lsu_mem_op && dec_load),
+    .store_i(lsu_mem_op && dec_store),
     .rsp_rdata_i(dmem_rsp_rdata_i),
-    .rsp_err_i(dmem_rsp_err_i),
-    .req_valid_o(dmem_req_valid_o),
+    .rsp_err_i(dmem_rsp_err_i && lsu_rsp_fire),
+    .req_valid_o(lsu_req_valid_raw),
     .req_addr_o(dmem_req_addr_o),
     .req_write_o(dmem_req_write_o),
     .req_size_o(dmem_req_size_o),
@@ -342,6 +381,8 @@ module core_int_datapath (
     .misaligned_o(lsu_misaligned),
     .fault_o(lsu_fault)
   );
+
+  assign dmem_req_valid_o = lsu_req_valid_raw && !lsu_req_outstanding_q;
 
   assign csr_wdata = dec_csr_cmd[2] ? dec_imm : rs1_data;
 
@@ -354,7 +395,7 @@ module core_int_datapath (
     .csr_wdata_i(csr_wdata),
     .csr_rdata_o(csr_rdata),
     .csr_illegal_o(csr_illegal),
-    .retire_i(ex_valid && !write_fault && !trap_valid),
+    .retire_i(retire_valid && !write_fault && !trap_valid),
     .trap_valid_i(trap_valid),
     .trap_interrupt_i(trap_interrupt),
     .trap_cause_i(trap_cause),
@@ -373,7 +414,7 @@ module core_int_datapath (
   );
 
   core_trap trap_u (
-    .valid_i(ex_valid),
+    .valid_i(retire_valid),
     .pc_i(ex_pc),
     .instr_i(ex_instr),
     .instr_misaligned_i(1'b0),
@@ -405,8 +446,8 @@ module core_int_datapath (
   );
 
   assign auipc_result = ex_pc + dec_imm;
-  assign lsu_active_fault = (dec_load || dec_store) && lsu_fault;
-  assign redirect_valid = ex_valid && branch_taken && !ex_fetch_fault &&
+  assign lsu_active_fault = lsu_mem_op && lsu_fault;
+  assign redirect_valid = retire_valid && branch_taken && !ex_fetch_fault &&
                           !dec_illegal && !lsu_active_fault;
   assign pipe_redirect_valid = trap_redirect || redirect_valid;
   assign pipe_redirect_pc = trap_redirect ? trap_redirect_pc : branch_target;
@@ -437,7 +478,7 @@ module core_int_datapath (
                        lsu_active_fault || csr_illegal;
 
   core_wb wb_u (
-    .wb_valid_i(ex_valid),
+    .wb_valid_i(retire_valid),
     .rd_i(dec_rd),
     .rd_write_i(wb_rd_write),
     .wb_sel_i(wb_sel),
@@ -459,8 +500,8 @@ module core_int_datapath (
   assign ex_valid_o = ex_valid;
   assign ex_pc_o = ex_pc;
   assign ex_instr_o = ex_instr;
-  assign illegal_o = ex_valid && dec_illegal;
-  assign lsu_fault_o = ex_valid && lsu_active_fault;
+  assign illegal_o = retire_valid && dec_illegal;
+  assign lsu_fault_o = retire_valid && lsu_active_fault;
   assign trap_valid_o = trap_valid;
   assign trap_interrupt_o = trap_interrupt;
   assign trap_cause_o = trap_cause;
@@ -473,7 +514,7 @@ module core_int_datapath (
   assign hazard_fwd_rs1_wb_o = hazard_rs1_fwd_wb;
   assign hazard_fwd_rs2_ex_o = hazard_rs2_fwd_ex;
   assign hazard_fwd_rs2_wb_o = hazard_rs2_fwd_wb;
-  assign unsupported_o = ex_valid && unsupported;
+  assign unsupported_o = retire_valid && unsupported;
 
   // These decoded controls are intentionally unused in this staged datapath.
   // Keeping them named documents the integration boundary for the next steps.
@@ -492,5 +533,6 @@ module core_int_datapath (
                                   id_dec_mret ^ id_dec_illegal ^
                                   dec_uses_rs1 ^ dec_uses_rs2 ^
                                   lsu_misaligned ^ dec_csr_cmd[0] ^
-                                  dec_csr_addr[0] ^ dec_imm_sel[0];
+                                  dec_csr_addr[0] ^ dec_imm_sel[0] ^
+                                  dmem_rsp_err_i;
 endmodule

@@ -8,9 +8,9 @@ This plan covers the first `tile` integration milestone:
 frontend + icache + core + structural instruction-path wiring
 ```
 
-It explicitly does not claim D-cache integration. The D-cache path requires a
-core LSU/data-memory ready/valid handshake update or a specified tile-owned
-sequential adapter before meaningful tile verification is possible.
+It explicitly does not claim D-cache integration until real `dcache` wiring and
+data-path tests are added. The core side now has a valid/ready data interface,
+so a later tile milestone can verify D-cache without a hidden adapter.
 
 ## 2. Verification Goals
 
@@ -44,9 +44,9 @@ inject response error for selected addresses
 allow request-ready backpressure for cache-facing ports
 ```
 
-Core data-memory scalar ports may be tied to a small staged model for the
+Core data-memory valid/ready ports may be tied to a small model for the
 instruction programs used in this milestone, but D-cache behavior must remain
-out of scope until the data-side interface is redesigned.
+out of scope until the real D-cache instance is wired.
 
 ## 4. Directed Cases
 
@@ -115,10 +115,10 @@ redirect while instruction buffer contains younger work
 
 ## 7. Known Open Issue
 
-D-cache tile integration is pending a core data-side handshake redesign. The
+D-cache tile integration is pending tile RTL wiring and verification. The
 verification report for this tile milestone must explicitly state:
 
 ```text
 instruction path: frontend-owned PC, integrated through I-cache
-data path: D-cache not integrated in this milestone
+data path: D-cache not integrated unless a later tile milestone wires it
 ```

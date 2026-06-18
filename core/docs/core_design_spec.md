@@ -28,7 +28,7 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 |                  v                                            |
 |  +------------------------------+                             |
 |  | COMB datapath control        |---- IF commit/ex/trap/hazard|
-|  | decode/alu/branch/lsu/trap   |---- IF dmem req/rsp         |
+|  | decode/alu/branch/lsu/trap   |---- IF dmem req/rsp handshake|
 |  | hazard/wb/redirect           |---- IF instr stream/redirect|
 |  +------------------------------+                             |
 |                                                               |
@@ -61,7 +61,7 @@ its verified submodules.
 | Clock/reset | `clk_i`, `rst_ni` | Direct pass-through. |
 | Instruction stream | `instr_valid_i`, `instr_ready_o`, `instr_pc_i`, `instr_i`, `instr_fault_i` | Frontend-owned fetch stream into datapath. |
 | Redirect | `redirect_valid_o`, `redirect_pc_o` | Branch/trap/MRET redirect request back to frontend. |
-| Data memory | `dmem_req_*`, `dmem_rsp_*` | Direct pass-through to the staged cache/tile interface. |
+| Data memory | `dmem_req_*`, `dmem_rsp_*` | Valid/ready request-response pass-through to D-cache/tile. |
 | Interrupts | `timer_irq_i`, `external_irq_i` | Direct pass-through into machine CSR/trap logic. |
 | Commit/execute observation | `commit_*`, `ex_*` | Direct pass-through for verification and future retire/debug hooks. |
 | Trap/CSR observation | `trap_*`, `mret_taken_o`, `csr_rdata_o` | Direct pass-through for verification and future debug hooks. |

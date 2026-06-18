@@ -93,11 +93,14 @@ hazard_fwd_rs2_wb_o
 timer_irq_i
 external_irq_i
 dmem_req_valid_o
+dmem_req_ready_i
 dmem_req_addr_o
 dmem_req_write_o
 dmem_req_size_o
 dmem_req_wdata_o
 dmem_req_wstrb_o
+dmem_rsp_valid_i
+dmem_rsp_ready_o
 dmem_rsp_rdata_i
 dmem_rsp_err_i
 ```
@@ -107,7 +110,8 @@ dmem_rsp_err_i
 Verification must cover immediate ALU, register ALU, write-after-read
 dependencies through the register file timing, LUI, AUIPC, taken and not-taken
 branches, JAL/JALR link writeback, redirect flush, load data extension, store
-request formatting, LSU fault/trap behavior, CSR read/write old-value
-writeback, ECALL trap entry, MRET redirect, interrupt redirect, x0 suppression,
-illegal trap behavior, load-use stall/bubble behavior, frontend PC stepping in
-the testbench model, and redirect target forwarding.
+request formatting, data request/response wait-state behavior, LSU fault/trap
+behavior, CSR read/write old-value writeback, ECALL trap entry, MRET redirect,
+interrupt redirect, x0 suppression, illegal trap behavior, load-use
+stall/bubble behavior, frontend PC stepping in the testbench model, and
+redirect target forwarding.

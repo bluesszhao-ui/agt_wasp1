@@ -5,10 +5,10 @@
 `tile` integrates the already implemented `frontend`, `core`, and `icache`
 modules into the first CPU tile instruction path.
 
-The first RTL milestone should not instantiate `dcache` yet. The current core
-data interface is not ready/valid, while `dcache` is multi-cycle ready/valid.
-Connecting them through a purely combinational adapter would make backpressure
-and load-response timing ambiguous.
+The first RTL milestone may still focus on the instruction path, but the core
+data interface now matches the multi-cycle ready/valid shape used by `dcache`.
+That allows the next tile milestone to wire D-cache without adding a hidden
+tile-owned execution buffer.
 
 ## 2. Planned Block Diagram
 
@@ -55,7 +55,7 @@ Clock/reset domain:
 |                | frontend instr_valid/ready/pc/instr/fault             |
 |                +-------------------------------------------------------+
 |                                                                        |
-|  IF dmem scalar core data interface remains exposed/deferred           |
+|  IF dmem valid/ready core data interface remains exposed/deferred      |
 |  IF commit/trap/hazard/debug-observe outputs                           |
 +------------------------------------------------------------------------+
 ```
@@ -72,7 +72,7 @@ Deferred child:
 
 | Module | Reason deferred |
 | --- | --- |
-| `dcache` | Requires a core LSU/data-memory ready/valid handshake or a specified tile-owned sequential adapter. |
+| `dcache` | Deferred from the first instruction-path RTL milestone; next data-path milestone should wire it through valid/ready ports. |
 
 ## 4. Tile-Owned Logic
 
@@ -146,18 +146,18 @@ module specs. Tile does not generate extra redirects.
 
 ## 7. Data Path Status
 
-The current tile milestone should expose the current core scalar data-memory
-ports for observation or test hookup, but must not claim D-cache integration is
-complete.
+The current tile milestone should expose or wire the core valid/ready
+data-memory ports, but must not claim D-cache integration is complete until real
+`dcache` is instantiated and verified.
 
-The next required design work before D-cache tile RTL is:
+The next required tile work before claiming D-cache integration is:
 
 ```text
-core_lsu/core_int_datapath/core wrapper:
-  add request-ready and response-valid/ready semantics
-  hold pipeline state while an outstanding load/store is waiting
-  define store completion and error timing
-  update verification plans and reports
+tile:
+  connect core dmem valid/ready ports to dcache.core_if
+  connect dcache.mem_if to tile dmem_if
+  verify load/store hit, miss, backpressure, response error, flush, invalidate
+  decide whether I/D downstream ports stay separate or arbitrate before AHB
 ```
 
 ## 8. Sequential State Diagram
