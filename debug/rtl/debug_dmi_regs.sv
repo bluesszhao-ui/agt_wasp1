@@ -1,0 +1,262 @@
+`timescale 1ns/1ps
+`include "wasp1_target_defs.svh"
+
+// Stage-1 RISC-V Debug Module register file and one-entry DMI response buffer.
+module debug_dmi_regs (
+  input  logic              clk_i,                 // Debug clock for all local sequential state.
+  input  logic              rst_ni,                // Asynchronous active-low reset for the Debug Module.
+  debug_dmi_if.dm            dmi,                   // DMI request/response channel from the future JTAG DTM.
+  input  logic              hart_halted_i,         // Selected hart reports that it is halted in Debug Mode.
+  input  logic              hart_running_i,        // Selected hart reports normal instruction execution.
+  input  logic              hart_resumeack_i,      // Selected hart acknowledges the outstanding resume request.
+  input  logic              hart_havereset_i,      // Selected hart reports that reset has occurred.
+  input  logic              abstract_busy_i,       // Abstract command executor is processing a command.
+  input  logic              command_error_valid_i, // Executor completed with a valid cmderr update.
+  input  logic [2:0]        command_error_i,       // Executor error code written into abstractcs.cmderr.
+  input  logic              data0_we_i,            // Executor writes a completed GPR result into data0.
+  input  logic [31:0]       data0_wdata_i,         // Executor result data for data0.
+  output logic              dmactive_o,            // Debug Module active state from dmcontrol.dmactive.
+  output logic              ndmreset_o,            // Non-debug module reset request from dmcontrol.ndmreset.
+  output logic              haltreq_o,             // Halt request for the implemented hart 0.
+  output logic              resumereq_o,           // Resume request held until hart_resumeack_i is observed.
+  output logic              ackhavereset_o,        // One-cycle pulse acknowledging the hart reset indication.
+  output logic              command_valid_o,       // One-cycle pulse for an accepted abstract command write.
+  output logic [31:0]       command_o,             // Most recently accepted abstract command word.
+  output logic [31:0]       data0_o                // Abstract data register shared with the command executor.
+);
+  import debug_dmi_pkg::*;
+
+  // Debug Module control state. Only hart 0 exists, but hartsel is retained so
+  // debuggers can probe a non-existent hart and receive architectural status.
+  logic        dmactive_q;
+  logic        ndmreset_q;
+  logic        haltreq_q;
+  logic        resumereq_q;
+  logic [19:0] hartsel_q;
+
+  // Abstract command state visible through command, abstractcs, and data0.
+  logic [31:0] command_q;
+  logic [31:0] data0_q;
+  logic [2:0]  cmderr_q;
+
+  // A one-entry registered response makes DMI backpressure fully deterministic.
+  logic        rsp_valid_q;
+  logic [1:0]  rsp_resp_q;
+  logic [31:0] rsp_data_q;
+
+  // Combinational request decode and readback images.
+  logic        req_known_addr;
+  logic        req_supported;
+  logic        selected_hart_exists;
+  logic [31:0] dmcontrol_rdata;
+  logic [31:0] dmstatus_rdata;
+  logic [31:0] abstractcs_rdata;
+  logic [31:0] read_data;
+
+  // The output requests are suppressed whenever the Debug Module is inactive
+  // or software selected a hart number other than the implemented hart 0.
+  assign selected_hart_exists = (hartsel_q == 20'd0);
+  assign dmactive_o = dmactive_q;
+  assign ndmreset_o = dmactive_q && ndmreset_q;
+  assign haltreq_o = dmactive_q && selected_hart_exists && haltreq_q;
+  assign resumereq_o = dmactive_q && selected_hart_exists && resumereq_q;
+  assign command_o = command_q;
+  assign data0_o = data0_q;
+
+  // The response slot can accept a request when empty or when its current
+  // response is consumed on this edge, allowing bubble-free DMI transfers.
+  assign dmi.req_ready = !rsp_valid_q || dmi.rsp_ready;
+  assign dmi.rsp_valid = rsp_valid_q;
+  assign dmi.rsp_resp = rsp_resp_q;
+  assign dmi.rsp_data = rsp_data_q;
+
+  // Defined read-only and read/write register addresses are all legal for both
+  // DMI read and write operations. Writes to read-only registers are ignored.
+  always_comb begin
+    unique case (dmi.req_addr)
+      DMI_ADDR_DATA0,
+      DMI_ADDR_DMCONTROL,
+      DMI_ADDR_DMSTATUS,
+      DMI_ADDR_HARTINFO,
+      DMI_ADDR_ABSTRACTCS,
+      DMI_ADDR_COMMAND: req_known_addr = 1'b1;
+      default:          req_known_addr = 1'b0;
+    endcase
+
+    req_supported = (dmi.req_op == DMI_OP_NOP) ||
+                    (((dmi.req_op == DMI_OP_READ) ||
+                      (dmi.req_op == DMI_OP_WRITE)) && req_known_addr);
+  end
+
+  // dmcontrol readback exposes implemented fields; unsupported hart-reset and
+  // reset-halt controls are hardwired to zero.
+  always_comb begin
+    dmcontrol_rdata = '0;
+    dmcontrol_rdata[31] = haltreq_q;
+    dmcontrol_rdata[30] = resumereq_q;
+    dmcontrol_rdata[25:16] = hartsel_q[9:0];
+    dmcontrol_rdata[15:6] = hartsel_q[19:10];
+    dmcontrol_rdata[1] = ndmreset_q;
+    dmcontrol_rdata[0] = dmactive_q;
+  end
+
+  // Single-hart any/all fields are identical. A nonzero hartsel reports a
+  // non-existent hart, which OpenOCD uses while enumerating available harts.
+  always_comb begin
+    dmstatus_rdata = '0;
+    dmstatus_rdata[7] = 1'b1;  // authenticated: no authentication block exists.
+    dmstatus_rdata[3:0] = 4'd2; // version 2 denotes Debug Spec v0.13 behavior.
+    if (dmactive_q) begin
+      if (selected_hart_exists) begin
+        dmstatus_rdata[19] = hart_havereset_i;
+        dmstatus_rdata[18] = hart_havereset_i;
+        dmstatus_rdata[17] = hart_resumeack_i;
+        dmstatus_rdata[16] = hart_resumeack_i;
+        dmstatus_rdata[11] = hart_running_i;
+        dmstatus_rdata[10] = hart_running_i;
+        dmstatus_rdata[9] = hart_halted_i;
+        dmstatus_rdata[8] = hart_halted_i;
+      end else begin
+        dmstatus_rdata[15] = 1'b1;
+        dmstatus_rdata[14] = 1'b1;
+      end
+    end
+  end
+
+  // This first implementation provides one abstract data register and no
+  // program buffer. The executor owns the busy input; cmderr is stored here.
+  always_comb begin
+    abstractcs_rdata = '0;
+    abstractcs_rdata[12] = abstract_busy_i;
+    abstractcs_rdata[10:8] = cmderr_q;
+    abstractcs_rdata[3:0] = 4'd1;
+  end
+
+  // Register read mux. hartinfo is zero because the initial hart integration
+  // has no hart-local data window or debug scratch registers.
+  always_comb begin
+    read_data = '0;
+    unique case (dmi.req_addr)
+      DMI_ADDR_DATA0:      read_data = data0_q;
+      DMI_ADDR_DMCONTROL:  read_data = dmcontrol_rdata;
+      DMI_ADDR_DMSTATUS:   read_data = dmstatus_rdata;
+      DMI_ADDR_HARTINFO:   read_data = 32'h0000_0000;
+      DMI_ADDR_ABSTRACTCS: read_data = abstractcs_rdata;
+      DMI_ADDR_COMMAND:    read_data = command_q;
+      default:             read_data = 32'h0000_0000;
+    endcase
+  end
+
+  // All architectural state and the DMI response slot update in this single
+  // clock domain. Reset dominates; dmactive clear resets Debug Module state;
+  // accepted DMI writes then apply address-specific side effects.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      dmactive_q <= 1'b0;
+      ndmreset_q <= 1'b0;
+      haltreq_q <= 1'b0;
+      resumereq_q <= 1'b0;
+      hartsel_q <= '0;
+      command_q <= '0;
+      data0_q <= '0;
+      cmderr_q <= CMDERR_NONE;
+      rsp_valid_q <= 1'b0;
+      rsp_resp_q <= DMI_RESP_SUCCESS;
+      rsp_data_q <= '0;
+      ackhavereset_o <= 1'b0;
+      command_valid_o <= 1'b0;
+    end else begin
+      // Pulse outputs default low and are asserted only by an accepted write.
+      ackhavereset_o <= 1'b0;
+      command_valid_o <= 1'b0;
+
+      // Hart acknowledgement retires the level-sensitive resume request.
+      if (hart_resumeack_i && selected_hart_exists) begin
+        resumereq_q <= 1'b0;
+      end
+
+      // Executor updates are independent of DMI response backpressure, but an
+      // inactive DM rejects stale completion signals from a prior session.
+      if (dmactive_q && data0_we_i) begin
+        data0_q <= data0_wdata_i;
+      end
+      if (dmactive_q && command_error_valid_i && (command_error_i != CMDERR_NONE) &&
+          (cmderr_q == CMDERR_NONE)) begin
+        cmderr_q <= command_error_i;
+      end
+
+      // Consuming the current response frees the one-entry response slot.
+      if (rsp_valid_q && dmi.rsp_ready) begin
+        rsp_valid_q <= 1'b0;
+      end
+
+      if (dmi.req_valid && dmi.req_ready) begin
+        rsp_valid_q <= 1'b1;
+        rsp_resp_q <= req_supported ? DMI_RESP_SUCCESS : DMI_RESP_FAILED;
+        rsp_data_q <= (dmi.req_op == DMI_OP_READ) ? read_data : 32'h0000_0000;
+
+        if (req_supported && (dmi.req_op == DMI_OP_WRITE)) begin
+          unique case (dmi.req_addr)
+            DMI_ADDR_DMCONTROL: begin
+              if (!dmi.req_data[0]) begin
+                // Clearing dmactive resets all state except the DMI transport.
+                dmactive_q <= 1'b0;
+                ndmreset_q <= 1'b0;
+                haltreq_q <= 1'b0;
+                resumereq_q <= 1'b0;
+                hartsel_q <= '0;
+                command_q <= '0;
+                data0_q <= '0;
+                cmderr_q <= CMDERR_NONE;
+              end else if (!dmactive_q) begin
+                // v0.13 activation writes ignore all fields except dmactive.
+                dmactive_q <= 1'b1;
+              end else begin
+                haltreq_q <= dmi.req_data[31];
+                if (dmi.req_data[31]) begin
+                  // The Debug Spec gives a simultaneous halt request priority.
+                  resumereq_q <= 1'b0;
+                end else if (dmi.req_data[30]) begin
+                  resumereq_q <= 1'b1;
+                end
+                if (dmi.req_data[28] && selected_hart_exists) begin
+                  ackhavereset_o <= 1'b1;
+                end
+                hartsel_q <= {dmi.req_data[15:6], dmi.req_data[25:16]};
+                ndmreset_q <= dmi.req_data[1];
+              end
+            end
+
+            DMI_ADDR_DATA0: begin
+              if (dmactive_q && abstract_busy_i) begin
+                if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
+              end else if (dmactive_q) begin
+                data0_q <= dmi.req_data;
+              end
+            end
+
+            DMI_ADDR_ABSTRACTCS: begin
+              // cmderr is write-one-to-clear; other abstractcs fields are RO.
+              cmderr_q <= cmderr_q & ~dmi.req_data[10:8];
+            end
+
+            DMI_ADDR_COMMAND: begin
+              if (dmactive_q) begin
+                if (abstract_busy_i) begin
+                  if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
+                end else begin
+                  command_q <= dmi.req_data;
+                  command_valid_o <= 1'b1;
+                end
+              end
+            end
+
+            // Writes to defined read-only registers complete with no effect.
+            default: begin
+            end
+          endcase
+        end
+      end
+    end
+  end
+endmodule

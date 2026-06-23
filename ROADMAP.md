@@ -55,15 +55,17 @@ PASS       Current verification target passes
 | `dcache/dcache_store` | PASS | Write-through store sequencer, backpressure, errors, flush, and random tests pass |
 | `dcache/dcache_ctrl` | PASS | Load/store hit/miss policy, write-through/no-write-allocate, flush, errors, and random tests pass |
 | `dcache` | PASS | Integrated tag/data/ctrl/refill/store wrapper, write-through/no-write-allocate, conflict, invalidate, flush, and random tests pass |
-| `tile` | TODO | Core/frontend/cache integration |
-| `debug` | TODO | RISC-V External Debug Spec 0.13.x target |
+| `tile` | PASS | Core/frontend/icache/dcache integration and executable RV32I programs pass |
+| `debug/debug_dmi_regs` | PASS | DMI register transport, hart status/control, abstract state, errors, and backpressure pass |
+| `debug` | TODO | JTAG DTM, hart control, abstract GPR access, and OpenOCD/GDB integration remain |
 | `wasp1` top | TODO | Full SoC integration |
 | `llvm_s1` | TODO | LLVM/BSP/startup/linker/tool scripts |
 
 ## Near-Term Plan
 
 ```text
-1. Start `tile` integration around core/frontend/icache/dcache
+1. Continue `debug` with hart halt/resume control and abstract GPR access
+2. Add JTAG TAP/DTM transport around the verified DMI register boundary
 ```
 
 ## Commit Policy Going Forward
