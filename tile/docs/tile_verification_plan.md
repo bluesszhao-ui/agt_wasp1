@@ -2,15 +2,14 @@
 
 ## 1. Scope
 
-This plan covers the first `tile` integration milestone:
+This plan covers the integrated `tile` milestone:
 
 ```text
-frontend + icache + core + structural instruction-path wiring
+frontend + icache + core + dcache + structural I/D path wiring
 ```
 
-It explicitly does not claim D-cache integration until real `dcache` wiring and
-data-path tests are added. The core side now has a valid/ready data interface,
-so a later tile milestone can verify D-cache without a hidden adapter.
+Both downstream memory ports are exercised with independently backpressured,
+self-checking memory models.
 
 ## 2. Verification Goals
 
@@ -25,13 +24,16 @@ core ready backpressure reaches frontend
 core redirect output reaches frontend redirect input
 I-cache downstream memory requests are visible on tile imem_if
 cache flush/invalidate inputs reach I-cache
+core load/store requests pass through D-cache
+D-cache load miss, load hit, store hit, write-through, and error behavior
+D-cache flush/invalidate controls reach the cache
 core observation outputs are visible at tile boundary
-no tile-owned state exists in the first milestone
+no tile-owned state exists
 ```
 
 ## 3. Testbench Strategy
 
-The first self-checking tile testbench should instantiate real `tile` RTL and a
+The self-checking tile testbench instantiates real `tile` RTL and a
 simple downstream memory model on `imem_if`.
 
 Recommended memory model behavior:
@@ -44,9 +46,9 @@ inject response error for selected addresses
 allow request-ready backpressure for cache-facing ports
 ```
 
-Core data-memory valid/ready ports may be tied to a small model for the
-instruction programs used in this milestone, but D-cache behavior must remain
-out of scope until the real D-cache instance is wired.
+The test program performs dependent loads, stores, branches, and redirects so
+that cache integration is checked through architectural commits rather than
+only through hierarchical signal observation.
 
 ## 4. Directed Cases
 
@@ -56,27 +58,22 @@ out of scope until the real D-cache instance is wired.
 | Instruction hit/refill | Exercise I-cache request/response into frontend/core | Core receives instruction word and can commit simple instructions. |
 | Core backpressure | Force core instruction ready low through a hazard sequence | Frontend holds or buffers according to frontend spec; no instruction is lost. |
 | Redirect | Execute branch/trap redirect | Core redirect reaches frontend and next fetch uses target PC. |
-| Fetch error | Inject I-cache/downstream error | Core fetch fault/trap observation is asserted according to core behavior. |
+| Fetch error | Inject a one-shot I-cache refill error | Faulted instruction suppresses writeback; a later clean refill recovers. |
 | Cache invalidate | Pulse I-cache invalidate input | Later access behaves as miss/refill according to I-cache specs. |
 | Cache flush | Pulse I-cache flush while cache work active | Active I-cache transaction is aborted according to child cache specs. |
 | Interrupt propagation | Drive timer/external IRQ | Core trap observation reports the interrupt path. |
 | Observation pass-through | Check commit/trap/hazard outputs | Tile outputs match child core outputs. |
+| D-cache load miss/hit | Execute repeated loads in one cache line | First load refills; later load returns cached/updated data. |
+| D-cache store hit | Store to a refilled line | Downstream write-through occurs and cached bytes update after success. |
+| D-cache backpressure | Stall downstream request/response | Core holds the LSU instruction and issues no duplicate transaction. |
+| D-cache error | Inject refill response error | Core reports `lsu_fault_o` and suppresses load writeback per the current core contract. |
+| D-cache invalidate | Invalidate a resident line | Next load refills the line again. |
 
 ## 5. Time-Sequenced Action Table
 
-The first verification report must include a table like this after the
-testbench is implemented:
-
-| Time | Action | Expected result | Observed result |
-| --- | --- | --- | --- |
-| 0ns-20ns | Hold reset active. | Child frontend/core/cache state reset or invalid according to child specs. | TBD |
-| 20ns-80ns | Release reset and provide boot instruction memory responses. | First frontend/I-cache request targets `boot_pc_i`; first instruction stream beat reaches core. | TBD |
-| 80ns-180ns | Run simple ALU/commit sequence from instruction memory. | Commit outputs match expected rd/data sequence. | TBD |
-| 180ns-240ns | Force an instruction-stream stall through a load-use sequence. | Frontend/core handshake holds without instruction loss. | TBD |
-| 240ns-320ns | Execute branch or trap redirect. | Frontend redirects fetch to the core-provided target PC. | TBD |
-| 320ns-400ns | Inject fetch response error. | Fetch fault observations match core/cache specs. | TBD |
-| 400ns-480ns | Pulse I-cache flush/invalidate during active work. | Child I-cache behavior matches flush/invalidate specs. | TBD |
-| 480ns-560ns | Drive timer/external interrupts. | Core trap/interrupt observations match CSR/trap specs. | TBD |
+The measured 0ns-5226ns action/result table is maintained in
+`tile_verification_report.md`. It records every reset boundary, program phase,
+cache maintenance pulse, injected error, interrupt action, and observed result.
 
 ## 6. Coverage Targets
 
@@ -96,6 +93,14 @@ redirect_target_fetch_seen
 fetch_error_seen
 icache_flush_seen
 icache_invalidate_seen
+dcache_load_miss_seen
+dcache_load_hit_seen
+dcache_store_seen
+dcache_write_through_seen
+dcache_backpressure_seen
+dcache_error_seen
+dcache_flush_seen
+dcache_invalidate_seen
 timer_irq_seen
 external_irq_seen
 commit_seen
@@ -113,12 +118,8 @@ fetch downstream response error on different refill beats
 redirect while instruction buffer contains younger work
 ```
 
-## 7. Known Open Issue
+## 7. Integration Boundary
 
-D-cache tile integration is pending tile RTL wiring and verification. The
-verification report for this tile milestone must explicitly state:
-
-```text
-instruction path: frontend-owned PC, integrated through I-cache
-data path: D-cache not integrated unless a later tile milestone wires it
-```
+The tile keeps instruction and data downstream initiators separate. Arbitration
+and conversion to the SoC AHB-Lite masters belong to the later SoC integration
+boundary and are not inferred by this testbench.

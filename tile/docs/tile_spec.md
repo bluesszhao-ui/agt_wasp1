@@ -2,10 +2,10 @@
 
 ## 1. Scope
 
-`tile` is the first CPU-tile integration boundary for wasp1.
+`tile` is the CPU-tile integration boundary for wasp1.
 
 The tile groups the machine-mode RV32I+Zicsr core, frontend, instruction cache,
-and later data cache blocks. It presents downstream lightweight valid/ready
+and data cache blocks. It presents downstream lightweight valid/ready
 memory initiator ports that later SoC integration will adapt to AHB-Lite:
 
 ```text
@@ -32,12 +32,12 @@ Rocket-like separation where frontend owns instruction fetch while the core
 pipeline owns decode/execute/commit and redirect decisions.
 
 The data side uses the valid/ready request-response shape expected by `dcache`.
-The first tile RTL may still stage instruction-side integration first, but the
-D-cache path no longer requires a lossy tile-owned adapter.
+The core and D-cache connect directly through an internal `mem_req_rsp_if`; the
+tile does not add a request queue, response queue, or protocol adapter.
 
 ## 3. External Interface Contract
 
-The first fetch-integrated `tile` RTL should expose:
+The integrated `tile` RTL exposes:
 
 | Signal/interface | Direction | Description |
 | --- | --- | --- |
@@ -48,7 +48,10 @@ The first fetch-integrated `tile` RTL should expose:
 | `external_irq_i` | input | Machine external interrupt pending input to core. |
 | `icache_flush_i` | input | Flush active I-cache controller/refill work. |
 | `icache_invalidate_i` | input | Invalidate I-cache tag valid bits. |
+| `dcache_flush_i` | input | Abort active D-cache controller/refill/store work. |
+| `dcache_invalidate_i` | input | Invalidate D-cache tag valid bits. |
 | `imem_if` | initiator | Downstream instruction memory request/response port from I-cache. |
+| `dmem_if` | initiator | Downstream data memory request/response port from D-cache. |
 
 For verification and future debug/trace integration, tile should also expose
 the core observation outputs already provided by `core`:
@@ -65,14 +68,6 @@ csr_rdata_o
 hazard_*
 unsupported_o
 ```
-
-The later data-cache-integrated tile adds:
-
-| Signal/interface | Direction | Description |
-| --- | --- | --- |
-| `dcache_flush_i` | input | Flush active D-cache controller/refill/store work. |
-| `dcache_invalidate_i` | input | Invalidate D-cache tag valid bits. |
-| `dmem_if` | initiator | Downstream data memory request/response port from D-cache. |
 
 ## 4. Fetch Protocol Mapping
 
@@ -130,8 +125,8 @@ The tile itself must not alter the programmer-visible cache policy:
 
 ```text
 I-cache: direct-mapped, load-miss refill
-D-cache later: direct-mapped, load-miss allocate, store write-through,
-               store miss no-write-allocate
+D-cache: direct-mapped, load-miss allocate, store write-through,
+         store miss no-write-allocate
 ```
 
 ## 7. Target Support
@@ -148,15 +143,13 @@ WASP1_TARGET_FPGA_XILINX_VIRTEX7
 WASP1_TARGET_SIM_GENERIC
 ```
 
-## 8. Out Of Scope For The Fetch-Integrated Milestone
+## 8. Out Of Scope
 
-The first fetch-integrated tile milestone does not include:
+The tile does not include:
 
 ```text
 AHB-Lite conversion
-I/D downstream arbitration
-D-cache RTL connection and I/D downstream arbitration may be implemented in a
-later tile milestone
+I/D downstream arbitration; the two ports remain independent tile initiators
 debug module integration
 cache maintenance CSRs
 clock gating

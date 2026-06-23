@@ -2,15 +2,16 @@
 
 ## 1. Scope
 
-`tile` integrates the already implemented `frontend`, `core`, and `icache`
-modules into the first CPU tile instruction path.
-
-The first RTL milestone may still focus on the instruction path, but the core
-data interface now matches the multi-cycle ready/valid shape used by `dcache`.
-That allows the next tile milestone to wire D-cache without adding a hidden
-tile-owned execution buffer.
+`tile` integrates the already implemented `frontend`, `core`, `icache`, and
+`dcache` modules into one CPU tile with independent instruction and data
+downstream memory ports.
 
 ## 2. Planned Block Diagram
+
+![tile timing and state ownership](images/tile_state.png)
+
+The generated PNG is the normative timing-class view. The text diagram below
+retains signal-level detail for reviews and plain-text tooling.
 
 ```text
 Legend:
@@ -55,7 +56,16 @@ Clock/reset domain:
 |                | frontend instr_valid/ready/pc/instr/fault             |
 |                +-------------------------------------------------------+
 |                                                                        |
-|  IF dmem valid/ready core data interface remains exposed/deferred      |
+|  | COMB core/D-cache request-response wiring |                         |
+|  +----------------------+--------------------+                         |
+|                         v                                              |
+|  +-----------------------------+                                       |
+|  | SEQ clk_i/rst_ni            |                                       |
+|  | dcache tag/data/refill/ctrl |                                       |
+|  +-------------+---------------+                                       |
+|                |                                                       |
+|                v                                                       |
+|  IF dmem_if downstream initiator                                       |
 |  IF commit/trap/hazard/debug-observe outputs                           |
 +------------------------------------------------------------------------+
 ```
@@ -67,12 +77,7 @@ Clock/reset domain:
 | `u_frontend` | `frontend` | Owns boot PC, sequential fetch PC, redirect reload, request issue, and instruction buffering. |
 | `u_icache` | `icache` | Instruction fetch cache behind the frontend request stream. |
 | `u_core` | `core` | RV32I+Zicsr machine-mode execution and observation outputs. |
-
-Deferred child:
-
-| Module | Reason deferred |
-| --- | --- |
-| `dcache` | Deferred from the first instruction-path RTL milestone; next data-path milestone should wire it through valid/ready ports. |
+| `u_dcache` | `dcache` | Direct-mapped load-miss-allocate, write-through data cache. |
 
 ## 4. Tile-Owned Logic
 
@@ -83,6 +88,8 @@ frontend imem_if initiator <-> icache front_if target
 icache mem_if initiator    <-> tile imem_if initiator
 frontend instruction stream -> core instruction stream
 core redirect output        -> frontend redirect input
+core data request/response  <-> dcache core_if
+dcache mem_if initiator     <-> tile dmem_if initiator
 ```
 
 The tile should not own architectural state, cache state, CSR state, pipeline
@@ -144,36 +151,26 @@ frontend.redirect_pc_i    <- core.redirect_pc_o
 Redirect priority remains inside `frontend` and `core_pipe` according to their
 module specs. Tile does not generate extra redirects.
 
-## 7. Data Path Status
+## 7. Data Path Wiring
 
-The current tile milestone should expose or wire the core valid/ready
-data-memory ports, but must not claim D-cache integration is complete until real
-`dcache` is instantiated and verified.
-
-The next required tile work before claiming D-cache integration is:
-
-```text
-tile:
-  connect core dmem valid/ready ports to dcache.core_if
-  connect dcache.mem_if to tile dmem_if
-  verify load/store hit, miss, backpressure, response error, flush, invalidate
-  decide whether I/D downstream ports stay separate or arbitrate before AHB
-```
+Core data signals are mapped field-for-field to an internal
+`mem_req_rsp_if`. `req_instr` is tied low. The D-cache downstream `mem_if` is
+the tile `dmem_if`; no tile-owned state changes transaction timing.
 
 ## 8. Sequential State Diagram
 
-The first tile wrapper owns no explicit sequential state and no tile-owned FSM.
+The tile wrapper owns no explicit sequential state and no tile-owned FSM.
 All sequential state is inside child modules:
 
 ```text
 frontend -> PC, outstanding fetch, instruction buffer
 icache   -> icache_ctrl, icache_tag, icache_data, icache_refill
 core     -> core_pipe, core_regfile, core_csr, integrated datapath state
+dcache   -> dcache_ctrl, dcache_tag, dcache_data, refill and store sequencers
 ```
 
-The tile diagram is therefore an L1 state ownership diagram rather than an FSM.
-No new PNG state diagram is required until tile-owned registers or an FSM are
-introduced.
+The tile PNG is an L1 timing/ownership block diagram rather than an FSM
+diagram. It keeps the COMB wiring separate from every child SEQ block.
 
 ## 9. Target Support
 
