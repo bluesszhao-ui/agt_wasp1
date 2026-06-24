@@ -1,44 +1,91 @@
 MODULE := debug
 VERILATOR ?= verilator
-RTL_FILELIST := filelists/debug_dmi_regs.f
-TB_FILELIST := filelists/tb_debug_dmi_regs.f
-TB_TOP := tb_debug_dmi_regs
+DMI_RTL_FILELIST := filelists/debug_dmi_regs.f
+DMI_TB_FILELIST := filelists/tb_debug_dmi_regs.f
+DMI_TB_TOP := tb_debug_dmi_regs
+HALT_CTRL_RTL_FILELIST := filelists/debug_halt_ctrl.f
+HALT_CTRL_TB_FILELIST := filelists/tb_debug_halt_ctrl.f
+HALT_CTRL_TB_TOP := tb_debug_halt_ctrl
 
-.PHONY: all lint lint-ic lint-fpga-v7 sim clean
+.PHONY: all lint lint-dmi-regs lint-halt-ctrl \
+	lint-ic lint-dmi-regs-ic lint-halt-ctrl-ic \
+	lint-fpga-v7 lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7 \
+	sim sim-dmi-regs sim-halt-ctrl clean
 
 all: lint sim
 
-lint:
+lint: lint-dmi-regs lint-halt-ctrl
+
+lint-dmi-regs:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module debug_dmi_regs \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
-		-f $(RTL_FILELIST) > logs/lint.log 2>&1
+		-f $(DMI_RTL_FILELIST) > logs/lint.log 2>&1
 	@cat logs/lint.log
 
-lint-ic:
+lint-halt-ctrl:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_halt_ctrl \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(HALT_CTRL_RTL_FILELIST) > logs/lint_halt_ctrl.log 2>&1
+	@cat logs/lint_halt_ctrl.log
+
+lint-ic: lint-dmi-regs-ic lint-halt-ctrl-ic
+
+lint-dmi-regs-ic:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module debug_dmi_regs \
 		+define+WASP1_TARGET_IC \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
-		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
+		-f $(DMI_RTL_FILELIST) > logs/lint_ic.log 2>&1
 	@cat logs/lint_ic.log
 
-lint-fpga-v7:
+lint-halt-ctrl-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_halt_ctrl \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-f $(HALT_CTRL_RTL_FILELIST) > logs/lint_halt_ctrl_ic.log 2>&1
+	@cat logs/lint_halt_ctrl_ic.log
+
+lint-fpga-v7: lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7
+
+lint-dmi-regs-fpga-v7:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module debug_dmi_regs \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
-		-f $(RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
+		-f $(DMI_RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
 	@cat logs/lint_fpga_v7.log
 
-sim:
+lint-halt-ctrl-fpga-v7:
 	@mkdir -p build logs
-	$(VERILATOR) -sv --binary --timing --top-module $(TB_TOP) \
+	$(VERILATOR) --lint-only -sv --top-module debug_halt_ctrl \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
-		-Mdir build/obj_$(TB_TOP) -f $(TB_FILELIST) \
+		-f $(HALT_CTRL_RTL_FILELIST) > logs/lint_halt_ctrl_fpga_v7.log 2>&1
+	@cat logs/lint_halt_ctrl_fpga_v7.log
+
+sim: sim-dmi-regs sim-halt-ctrl
+
+sim-dmi-regs:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(DMI_TB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(DMI_TB_TOP) -f $(DMI_TB_FILELIST) \
 		> logs/tb_debug_dmi_regs_build.log 2>&1
-	@./build/obj_$(TB_TOP)/V$(TB_TOP) > logs/tb_debug_dmi_regs.log 2>&1
+	@./build/obj_$(DMI_TB_TOP)/V$(DMI_TB_TOP) > logs/tb_debug_dmi_regs.log 2>&1
 	@cat logs/tb_debug_dmi_regs.log
+
+sim-halt-ctrl:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(HALT_CTRL_TB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(HALT_CTRL_TB_TOP) -f $(HALT_CTRL_TB_FILELIST) \
+		> logs/tb_debug_halt_ctrl_build.log 2>&1
+	@./build/obj_$(HALT_CTRL_TB_TOP)/V$(HALT_CTRL_TB_TOP) \
+		> logs/tb_debug_halt_ctrl.log 2>&1
+	@cat logs/tb_debug_halt_ctrl.log
 
 clean:
 	@rm -rf build/* logs/* wave/*

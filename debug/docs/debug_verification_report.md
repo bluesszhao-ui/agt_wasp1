@@ -68,6 +68,8 @@ mismatch; this milestone does not yet claim structural code/toggle coverage.
 
 ## 6. Residual Scope
 
-This report covers `debug_dmi_if` and `debug_dmi_regs`. It does not yet cover
-JTAG TAP/DTM scan behavior, hart halt entry, abstract GPR execution, debug ROM,
-program buffer, memory access, single-step, or OpenOCD/GDB end-to-end tests.
+This report covers `debug_dmi_if` and `debug_dmi_regs`. DM-side halt/resume
+transaction control is covered separately by
+`debug_halt_ctrl_verification_report.md`. Core pipeline Debug Mode entry,
+JTAG TAP/DTM scan behavior, abstract GPR execution, debug ROM, program buffer,
+memory access, single-step, and OpenOCD/GDB end-to-end tests remain.
