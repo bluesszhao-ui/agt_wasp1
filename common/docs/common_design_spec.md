@@ -65,8 +65,20 @@ Core, frontend, I-cache, D-cache, and tile-local arbitration use
 
 Interrupt-producing modules expose interrupt bits through `irq_if`.
 
-Core/debug coupling uses `debug_if`; the RISC-V debug module will map this into
-the internal core control path.
+Core/debug coupling uses `debug_if`; the RISC-V debug module maps this into the
+internal core control path. Its modports separate ownership:
+
+```text
+dm_ctrl  halt/resume/step requests plus running/halted status
+dm_gpr   GPR request/response channel only
+dm       complete Debug Module view for final integration
+core     complete core-side view
+monitor  passive verification view
+```
+
+The split DM modports allow `debug_halt_ctrl` and `debug_reg_access` to connect
+to the same eventual interface without either submodule driving the other's
+signals.
 
 ## 5. Synthesis Notes
 

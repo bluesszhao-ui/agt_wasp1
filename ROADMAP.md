@@ -58,14 +58,15 @@ PASS       Current verification target passes
 | `tile` | PASS | Core/frontend/icache/dcache integration and executable RV32I programs pass |
 | `debug/debug_dmi_regs` | PASS | DMI register transport, hart status/control, abstract state, errors, and backpressure pass |
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
-| `debug` | TODO | Core Debug Mode, abstract GPR access, JTAG DTM, and OpenOCD/GDB integration remain |
+| `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
+| `debug` | TODO | Core Debug Mode, abstract command decode, JTAG DTM, and OpenOCD/GDB integration remain |
 | `wasp1` top | TODO | Full SoC integration |
 | `llvm_s1` | TODO | LLVM/BSP/startup/linker/tool scripts |
 
 ## Near-Term Plan
 
 ```text
-1. Continue `debug` with abstract GPR command execution and core Debug Mode hooks
+1. Continue `debug` with abstract GPR command decoding and core Debug Mode hooks
 2. Add JTAG TAP/DTM transport around the verified DMI register boundary
 ```
 

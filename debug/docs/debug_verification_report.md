@@ -71,5 +71,7 @@ mismatch; this milestone does not yet claim structural code/toggle coverage.
 This report covers `debug_dmi_if` and `debug_dmi_regs`. DM-side halt/resume
 transaction control is covered separately by
 `debug_halt_ctrl_verification_report.md`. Core pipeline Debug Mode entry,
-JTAG TAP/DTM scan behavior, abstract GPR execution, debug ROM, program buffer,
-memory access, single-step, and OpenOCD/GDB end-to-end tests remain.
+JTAG TAP/DTM scan behavior, abstract-command GPR decoding, core-side GPR access,
+debug ROM, program buffer, memory access, single-step, and OpenOCD/GDB
+end-to-end tests remain. Low-level GPR transport is covered separately by
+`debug_reg_access_verification_report.md`.
