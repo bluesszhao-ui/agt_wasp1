@@ -37,11 +37,14 @@ each pipeline advance, and checks expected register writeback.
 | Load-use hazard | Dependent ID instruction stalls stream/decode and injects EX bubble |
 | x0 write | x0 writeback suppression |
 | Illegal | Illegal instruction trap and writeback suppression |
+| Debug halt | Assert halt, drain pipeline, and check halted status plus frontend backpressure |
+| Debug GPR read/write | Read a committed register, write/read back another register, and prove x0 remains zero |
+| Debug resume | Resume from halted state and check running status returns |
 
 ## 3. Exit Criteria
 
 All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
 load, store, LSU fault, data-memory wait state, request backpressure, CSR,
-trap, interrupt, load-use hazard, suppression, and frontend-model PC stepping
-coverage.
+trap, interrupt, load-use hazard, suppression, frontend-model PC stepping, and
+debug halt/GPR/resume coverage.

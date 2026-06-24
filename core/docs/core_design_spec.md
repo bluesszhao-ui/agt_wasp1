@@ -16,7 +16,7 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 +---------------------------------------------------------------+
 | core                                                          |
 |                                                               |
-|  IF clk/rst, frontend instr stream, irq, data response         |
+|  IF clk/rst, frontend instr stream, irq, data response, debug  |
 |        |                                                      |
 |        v                                                      |
 |  +------------------------------+                             |
@@ -35,11 +35,14 @@ Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
 +---------------------------------------------------------------+
 ```
 
-PNG diagram:
+Historical PNG diagram:
 
 ```text
 core/docs/images/core_state.png
 ```
+
+New or substantially reworked diagrams should use editable OmniGraffle source
+under `core/docs/diagrams/`.
 
 ## 3. Implementation
 
@@ -63,6 +66,7 @@ its verified submodules.
 | Redirect | `redirect_valid_o`, `redirect_pc_o` | Branch/trap/MRET redirect request back to frontend. |
 | Data memory | `dmem_req_*`, `dmem_rsp_*` | Valid/ready request-response pass-through to D-cache/tile. |
 | Interrupts | `timer_irq_i`, `external_irq_i` | Direct pass-through into machine CSR/trap logic. |
+| Debug | `core_debug` | Direct pass-through to `core_int_datapath` for halt/resume/step and halted GPR access. |
 | Commit/execute observation | `commit_*`, `ex_*` | Direct pass-through for verification and future retire/debug hooks. |
 | Trap/CSR observation | `trap_*`, `mret_taken_o`, `csr_rdata_o` | Direct pass-through for verification and future debug hooks. |
 | Hazard observation | `hazard_*` | Direct pass-through from the integrated hazard unit. |

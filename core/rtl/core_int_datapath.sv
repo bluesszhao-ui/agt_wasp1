@@ -29,6 +29,7 @@ module core_int_datapath (
   input  logic        dmem_rsp_err_i,     // Data memory response error.
   input  logic        timer_irq_i,        // Machine timer interrupt pending.
   input  logic        external_irq_i,     // Machine external interrupt pending.
+  debug_if.core       core_debug,         // Debug Module control and halted-core GPR channel.
 
   output logic        commit_valid_o,     // Register writeback happened this cycle.
   output logic [4:0]  commit_rd_o,        // Committed destination register.
@@ -183,6 +184,21 @@ module core_int_datapath (
   logic        pipe_fetch_stall;  // Final fetch stall into core_pipe.
   logic        pipe_decode_stall; // Final decode stall into core_pipe.
   logic        pipe_execute_bubble;// Final execute bubble into core_pipe.
+  logic        debug_stop_fetch;   // Debug halt request stops new frontend accepts.
+  logic        debug_freeze_pipe;  // Debug halted state freezes the drained pipe.
+  logic        debug_halted;       // Core is halted and can accept GPR debug access.
+  logic        debug_running;      // Core is running or executing a debug step.
+  logic        debug_pipe_idle;    // IF/ID, EX/WB, and LSU outstanding state are empty.
+  logic        debug_gpr_req_fire; // Halted GPR request handshake.
+  logic        debug_gpr_write_fire;// Halted GPR write request accepted.
+  logic        debug_gpr_rsp_valid_q;// Registered GPR response valid.
+  logic [31:0] debug_gpr_rsp_rdata_q;// Registered GPR read response payload.
+  logic        debug_gpr_rsp_err_q; // Registered GPR response error.
+  logic        debug_busy;         // Debug GPR response is pending or being created.
+  logic [4:0]  regfile_raddr1;     // Read port 1 address after debug muxing.
+  logic        regfile_we;         // Register file write enable after debug muxing.
+  logic [4:0]  regfile_waddr;      // Register file write address after debug muxing.
+  logic [31:0] regfile_wdata;      // Register file write data after debug muxing.
 
   assign lsu_mem_op = ex_valid && (dec_load || dec_store) &&
                       !ex_fetch_fault && !dec_illegal;
@@ -192,9 +208,68 @@ module core_int_datapath (
   assign lsu_complete = !lsu_mem_op || lsu_misaligned || lsu_rsp_fire;
   assign lsu_wait_stall = lsu_mem_op && !lsu_misaligned && !lsu_rsp_fire;
   assign retire_valid = ex_valid && lsu_complete;
-  assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall;
-  assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall;
-  assign pipe_execute_bubble = hazard_execute_bubble && !lsu_wait_stall;
+  assign debug_pipe_idle = !id_valid && !ex_valid && !lsu_req_outstanding_q;
+  assign debug_gpr_req_fire = core_debug.gpr_req_valid &&
+                              core_debug.gpr_req_ready;
+  assign debug_gpr_write_fire = debug_gpr_req_fire &&
+                                core_debug.gpr_req_write;
+  assign debug_busy = debug_gpr_rsp_valid_q || debug_gpr_req_fire;
+  assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall ||
+                            debug_stop_fetch;
+  assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall ||
+                             debug_freeze_pipe;
+  assign pipe_execute_bubble = hazard_execute_bubble && !lsu_wait_stall &&
+                               !debug_freeze_pipe;
+
+  core_debug_ctrl debug_ctrl_u (
+    .clk_i(clk_i),
+    .rst_ni(rst_ni),
+    .halt_req_i(core_debug.halt_req),
+    .resume_req_i(core_debug.resume_req),
+    .step_req_i(core_debug.step_req),
+    .pipe_idle_i(debug_pipe_idle),
+    .retire_valid_i(retire_valid),
+    .debug_busy_i(debug_busy),
+    .stop_fetch_o(debug_stop_fetch),
+    .freeze_pipe_o(debug_freeze_pipe),
+    .halted_o(debug_halted),
+    .running_o(debug_running)
+  );
+
+  assign core_debug.halted = debug_halted;
+  assign core_debug.running = debug_running;
+  assign core_debug.gpr_req_ready = debug_halted && !debug_gpr_rsp_valid_q;
+  assign core_debug.gpr_rsp_valid = debug_gpr_rsp_valid_q;
+  assign core_debug.gpr_rsp_rdata = debug_gpr_rsp_rdata_q;
+  assign core_debug.gpr_rsp_err = debug_gpr_rsp_err_q;
+  assign regfile_raddr1 = debug_halted ? core_debug.gpr_req_addr : dec_rs1;
+  assign regfile_we = debug_gpr_write_fire ? 1'b1 : rf_we;
+  assign regfile_waddr = debug_gpr_write_fire ? core_debug.gpr_req_addr :
+                                                rf_waddr;
+  assign regfile_wdata = debug_gpr_write_fire ? core_debug.gpr_req_wdata :
+                                                rf_wdata;
+
+  // The halted GPR channel returns one registered response per accepted
+  // request. Reads capture the muxed regfile read port; writes use the same
+  // rising edge as the response capture and report success unless reset wins.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      debug_gpr_rsp_valid_q <= 1'b0;
+      debug_gpr_rsp_rdata_q <= 32'h0000_0000;
+      debug_gpr_rsp_err_q <= 1'b0;
+    end else begin
+      if (debug_gpr_rsp_valid_q && core_debug.gpr_rsp_ready) begin
+        debug_gpr_rsp_valid_q <= 1'b0;
+      end
+
+      if (debug_gpr_req_fire) begin
+        debug_gpr_rsp_valid_q <= 1'b1;
+        debug_gpr_rsp_rdata_q <= core_debug.gpr_req_write ? 32'h0000_0000 :
+                                                            rs1_data;
+        debug_gpr_rsp_err_q <= 1'b0;
+      end
+    end
+  end
 
   // Track the single outstanding data transaction owned by this in-order
   // datapath. The pipeline is held while this bit is set, so no second data
@@ -326,13 +401,13 @@ module core_int_datapath (
   ) regfile_u (
     .clk_i(clk_i),
     .rst_ni(rst_ni),
-    .raddr1_i(dec_rs1),
+    .raddr1_i(regfile_raddr1),
     .rdata1_o(rs1_data),
     .raddr2_i(dec_rs2),
     .rdata2_o(rs2_data),
-    .we_i(rf_we),
-    .waddr_i(rf_waddr),
-    .wdata_i(rf_wdata)
+    .we_i(regfile_we),
+    .waddr_i(regfile_waddr),
+    .wdata_i(regfile_wdata)
   );
 
   // AUIPC uses the PC as the left operand even though decode does not mark it

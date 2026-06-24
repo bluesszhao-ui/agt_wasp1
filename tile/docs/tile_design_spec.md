@@ -10,8 +10,10 @@ downstream memory ports.
 
 ![tile timing and state ownership](images/tile_state.png)
 
-The generated PNG is the normative timing-class view. The text diagram below
-retains signal-level detail for reviews and plain-text tooling.
+This is a historical PNG timing-class view. New or substantially reworked tile
+figures should use editable OmniGraffle source under `tile/docs/diagrams/`. The
+text diagram below retains signal-level detail for reviews and plain-text
+tooling.
 
 ```text
 Legend:
@@ -22,7 +24,7 @@ Legend:
 Clock/reset domain:
   all SEQ blocks below use clk=clk_i, rst=rst_ni
 
- IF clk_i/rst_ni/boot_pc/irq/cache control
+ IF clk_i/rst_ni/boot_pc/irq/cache control/debug
         |
         v
 +------------------------------------------------------------------------+
@@ -67,6 +69,7 @@ Clock/reset domain:
 |                v                                                       |
 |  IF dmem_if downstream initiator                                       |
 |  IF commit/trap/hazard/debug-observe outputs                           |
+|  IF debug_if.core pass-through to core                                  |
 +------------------------------------------------------------------------+
 ```
 
@@ -90,6 +93,7 @@ frontend instruction stream -> core instruction stream
 core redirect output        -> frontend redirect input
 core data request/response  <-> dcache core_if
 dcache mem_if initiator     <-> tile dmem_if initiator
+core_debug                  <-> core debug_if.core
 ```
 
 The tile should not own architectural state, cache state, CSR state, pipeline

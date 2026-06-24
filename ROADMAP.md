@@ -37,9 +37,10 @@ PASS       Current verification target passes
 | `core/core_trap` | PASS | Sync traps, MRET, IRQ masking, and trap priority tests pass |
 | `core/core_hazard` | PASS | Load-use stalls, EX/WB forwarding, priority, x0, and random dependency tests pass |
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
+| `core/core_debug_ctrl` | PASS | Debug halt-pending drain, halted state, resume, step hook, busy block, and priority tests pass |
 | `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
-| `core/core_int_datapath` | PASS | Executable datapath for ALU, LUI/AUIPC, branch/JAL/JALR redirect, loads, stores, CSR, traps, timer IRQ, load-use hazard, and suppression paths passes |
-| `core` | PASS | First top-level wrapper around `core_int_datapath` passes lint and wrapper/integrated simulation |
+| `core/core_int_datapath` | PASS | Executable datapath plus core-side debug halt/GPR hooks pass directed coverage |
+| `core` | PASS | Top-level wrapper exposes debug_if.core and passes wrapper/integrated simulation |
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
 | `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
 | `frontend/frontend_ibuf` | PASS | FIFO ordering, full/empty, simultaneous push/pop, flush, metadata, and random handshakes pass |
@@ -60,14 +61,14 @@ PASS       Current verification target passes
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, cmderr mapping, aborts, and random commands pass |
-| `debug` | TODO | Core Debug Mode hooks, Debug Module integration, JTAG DTM, and OpenOCD/GDB remain |
+| `debug` | TODO | Debug Module integration, JTAG DTM, and OpenOCD/GDB remain |
 | `wasp1` top | TODO | Full SoC integration |
 | `llvm_s1` | TODO | LLVM/BSP/startup/linker/tool scripts |
 
 ## Near-Term Plan
 
 ```text
-1. Continue `debug` with core Debug Mode hooks and Debug Module integration
+1. Continue `debug` with Debug Module integration around DMI regs, halt control, abstract command, and core hooks
 2. Add JTAG TAP/DTM transport around the verified DMI register boundary
 ```
 

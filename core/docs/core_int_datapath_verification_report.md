@@ -29,13 +29,14 @@ make lint
 | 456ns-496ns | Data response wait | Delayed LW response with request accepted before response valid | Pipeline held until response fire, then load committed |
 | 496ns-536ns | Data request backpressure | Hold `dmem_req_ready_i=0` for a load request, then release ready | Request stayed valid, pipeline held, then response committed |
 | 536ns-766ns | CSR/trap/IRQ | CSRRW/CSRRS, ECALL, MRET, CSR IRQ enable, timer IRQ | CSR writes, trap metadata, redirects, and interrupt entry matched |
+| 766ns-886ns | Debug halt/GPR/resume | Halt after program drain, read x26, write/read x10, prove x0 stays zero, resume | Halted status, frontend backpressure, GPR responses, and resume matched |
 
 ## 4. Coverage Summary
 
 The standalone testbench reports:
 
 ```text
-tb_core_int_datapath coverage: pass_count=67 commit=36 alu_i=13 alu_r=3 upper=2 link=3 branch=2 redirect=8 load=6 store=2 lsu_fault=1 dmem_wait=2 dmem_bp=1 csr=9 trap=4 irq=1 hazard=1 suppress=22 pc=62
+tb_core_int_datapath coverage: pass_count=74 commit=36 alu_i=13 alu_r=3 upper=2 link=3 branch=2 redirect=8 load=6 store=2 lsu_fault=1 dmem_wait=2 dmem_bp=1 csr=9 trap=4 irq=1 hazard=1 suppress=22 pc=62 debug=7
 tb_core_int_datapath PASS
 ```
 
@@ -58,3 +59,5 @@ Coverage intent met:
 - Load-use stall and execute bubble.
 - x0 and NOP suppression.
 - Frontend-model PC stepping.
+- Debug halt entry, halted frontend backpressure, GPR read, GPR write/readback,
+  x0 debug access, and resume.

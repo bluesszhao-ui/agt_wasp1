@@ -46,6 +46,7 @@ module tb_core;
   logic        hazard_fwd_rs2_ex;// Core rs2 EX-forward observation.
   logic        hazard_fwd_rs2_wb;// Core rs2 WB-forward observation.
   logic        unsupported;     // Core unsupported instruction observation.
+  debug_if     core_debug (.clk(clk), .rst_n(rst_n)); // Debug control/GPR wrapper interface.
 
   integer pass_count;           // Total passing self-checks.
   integer commit_count;         // Architectural commit coverage counter.
@@ -54,6 +55,7 @@ module tb_core;
   integer hazard_count;         // Load-use hazard coverage counter.
   integer trap_count;           // Trap redirect coverage counter.
   integer suppress_count;       // No-write suppression coverage counter.
+  integer debug_count;          // Debug halt/resume and GPR wrapper coverage.
   logic [31:0] exp_fetch_pc;    // Scoreboard expected frontend stream PC.
 
   core dut (
@@ -77,6 +79,7 @@ module tb_core;
     .dmem_rsp_err_i(dmem_rsp_err),
     .timer_irq_i(timer_irq),
     .external_irq_i(external_irq),
+    .core_debug(core_debug),
     .commit_valid_o(commit_valid),
     .commit_rd_o(commit_rd),
     .commit_data_o(commit_data),
@@ -270,6 +273,100 @@ module tb_core;
     end
   endtask
 
+  // Wrapper-level Debug Mode smoke that proves the public core port forwards
+  // halt/resume and halted GPR read/write traffic into the datapath.
+  task automatic check_debug_wrapper_path;
+    begin
+      @(negedge clk);
+      instr_valid = 1'b0;
+      core_debug.halt_req = 1'b1;
+      for (int unsigned tries = 0; tries < 20; tries++) begin
+        @(posedge clk);
+        #1;
+        if (core_debug.halted) begin
+          if (instr_ready || core_debug.running) begin
+            $fatal(1, "debug halt wrapper mismatch ready=%0b running=%0b",
+                   instr_ready, core_debug.running);
+          end
+          pass_count++;
+          debug_count++;
+          break;
+        end
+        if (tries == 19) begin
+          $fatal(1, "debug halt wrapper timeout");
+        end
+      end
+
+      @(negedge clk);
+      core_debug.gpr_req_valid = 1'b1;
+      core_debug.gpr_req_write = 1'b0;
+      core_debug.gpr_req_addr = 5'd21;
+      core_debug.gpr_req_wdata = 32'h0000_0000;
+      core_debug.gpr_rsp_ready = 1'b1;
+      #1;
+      if (!core_debug.gpr_req_ready) begin
+        $fatal(1, "debug read wrapper not ready");
+      end
+      @(posedge clk);
+      #1;
+      if (!core_debug.gpr_rsp_valid ||
+          (core_debug.gpr_rsp_rdata !== 32'hCAFE_BABE) ||
+          core_debug.gpr_rsp_err) begin
+        $fatal(1, "debug read wrapper mismatch valid=%0b data=%08x err=%0b",
+               core_debug.gpr_rsp_valid, core_debug.gpr_rsp_rdata,
+               core_debug.gpr_rsp_err);
+      end
+      core_debug.gpr_req_valid = 1'b0;
+      @(posedge clk);
+      pass_count++;
+      debug_count++;
+
+      @(negedge clk);
+      core_debug.gpr_req_valid = 1'b1;
+      core_debug.gpr_req_write = 1'b1;
+      core_debug.gpr_req_addr = 5'd11;
+      core_debug.gpr_req_wdata = 32'hABCD_0055;
+      @(posedge clk);
+      #1;
+      if (!core_debug.gpr_rsp_valid || core_debug.gpr_rsp_err) begin
+        $fatal(1, "debug write wrapper response mismatch");
+      end
+      core_debug.gpr_req_valid = 1'b0;
+      @(posedge clk);
+      pass_count++;
+      debug_count++;
+
+      @(negedge clk);
+      core_debug.gpr_req_valid = 1'b1;
+      core_debug.gpr_req_write = 1'b0;
+      core_debug.gpr_req_addr = 5'd11;
+      @(posedge clk);
+      #1;
+      if (!core_debug.gpr_rsp_valid ||
+          (core_debug.gpr_rsp_rdata !== 32'hABCD_0055)) begin
+        $fatal(1, "debug readback wrapper mismatch data=%08x",
+               core_debug.gpr_rsp_rdata);
+      end
+      core_debug.gpr_req_valid = 1'b0;
+      @(posedge clk);
+      pass_count++;
+      debug_count++;
+
+      @(negedge clk);
+      core_debug.halt_req = 1'b0;
+      core_debug.resume_req = 1'b1;
+      @(posedge clk);
+      #1;
+      core_debug.resume_req = 1'b0;
+      if (core_debug.halted || !core_debug.running) begin
+        $fatal(1, "debug resume wrapper mismatch halted=%0b running=%0b",
+               core_debug.halted, core_debug.running);
+      end
+      pass_count++;
+      debug_count++;
+    end
+  endtask
+
   initial begin
     pass_count = 0;
     commit_count = 0;
@@ -278,6 +375,7 @@ module tb_core;
     hazard_count = 0;
     trap_count = 0;
     suppress_count = 0;
+    debug_count = 0;
 
     exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
@@ -287,6 +385,14 @@ module tb_core;
     instr_fault = 1'b0;
     timer_irq = 1'b0;
     external_irq = 1'b0;
+    core_debug.halt_req = 1'b0;
+    core_debug.resume_req = 1'b0;
+    core_debug.step_req = 1'b0;
+    core_debug.gpr_req_valid = 1'b0;
+    core_debug.gpr_req_write = 1'b0;
+    core_debug.gpr_req_addr = 5'd0;
+    core_debug.gpr_req_wdata = 32'h0000_0000;
+    core_debug.gpr_rsp_ready = 1'b1;
 
     repeat (2) @(posedge clk);
     #1;
@@ -322,16 +428,17 @@ module tb_core;
     drive_instr(32'h0000_0013); // fall-through instruction flushed by trap
     expect_trap_redirect("illegal trap", TRAP_CAUSE_ILLEGAL_INSN,
                          32'hFFFF_FFFF, ex_pc, 32'h0000_0000);
+    check_debug_wrapper_path();
 
     if (pass_count < 9 || commit_count < 6 || fetch_count < 8 ||
         dmem_count < 1 || hazard_count < 1 || trap_count < 1 ||
-        suppress_count < 1) begin
+        suppress_count < 1 || debug_count < 5) begin
       $fatal(1, "core wrapper coverage goal missed");
     end
 
-    $display("tb_core coverage: pass_count=%0d commit=%0d fetch=%0d dmem=%0d hazard=%0d trap=%0d suppress=%0d",
+    $display("tb_core coverage: pass_count=%0d commit=%0d fetch=%0d dmem=%0d hazard=%0d trap=%0d suppress=%0d debug=%0d",
              pass_count, commit_count, fetch_count, dmem_count,
-             hazard_count, trap_count, suppress_count);
+             hazard_count, trap_count, suppress_count, debug_count);
     $display("tb_core PASS");
     $finish;
   end

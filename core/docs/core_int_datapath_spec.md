@@ -18,6 +18,7 @@ core_csr
 core_trap
 core_hazard
 core_wb
+core_debug_ctrl
 ```
 
 ## 2. Supported Instruction Scope
@@ -38,6 +39,8 @@ ECALL/EBREAK/illegal/CSR-fault trap redirect
 MRET redirect
 machine timer/external interrupt trap inputs
 load-use hazard stall and execute bubble
+Debug Mode halt-pending drain, halted status, resume, and step-running hook
+halted-core GPR read/write access through `debug_if.core`
 ```
 
 ## 3. Unsupported Instruction Scope
@@ -103,6 +106,7 @@ dmem_rsp_valid_i
 dmem_rsp_ready_o
 dmem_rsp_rdata_i
 dmem_rsp_err_i
+core_debug
 ```
 
 ## 5. Verification Requirements
@@ -115,3 +119,7 @@ behavior, CSR read/write old-value writeback, ECALL trap entry, MRET redirect,
 interrupt redirect, x0 suppression, illegal trap behavior, load-use
 stall/bubble behavior, frontend PC stepping in the testbench model, and
 redirect target forwarding.
+
+Debug verification must cover halt entry after the pipeline drains, frontend
+ready suppression while halted, halted GPR read/write/readback, x0 debug access,
+and resume back to running state.

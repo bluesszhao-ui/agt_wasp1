@@ -1,6 +1,7 @@
 +incdir+../common/rtl
 ../common/rtl/wasp1_pkg.sv
 ../common/rtl/mem_req_rsp_if.sv
+../common/rtl/debug_if.sv
 ../core/rtl/core_types_pkg.sv
 ../frontend/rtl/frontend_pc.sv
 ../frontend/rtl/frontend_fetch.sv
@@ -20,6 +21,7 @@
 ../core/rtl/core_trap.sv
 ../core/rtl/core_hazard.sv
 ../core/rtl/core_wb.sv
+../core/rtl/core_debug_ctrl.sv
 ../core/rtl/core_pipe.sv
 ../core/rtl/core_int_datapath.sv
 ../core/rtl/core.sv

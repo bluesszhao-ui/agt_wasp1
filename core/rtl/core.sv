@@ -30,6 +30,7 @@ module core (
 
   input  logic        timer_irq_i,        // Machine timer interrupt pending input.
   input  logic        external_irq_i,     // Machine external interrupt pending input.
+  debug_if.core       core_debug,         // External debug control and halted GPR channel.
 
   output logic        commit_valid_o,     // Architectural register writeback valid.
   output logic [4:0]  commit_rd_o,        // Architectural destination register.
@@ -76,6 +77,7 @@ module core (
     .dmem_rsp_err_i(dmem_rsp_err_i),
     .timer_irq_i(timer_irq_i),
     .external_irq_i(external_irq_i),
+    .core_debug(core_debug),
     .commit_valid_o(commit_valid_o),
     .commit_rd_o(commit_rd_o),
     .commit_data_o(commit_data_o),

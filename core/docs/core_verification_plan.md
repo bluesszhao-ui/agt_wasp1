@@ -7,8 +7,9 @@ This plan verifies the first `core` top-level wrapper around
 standalone `core` verification focuses on public interface mapping and a compact
 integrated instruction sequence.
 
-Full instruction, CSR, trap, load/store, branch, hazard, and suppression coverage
-is provided by the underlying submodule and `core_int_datapath` plans.
+Full instruction, CSR, trap, load/store, branch, hazard, suppression, and
+debug-control coverage is provided by the underlying submodule and
+`core_int_datapath` plans.
 
 ## 2. Testbench
 
@@ -31,6 +32,7 @@ timescale: 1ns/1ps
 | Hazard observation | Execute load-use dependency and check public stall output. |
 | Trap observation | Execute illegal instruction and check trap redirect outputs. |
 | Suppression behavior | Check NOP/no-write slot does not assert commit. |
+| Debug wrapper path | Halt the wrapper, read/write GPRs through `debug_if.core`, and resume. |
 
 ## 4. Time-Sequenced Case Plan
 
@@ -44,9 +46,10 @@ timescale: 1ns/1ps
 | 110ns-130ns | Feed dependent `add x22,x21,x0`. | Load-use hazard stalls fetch/decode and injects one execute bubble. |
 | 130ns-150ns | Feed NOP drain. | Dependent add commits loaded value. |
 | 150ns-180ns | Feed illegal instruction and flushed fall-through. | Illegal trap is reported and `redirect_pc_o` targets `mtvec=0`. |
+| 180ns-220ns | Stop instruction stream, assert debug halt, perform GPR read/write/readback, resume. | Halted status, GPR responses, and running status match. |
 
 ## 5. Pass Criteria
 
 Simulation must finish with `tb_core PASS`, all self-checks passing, and the
-coverage summary meeting minimum counters for commit, instruction stream, data-memory,
-hazard, trap, and suppression observations.
+coverage summary meeting minimum counters for commit, instruction stream,
+data-memory, hazard, trap, suppression, and debug observations.

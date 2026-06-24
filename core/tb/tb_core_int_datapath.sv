@@ -46,6 +46,7 @@ module tb_core_int_datapath;
   logic        hazard_fwd_rs2_ex;// DUT rs2 EX-forward indicator.
   logic        hazard_fwd_rs2_wb;// DUT rs2 WB-forward indicator.
   logic        unsupported;    // DUT unsupported instruction class flag.
+  debug_if     core_debug (.clk(clk), .rst_n(rst_n)); // Debug control/GPR test interface.
 
   integer pass_count;          // Total passing checks.
   integer commit_count;        // Number of observed commits.
@@ -66,6 +67,7 @@ module tb_core_int_datapath;
   integer hazard_count;        // Load-use stall coverage.
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
+  integer debug_count;         // Debug halt/resume and GPR access coverage.
   logic [31:0] exp_fetch_pc;   // Scoreboard expected frontend stream PC.
   logic        mem_zero_wait;   // Select zero-wait or registered response model.
   logic        mem_req_ready_en;// Allows directed request-ready backpressure.
@@ -95,6 +97,7 @@ module tb_core_int_datapath;
     .dmem_rsp_err_i(dmem_rsp_err),
     .timer_irq_i(timer_irq),
     .external_irq_i(external_irq),
+    .core_debug(core_debug),
     .commit_valid_o(commit_valid),
     .commit_rd_o(commit_rd),
     .commit_data_o(commit_data),
@@ -545,6 +548,120 @@ module tb_core_int_datapath;
     end
   endtask
 
+  // Request Debug Mode, wait for the pipeline to drain, and verify the public
+  // halted/running status plus frontend backpressure seen by integration logic.
+  task automatic debug_enter_halt(input string name);
+    begin
+      @(negedge clk);
+      instr_valid = 1'b0;
+      core_debug.halt_req = 1'b1;
+      for (int unsigned tries = 0; tries < 20; tries++) begin
+        @(posedge clk);
+        #1;
+        if (core_debug.halted) begin
+          if (core_debug.running || instr_ready) begin
+            $fatal(1, "%s halted status mismatch running=%0b ready=%0b",
+                   name, core_debug.running, instr_ready);
+          end
+          pass_count++;
+          debug_count++;
+          return;
+        end
+      end
+      $fatal(1, "%s did not halt", name);
+    end
+  endtask
+
+  // Issue one halted-core GPR read through the debug interface and check the
+  // registered response returned to the Debug Module side.
+  task automatic debug_read_gpr(
+    input string       name,
+    input logic [4:0]  addr,
+    input logic [31:0] exp_data
+  );
+    begin
+      @(negedge clk);
+      core_debug.gpr_req_valid = 1'b1;
+      core_debug.gpr_req_write = 1'b0;
+      core_debug.gpr_req_addr = addr;
+      core_debug.gpr_req_wdata = 32'h0000_0000;
+      core_debug.gpr_rsp_ready = 1'b1;
+      #1;
+      if (!core_debug.gpr_req_ready) begin
+        $fatal(1, "%s read request not ready", name);
+      end
+      @(posedge clk);
+      #1;
+      if (!core_debug.gpr_rsp_valid ||
+          (core_debug.gpr_rsp_rdata !== exp_data) ||
+          core_debug.gpr_rsp_err) begin
+        $fatal(1, "%s read response mismatch valid=%0b data=%08x err=%0b exp=%08x",
+               name, core_debug.gpr_rsp_valid, core_debug.gpr_rsp_rdata,
+               core_debug.gpr_rsp_err, exp_data);
+      end
+      core_debug.gpr_req_valid = 1'b0;
+      @(posedge clk);
+      #1;
+      if (core_debug.gpr_rsp_valid) begin
+        $fatal(1, "%s read response did not clear", name);
+      end
+      pass_count++;
+      debug_count++;
+    end
+  endtask
+
+  // Issue one halted-core GPR write and verify the write response handshake.
+  task automatic debug_write_gpr(
+    input string       name,
+    input logic [4:0]  addr,
+    input logic [31:0] data
+  );
+    begin
+      @(negedge clk);
+      core_debug.gpr_req_valid = 1'b1;
+      core_debug.gpr_req_write = 1'b1;
+      core_debug.gpr_req_addr = addr;
+      core_debug.gpr_req_wdata = data;
+      core_debug.gpr_rsp_ready = 1'b1;
+      #1;
+      if (!core_debug.gpr_req_ready) begin
+        $fatal(1, "%s write request not ready", name);
+      end
+      @(posedge clk);
+      #1;
+      if (!core_debug.gpr_rsp_valid || core_debug.gpr_rsp_err) begin
+        $fatal(1, "%s write response mismatch valid=%0b err=%0b",
+               name, core_debug.gpr_rsp_valid, core_debug.gpr_rsp_err);
+      end
+      core_debug.gpr_req_valid = 1'b0;
+      @(posedge clk);
+      #1;
+      if (core_debug.gpr_rsp_valid) begin
+        $fatal(1, "%s write response did not clear", name);
+      end
+      pass_count++;
+      debug_count++;
+    end
+  endtask
+
+  // Resume normal execution from Debug Mode and verify running status returns.
+  task automatic debug_resume(input string name);
+    begin
+      @(negedge clk);
+      core_debug.halt_req = 1'b0;
+      core_debug.resume_req = 1'b1;
+      @(posedge clk);
+      #1;
+      core_debug.resume_req = 1'b0;
+      if (core_debug.halted || !core_debug.running) begin
+        $fatal(1, "%s resume status mismatch halted=%0b running=%0b",
+               name, core_debug.halted, core_debug.running);
+      end
+      pass_count++;
+      debug_count++;
+    end
+  endtask
+
   initial begin
     pass_count = 0;
     commit_count = 0;
@@ -565,6 +682,7 @@ module tb_core_int_datapath;
     hazard_count = 0;
     suppress_count = 0;
     pc_count = 0;
+    debug_count = 0;
 
     exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
@@ -577,6 +695,14 @@ module tb_core_int_datapath;
     saved_ecall_pc = 32'h0000_0000;
     timer_irq = 1'b0;
     external_irq = 1'b0;
+    core_debug.halt_req = 1'b0;
+    core_debug.resume_req = 1'b0;
+    core_debug.step_req = 1'b0;
+    core_debug.gpr_req_valid = 1'b0;
+    core_debug.gpr_req_write = 1'b0;
+    core_debug.gpr_req_addr = 5'd0;
+    core_debug.gpr_req_wdata = 32'h0000_0000;
+    core_debug.gpr_rsp_ready = 1'b1;
 
     repeat (2) @(posedge clk);
     #1;
@@ -825,22 +951,30 @@ module tb_core_int_datapath;
     expect_irq_redirect("timer irq", TRAP_CAUSE_M_TIMER_IRQ, ex_pc, 32'h0000_0200);
     timer_irq = 1'b0;
 
+    debug_enter_halt("debug halt after program");
+    debug_read_gpr("debug read x26", 5'd26, 32'h0000_0888);
+    debug_write_gpr("debug write x10", 5'd10, 32'hCAFE_1234);
+    debug_read_gpr("debug readback x10", 5'd10, 32'hCAFE_1234);
+    debug_write_gpr("debug write x0 ignored", 5'd0, 32'hFFFF_FFFF);
+    debug_read_gpr("debug read x0", 5'd0, 32'h0000_0000);
+    debug_resume("debug resume");
+
     if (commit_count < 8 || alu_i_count < 3 || alu_r_count < 2 ||
         upper_count < 2 || link_count < 3 || branch_count < 2 ||
         redirect_count < 4 || load_count < 3 || store_count < 2 ||
         lsu_fault_count < 1 || dmem_wait_count < 2 || dmem_bp_count < 1 ||
         csr_count < 9 || trap_count < 4 ||
         irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
-        pc_count < 56) begin
+        pc_count < 56 || debug_count < 7) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d",
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
              load_count, store_count, lsu_fault_count, dmem_wait_count,
              dmem_bp_count, csr_count, trap_count, irq_count, hazard_count,
-             suppress_count, pc_count);
+             suppress_count, pc_count, debug_count);
     $display("tb_core_int_datapath PASS");
     $finish;
   end

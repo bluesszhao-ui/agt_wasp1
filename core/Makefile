@@ -10,6 +10,7 @@ TB_CORE_LSU_FILELIST := filelists/tb_core_lsu.f
 TB_CORE_TRAP_FILELIST := filelists/tb_core_trap.f
 TB_CORE_HAZARD_FILELIST := filelists/tb_core_hazard.f
 TB_CORE_WB_FILELIST := filelists/tb_core_wb.f
+TB_CORE_DEBUG_CTRL_FILELIST := filelists/tb_core_debug_ctrl.f
 TB_CORE_PIPE_FILELIST := filelists/tb_core_pipe.f
 TB_CORE_INT_DATAPATH_FILELIST := filelists/tb_core_int_datapath.f
 TB_CORE_FILELIST := filelists/tb_core.f
@@ -22,6 +23,7 @@ CORE_LSU_TOP := tb_core_lsu
 CORE_TRAP_TOP := tb_core_trap
 CORE_HAZARD_TOP := tb_core_hazard
 CORE_WB_TOP := tb_core_wb
+CORE_DEBUG_CTRL_TOP := tb_core_debug_ctrl
 CORE_PIPE_TOP := tb_core_pipe
 CORE_INT_DATAPATH_TOP := tb_core_int_datapath
 CORE_TOP := tb_core
@@ -33,94 +35,101 @@ all: lint
 lint:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module core_alu \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_regfile \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_decode \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_branch \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_csr \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_lsu \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_hazard \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_wb \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_debug_ctrl \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_pipe \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_int_datapath \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint.log 2>&1
 	@cat logs/lint.log
 
-sim: sim-core-alu sim-core-regfile sim-core-decode sim-core-branch sim-core-csr sim-core-lsu sim-core-trap sim-core-hazard sim-core-wb sim-core-pipe sim-core-int-datapath sim-core
+sim: sim-core-alu sim-core-regfile sim-core-decode sim-core-branch sim-core-csr sim-core-lsu sim-core-trap sim-core-hazard sim-core-wb sim-core-debug-ctrl sim-core-pipe sim-core-int-datapath sim-core
 
 lint-ic:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module core_alu \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_regfile \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_decode \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_branch \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_csr \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_lsu \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_hazard \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_wb \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_debug_ctrl \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_pipe \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_int_datapath \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core \
 		+define+WASP1_TARGET_IC \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_ic.log 2>&1
 	@cat logs/lint_ic.log
 
@@ -128,58 +137,62 @@ lint-fpga-v7:
 	@mkdir -p build logs
 	$(VERILATOR) --lint-only -sv --top-module core_alu \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) > logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_regfile \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_decode \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_branch \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_csr \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_lsu \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_trap \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_hazard \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_wb \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
+	$(VERILATOR) --lint-only -sv --top-module core_debug_ctrl \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_pipe \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core_int_datapath \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	$(VERILATOR) --lint-only -sv --top-module core \
 		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-f $(RTL_FILELIST) >> logs/lint_fpga_v7.log 2>&1
 	@cat logs/lint_fpga_v7.log
 
 sim-core-alu:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_ALU_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_ALU_TOP) \
 		-f $(TB_CORE_ALU_FILELIST) > logs/tb_core_alu_build.log 2>&1
 	@./build/obj_$(CORE_ALU_TOP)/V$(CORE_ALU_TOP) > logs/tb_core_alu.log 2>&1
@@ -188,7 +201,7 @@ sim-core-alu:
 sim-core-regfile:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_REGFILE_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_REGFILE_TOP) \
 		-f $(TB_CORE_REGFILE_FILELIST) > logs/tb_core_regfile_build.log 2>&1
 	@./build/obj_$(CORE_REGFILE_TOP)/V$(CORE_REGFILE_TOP) > logs/tb_core_regfile.log 2>&1
@@ -197,7 +210,7 @@ sim-core-regfile:
 sim-core-decode:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_DECODE_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_DECODE_TOP) \
 		-f $(TB_CORE_DECODE_FILELIST) > logs/tb_core_decode_build.log 2>&1
 	@./build/obj_$(CORE_DECODE_TOP)/V$(CORE_DECODE_TOP) > logs/tb_core_decode.log 2>&1
@@ -206,7 +219,7 @@ sim-core-decode:
 sim-core-branch:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_BRANCH_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_BRANCH_TOP) \
 		-f $(TB_CORE_BRANCH_FILELIST) > logs/tb_core_branch_build.log 2>&1
 	@./build/obj_$(CORE_BRANCH_TOP)/V$(CORE_BRANCH_TOP) > logs/tb_core_branch.log 2>&1
@@ -215,7 +228,7 @@ sim-core-branch:
 sim-core-csr:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_CSR_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_CSR_TOP) \
 		-f $(TB_CORE_CSR_FILELIST) > logs/tb_core_csr_build.log 2>&1
 	@./build/obj_$(CORE_CSR_TOP)/V$(CORE_CSR_TOP) > logs/tb_core_csr.log 2>&1
@@ -224,7 +237,7 @@ sim-core-csr:
 sim-core-lsu:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_LSU_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_LSU_TOP) \
 		-f $(TB_CORE_LSU_FILELIST) > logs/tb_core_lsu_build.log 2>&1
 	@./build/obj_$(CORE_LSU_TOP)/V$(CORE_LSU_TOP) > logs/tb_core_lsu.log 2>&1
@@ -233,7 +246,7 @@ sim-core-lsu:
 sim-core-trap:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_TRAP_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_TRAP_TOP) \
 		-f $(TB_CORE_TRAP_FILELIST) > logs/tb_core_trap_build.log 2>&1
 	@./build/obj_$(CORE_TRAP_TOP)/V$(CORE_TRAP_TOP) > logs/tb_core_trap.log 2>&1
@@ -242,7 +255,7 @@ sim-core-trap:
 sim-core-hazard:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_HAZARD_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_HAZARD_TOP) \
 		-f $(TB_CORE_HAZARD_FILELIST) > logs/tb_core_hazard_build.log 2>&1
 	@./build/obj_$(CORE_HAZARD_TOP)/V$(CORE_HAZARD_TOP) > logs/tb_core_hazard.log 2>&1
@@ -251,16 +264,25 @@ sim-core-hazard:
 sim-core-wb:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_WB_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_WB_TOP) \
 		-f $(TB_CORE_WB_FILELIST) > logs/tb_core_wb_build.log 2>&1
 	@./build/obj_$(CORE_WB_TOP)/V$(CORE_WB_TOP) > logs/tb_core_wb.log 2>&1
 	@cat logs/tb_core_wb.log
 
+sim-core-debug-ctrl:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(CORE_DEBUG_CTRL_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(CORE_DEBUG_CTRL_TOP) \
+		-f $(TB_CORE_DEBUG_CTRL_FILELIST) > logs/tb_core_debug_ctrl_build.log 2>&1
+	@./build/obj_$(CORE_DEBUG_CTRL_TOP)/V$(CORE_DEBUG_CTRL_TOP) > logs/tb_core_debug_ctrl.log 2>&1
+	@cat logs/tb_core_debug_ctrl.log
+
 sim-core-pipe:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_PIPE_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_PIPE_TOP) \
 		-f $(TB_CORE_PIPE_FILELIST) > logs/tb_core_pipe_build.log 2>&1
 	@./build/obj_$(CORE_PIPE_TOP)/V$(CORE_PIPE_TOP) > logs/tb_core_pipe.log 2>&1
@@ -269,7 +291,7 @@ sim-core-pipe:
 sim-core-int-datapath:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_INT_DATAPATH_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_INT_DATAPATH_TOP) \
 		-f $(TB_CORE_INT_DATAPATH_FILELIST) > logs/tb_core_int_datapath_build.log 2>&1
 	@./build/obj_$(CORE_INT_DATAPATH_TOP)/V$(CORE_INT_DATAPATH_TOP) > logs/tb_core_int_datapath.log 2>&1
@@ -278,7 +300,7 @@ sim-core-int-datapath:
 sim-core:
 	@mkdir -p build logs
 	$(VERILATOR) -sv --binary --timing --top-module $(CORE_TOP) \
-		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-UNUSEDPARAM \
 		-Mdir build/obj_$(CORE_TOP) \
 		-f $(TB_CORE_FILELIST) > logs/tb_core_build.log 2>&1
 	@./build/obj_$(CORE_TOP)/V$(CORE_TOP) > logs/tb_core.log 2>&1

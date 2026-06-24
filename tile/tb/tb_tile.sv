@@ -106,6 +106,11 @@ module tb_tile;
     .rst_n(rst_n)
   );
 
+  debug_if core_debug (
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
   tile #(
     .IBUF_DEPTH(2),
     .ICACHE_LINE_COUNT(16),
@@ -144,6 +149,7 @@ module tb_tile;
     .hazard_fwd_rs2_ex_o(hazard_fwd_rs2_ex),
     .hazard_fwd_rs2_wb_o(hazard_fwd_rs2_wb),
     .unsupported_o(unsupported),
+    .core_debug(core_debug),
     .imem_if(imem_if),
     .dmem_if(dmem_if)
   );
@@ -395,6 +401,14 @@ module tb_tile;
       dcache_flush = 1'b0;
       dcache_invalidate = 1'b0;
       allow_interrupt_phase = 1'b0;
+      core_debug.halt_req = 1'b0;
+      core_debug.resume_req = 1'b0;
+      core_debug.step_req = 1'b0;
+      core_debug.gpr_req_valid = 1'b0;
+      core_debug.gpr_req_write = 1'b0;
+      core_debug.gpr_req_addr = 5'd0;
+      core_debug.gpr_req_wdata = 32'h0000_0000;
+      core_debug.gpr_rsp_ready = 1'b1;
       repeat (3) @(posedge clk);
       @(negedge clk);
       rst_n = 1'b1;

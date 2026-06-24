@@ -30,6 +30,11 @@ byte-lane-aware write-through backing memory
 
 No child cache or core interface is bypassed by the testbench.
 
+The tile debug interface is instantiated and driven inactive in this milestone.
+Core-side halt/GPR behavior is verified in `tb_core` and
+`tb_core_int_datapath`; tile verification checks that exposing the structured
+debug interface does not disturb normal frontend/cache/core execution.
+
 ## 3. Time-Sequenced Actions
 
 Times below are converted from the simulator's 1ps display units to ns.

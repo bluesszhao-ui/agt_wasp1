@@ -26,11 +26,12 @@ timescale: 1ns/1ps
 | 86ns-106ns | Feed dependent ADD. | Load-use stall output asserts and one execute bubble is injected. | PASS: hazard and bubble matched. |
 | 106ns-116ns | Feed NOP drain. | Dependent ADD commits loaded value. | PASS: dependent ADD committed `0xCAFE_BABE`. |
 | 116ns-126ns | Feed illegal instruction and fall-through NOP. | Illegal trap asserts `redirect_pc_o=0x00000000`. | PASS: trap outputs and redirect matched. |
+| 126ns-206ns | Enter debug halt, read x21, write/read x11, resume. | Halted status, frontend backpressure, GPR data, and running status match. | PASS: wrapper debug path matched. |
 
 ## 4. Coverage Summary
 
 ```text
-tb_core coverage: pass_count=9 commit=6 fetch=9 dmem=1 hazard=1 trap=1 suppress=1
+tb_core coverage: pass_count=14 commit=6 fetch=9 dmem=1 hazard=1 trap=1 suppress=1 debug=5
 tb_core PASS
 ```
 
@@ -46,6 +47,7 @@ tb_core_lsu PASS
 tb_core_trap PASS
 tb_core_hazard PASS
 tb_core_wb PASS
+tb_core_debug_ctrl PASS
 tb_core_pipe PASS
 tb_core_int_datapath PASS
 tb_core PASS

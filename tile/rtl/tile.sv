@@ -46,6 +46,7 @@ module tile #(
   output logic        hazard_fwd_rs2_wb_o, // Core rs2 WB-forward decision.
   output logic        unsupported_o,       // Unsupported instruction class indication.
 
+  debug_if.core       core_debug,          // External debug control and halted GPR channel.
   mem_req_rsp_if.initiator imem_if,        // I-cache downstream instruction-memory port.
   mem_req_rsp_if.initiator dmem_if         // D-cache downstream data-memory port.
 );
@@ -147,6 +148,7 @@ module tile #(
     .dmem_rsp_err_i(dmem_rsp_err),
     .timer_irq_i(timer_irq_i),
     .external_irq_i(external_irq_i),
+    .core_debug(core_debug),
     .commit_valid_o(commit_valid_o),
     .commit_rd_o(commit_rd_o),
     .commit_data_o(commit_data_o),

@@ -14,7 +14,7 @@ data memory port        -> later SoC/AHB data path
 ```
 
 The tile is not the whole SoC. It does not instantiate AHB-Lite fabric, SRAM,
-OTP, DMA, debug module, interrupt controller, or peripherals.
+OTP, DMA, Debug Module/JTAG DTM, interrupt controller, or peripherals.
 
 ## 2. Integration Decision
 
@@ -50,6 +50,7 @@ The integrated `tile` RTL exposes:
 | `icache_invalidate_i` | input | Invalidate I-cache tag valid bits. |
 | `dcache_flush_i` | input | Abort active D-cache controller/refill/store work. |
 | `dcache_invalidate_i` | input | Invalidate D-cache tag valid bits. |
+| `core_debug` | `debug_if.core` | Core-side debug halt/resume/step and halted GPR access channel. |
 | `imem_if` | initiator | Downstream instruction memory request/response port from I-cache. |
 | `dmem_if` | initiator | Downstream data memory request/response port from D-cache. |
 
@@ -67,6 +68,7 @@ redirect_*
 csr_rdata_o
 hazard_*
 unsupported_o
+core_debug
 ```
 
 ## 4. Fetch Protocol Mapping
@@ -150,7 +152,7 @@ The tile does not include:
 ```text
 AHB-Lite conversion
 I/D downstream arbitration; the two ports remain independent tile initiators
-debug module integration
+Debug Module and JTAG DTM transport integration
 cache maintenance CSRs
 clock gating
 multi-clock crossing
