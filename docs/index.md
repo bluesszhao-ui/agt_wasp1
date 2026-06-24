@@ -38,7 +38,7 @@ Current module docs:
 | `dma` | AHB DMA spec, design spec, verification plan, verification report |
 | `intc` | AHB interrupt controller spec, design spec, verification plan, verification report |
 | `core` | core spec/design skeleton and core_alu/core_regfile/core_decode/core_branch/core_csr/core_lsu/core_trap/core_hazard/core_wb/core_pipe/core_int_datapath specs, design specs, verification plans, verification reports |
-| `debug` | DMI register, halt-controller, and GPR-access specs, design specs, verification plans, verification reports |
+| `debug` | DMI, halt control, GPR transport, and abstract-command specs, design specs, verification plans, verification reports |
 
 Current implemented block specs:
 
@@ -76,6 +76,7 @@ debug/docs/debug_dmi_if_spec.md
 debug/docs/debug_dmi_regs_spec.md
 debug/docs/debug_halt_ctrl_spec.md
 debug/docs/debug_reg_access_spec.md
+debug/docs/debug_abstract_cmd_spec.md
 ```
 
 Current implemented block design specs:
@@ -114,6 +115,7 @@ debug/docs/debug_dmi_if_design_spec.md
 debug/docs/debug_dmi_regs_design_spec.md
 debug/docs/debug_halt_ctrl_design_spec.md
 debug/docs/debug_reg_access_design_spec.md
+debug/docs/debug_abstract_cmd_design_spec.md
 ```
 
 ## Project Status

@@ -1,0 +1,560 @@
+`timescale 1ns/1ps
+
+// Self-checking verification environment for RV32 Access Register commands.
+module tb_debug_abstract_cmd;
+  import debug_dmi_pkg::*;
+
+  localparam time CLK_PERIOD = 10ns;
+
+  // Debug Module command-side inputs and completion outputs.
+  logic        clk;
+  logic        rst_n;
+  logic        dmactive;
+  logic        hart_halted;
+  logic        command_valid;
+  logic [31:0] command;
+  logic [31:0] data0;
+  logic        busy;
+  logic        command_error_valid;
+  logic [2:0]  command_error;
+  logic        data0_we;
+  logic [31:0] data0_wdata;
+
+  // Mock debug_reg_access command and response channels.
+  logic        reg_cmd_valid;
+  logic        reg_cmd_ready;
+  logic        reg_cmd_write;
+  logic [4:0]  reg_cmd_addr;
+  logic [31:0] reg_cmd_wdata;
+  logic        reg_rsp_valid;
+  logic        reg_rsp_ready;
+  logic [31:0] reg_rsp_rdata;
+  logic        reg_rsp_error;
+  logic        reg_flush;
+
+  // Functional coverage counters summarized at PASS.
+  int unsigned pass_count;
+  int unsigned read_count;
+  int unsigned write_count;
+  int unsigned noop_count;
+  int unsigned unsupported_count;
+  int unsigned halt_error_count;
+  int unsigned downstream_error_count;
+  int unsigned issue_hold_count;
+  int unsigned wait_count;
+  int unsigned flush_count;
+  int unsigned busy_ignore_count;
+  int unsigned reset_abort_count;
+  int unsigned random_count;
+
+  debug_abstract_cmd u_debug_abstract_cmd (
+    .clk_i(clk),
+    .rst_ni(rst_n),
+    .dmactive_i(dmactive),
+    .hart_halted_i(hart_halted),
+    .command_valid_i(command_valid),
+    .command_i(command),
+    .data0_i(data0),
+    .busy_o(busy),
+    .command_error_valid_o(command_error_valid),
+    .command_error_o(command_error),
+    .data0_we_o(data0_we),
+    .data0_wdata_o(data0_wdata),
+    .reg_cmd_valid_o(reg_cmd_valid),
+    .reg_cmd_ready_i(reg_cmd_ready),
+    .reg_cmd_write_o(reg_cmd_write),
+    .reg_cmd_addr_o(reg_cmd_addr),
+    .reg_cmd_wdata_o(reg_cmd_wdata),
+    .reg_rsp_valid_i(reg_rsp_valid),
+    .reg_rsp_ready_o(reg_rsp_ready),
+    .reg_rsp_rdata_i(reg_rsp_rdata),
+    .reg_rsp_error_i(reg_rsp_error),
+    .reg_flush_o(reg_flush)
+  );
+
+  // Project-default 100 MHz clock.
+  initial begin
+    clk = 1'b0;
+    forever #(CLK_PERIOD / 2) clk = ~clk;
+  end
+
+  // Construct a raw Access Register command without hiding field positions.
+  function automatic logic [31:0] make_access_command(
+    input logic [2:0] aarsize,
+    input logic postincrement,
+    input logic postexec,
+    input logic transfer,
+    input logic write_value,
+    input logic [15:0] regno
+  );
+    logic [31:0] value;
+    begin
+      value = '0;
+      value[31:24] = ABSTRACT_CMD_ACCESS_REGISTER;
+      value[22:20] = aarsize;
+      value[19] = postincrement;
+      value[18] = postexec;
+      value[17] = transfer;
+      value[16] = write_value;
+      value[15:0] = regno;
+      make_access_command = value;
+    end
+  endfunction
+
+  // Advance one active edge and allow outputs to settle.
+  task automatic step_clock;
+    begin
+      @(posedge clk);
+      #1ns;
+    end
+  endtask
+
+  // Set all command and mock-reg-access inputs inactive.
+  task automatic drive_idle;
+    begin
+      dmactive = 1'b1;
+      hart_halted = 1'b1;
+      command_valid = 1'b0;
+      command = '0;
+      data0 = '0;
+      reg_cmd_ready = 1'b0;
+      reg_rsp_valid = 1'b0;
+      reg_rsp_rdata = '0;
+      reg_rsp_error = 1'b0;
+    end
+  endtask
+
+  // Verify the externally visible idle contract.
+  task automatic expect_idle(input string label);
+    begin
+      if (busy || command_error_valid || data0_we || reg_cmd_valid || reg_rsp_ready) begin
+        $error("%s: busy=%0b err_valid=%0b data0_we=%0b reg_cmd=%0b reg_rsp_ready=%0b",
+               label, busy, command_error_valid, data0_we, reg_cmd_valid, reg_rsp_ready);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
+  // Reset the controller and verify it returns idle.
+  task automatic apply_reset;
+    begin
+      drive_idle();
+      rst_n = 1'b0;
+      repeat (3) @(posedge clk);
+      rst_n = 1'b1;
+      step_clock();
+      expect_idle("reset idle");
+    end
+  endtask
+
+  // Pulse one raw command into the idle controller.
+  task automatic pulse_command(
+    input logic [31:0] command_value,
+    input logic [31:0] data_value
+  );
+    begin
+      @(negedge clk);
+      command = command_value;
+      data0 = data_value;
+      command_valid = 1'b1;
+      step_clock();
+      command_valid = 1'b0;
+    end
+  endtask
+
+  // Start a supported transfer and verify the decoded downstream fields.
+  task automatic start_gpr_transfer(
+    input logic write_value,
+    input logic [4:0] addr_value,
+    input logic [31:0] data_value,
+    input string label
+  );
+    logic [31:0] command_value;
+    begin
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, write_value,
+          ABSTRACT_GPR_BASE + 16'(addr_value));
+      pulse_command(command_value, data_value);
+      if (!busy || !reg_cmd_valid || (reg_cmd_write !== write_value) ||
+          (reg_cmd_addr !== addr_value) || (reg_cmd_wdata !== data_value) ||
+          command_error_valid || data0_we) begin
+        $error("%s: decoded GPR request mismatch", label);
+        $fatal(1);
+      end
+      if (write_value) write_count++;
+      else read_count++;
+      pass_count++;
+    end
+  endtask
+
+  // Hold downstream command backpressure and verify decoded fields are stable.
+  task automatic hold_reg_command(input int unsigned cycles, input string label);
+    logic held_write;
+    logic [4:0] held_addr;
+    logic [31:0] held_data;
+    begin
+      held_write = reg_cmd_write;
+      held_addr = reg_cmd_addr;
+      held_data = reg_cmd_wdata;
+      repeat (cycles) begin
+        step_clock();
+        if (!reg_cmd_valid || (reg_cmd_write !== held_write) ||
+            (reg_cmd_addr !== held_addr) || (reg_cmd_wdata !== held_data)) begin
+          $error("%s: register command changed under backpressure", label);
+          $fatal(1);
+        end
+        issue_hold_count++;
+        pass_count++;
+      end
+    end
+  endtask
+
+  // Accept the decoded request and enter response wait.
+  task automatic accept_reg_command(input string label);
+    begin
+      @(negedge clk);
+      reg_cmd_ready = 1'b1;
+      step_clock();
+      reg_cmd_ready = 1'b0;
+      if (!busy || reg_cmd_valid || !reg_rsp_ready) begin
+        $error("%s: controller did not enter response wait", label);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
+  // Return a downstream result and check the one-cycle COMPLETE outputs.
+  task automatic send_reg_response(
+    input logic [31:0] data_value,
+    input logic error_value,
+    input logic expected_write,
+    input string label
+  );
+    begin
+      @(negedge clk);
+      if (!reg_rsp_ready) begin
+        $error("%s: downstream response unexpectedly not ready", label);
+        $fatal(1);
+      end
+      reg_rsp_valid = 1'b1;
+      reg_rsp_rdata = data_value;
+      reg_rsp_error = error_value;
+      step_clock();
+      reg_rsp_valid = 1'b0;
+
+      if (!busy) begin
+        $error("%s: COMPLETE cycle did not keep busy asserted", label);
+        $fatal(1);
+      end
+      if (error_value) begin
+        if (!command_error_valid || (command_error != CMDERR_EXCEPTION) || data0_we) begin
+          $error("%s: downstream error mapping mismatch", label);
+          $fatal(1);
+        end
+        downstream_error_count++;
+      end else if (expected_write) begin
+        if (command_error_valid || data0_we) begin
+          $error("%s: successful write produced unexpected side effect", label);
+          $fatal(1);
+        end
+      end else begin
+        if (command_error_valid || !data0_we || (data0_wdata !== data_value)) begin
+          $error("%s: successful read data0 update mismatch", label);
+          $fatal(1);
+        end
+      end
+      pass_count++;
+
+      step_clock();
+      expect_idle({label, " idle"});
+    end
+  endtask
+
+  // Verify a complete supported read and write flow.
+  task automatic check_normal_paths;
+    begin
+      start_gpr_transfer(1'b0, 5'd5, 32'hA5A5_0005, "read x5");
+      hold_reg_command(3, "read issue hold");
+      accept_reg_command("read accepted");
+      repeat (2) begin
+        step_clock();
+        if (!reg_rsp_ready || command_error_valid || data0_we) begin
+          $error("read response wait mismatch");
+          $fatal(1);
+        end
+        wait_count++;
+        pass_count++;
+      end
+      send_reg_response(32'h1234_5678, 1'b0, 1'b0, "read x5 complete");
+
+      start_gpr_transfer(1'b1, 5'd10, 32'hCAFE_BABE, "write x10");
+      accept_reg_command("write accepted");
+      send_reg_response(32'h0000_0000, 1'b0, 1'b1, "write x10 complete");
+
+      start_gpr_transfer(1'b0, 5'd31, 32'h0000_0000, "error read");
+      accept_reg_command("error read accepted");
+      send_reg_response(32'hDEAD_BEEF, 1'b1, 1'b0, "error read complete");
+    end
+  endtask
+
+  // Immediate decoder/policy error returns one COMPLETE-cycle cmderr pulse.
+  task automatic expect_immediate_error(
+    input logic [31:0] command_value,
+    input logic [2:0] expected_error,
+    input string label
+  );
+    begin
+      pulse_command(command_value, 32'h55AA_55AA);
+      if (!busy || !command_error_valid || (command_error !== expected_error) ||
+          reg_cmd_valid || data0_we) begin
+        $error("%s: immediate error expected=%0d got_valid=%0b got=%0d",
+               label, expected_error, command_error_valid, command_error);
+        $fatal(1);
+      end
+      if (expected_error == CMDERR_NOTSUP) unsupported_count++;
+      if (expected_error == CMDERR_HALT_RESUME) halt_error_count++;
+      pass_count++;
+      step_clock();
+      expect_idle({label, " idle"});
+    end
+  endtask
+
+  // Exercise every unsupported field and the transfer-disabled no-op.
+  task automatic check_decode_errors_and_noop;
+    logic [31:0] command_value;
+    begin
+      command_value = make_access_command(3'd7, 1'b0, 1'b0, 1'b0, 1'b1, 16'hFFFF);
+      pulse_command(command_value, 32'h1111_2222);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid) begin
+        $error("transfer-disabled command was not a successful no-op");
+        $fatal(1);
+      end
+      noop_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("no-op idle");
+
+      expect_immediate_error(32'h0102_1000, CMDERR_NOTSUP, "unsupported cmdtype");
+      command_value = make_access_command(3'd3, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1001);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "unsupported aarsize");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b0, 1'b1, 1'b0, 16'h1002);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "postincrement unsupported");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0, 16'h1003);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "postexec unsupported");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h0300);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "CSR unsupported");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1020);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "non-GPR unsupported");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1004);
+      command_value[23] = 1'b1;
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "reserved bit unsupported");
+
+      hart_halted = 1'b0;
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1005);
+      expect_immediate_error(command_value, CMDERR_HALT_RESUME, "running hart rejected");
+      hart_halted = 1'b1;
+    end
+  endtask
+
+  // Verify halted-state loss in ISSUE and WAIT maps to halt/resume error.
+  task automatic check_hart_abort;
+    begin
+      start_gpr_transfer(1'b0, 5'd6, '0, "issue hart abort");
+      hart_halted = 1'b0;
+      #1ns;
+      if (!reg_flush || reg_cmd_valid) begin
+        $error("issue hart abort did not flush/gate request");
+        $fatal(1);
+      end
+      step_clock();
+      if (!command_error_valid || (command_error != CMDERR_HALT_RESUME)) begin
+        $error("issue hart abort error mismatch");
+        $fatal(1);
+      end
+      halt_error_count++;
+      flush_count++;
+      pass_count++;
+      hart_halted = 1'b1;
+      step_clock();
+      expect_idle("issue hart abort idle");
+
+      start_gpr_transfer(1'b0, 5'd7, '0, "wait hart abort");
+      accept_reg_command("wait hart abort accepted");
+      hart_halted = 1'b0;
+      #1ns;
+      if (!reg_flush) begin
+        $error("wait hart abort did not flush downstream");
+        $fatal(1);
+      end
+      step_clock();
+      if (!command_error_valid || (command_error != CMDERR_HALT_RESUME)) begin
+        $error("wait hart abort error mismatch");
+        $fatal(1);
+      end
+      halt_error_count++;
+      flush_count++;
+      pass_count++;
+      hart_halted = 1'b1;
+      step_clock();
+      expect_idle("wait hart abort idle");
+    end
+  endtask
+
+  // DM deactivation aborts silently and holds downstream flush asserted.
+  task automatic check_dm_abort;
+    begin
+      start_gpr_transfer(1'b1, 5'd8, 32'h8888_8888, "issue dm abort");
+      dmactive = 1'b0;
+      #1ns;
+      if (!reg_flush || reg_cmd_valid) begin
+        $error("issue DM abort did not gate/flush");
+        $fatal(1);
+      end
+      step_clock();
+      if (busy || command_error_valid || data0_we) begin
+        $error("DM deactivation did not silently return idle");
+        $fatal(1);
+      end
+      dmactive = 1'b1;
+      #1ns;
+      expect_idle("issue DM abort idle");
+      flush_count++;
+
+      start_gpr_transfer(1'b0, 5'd9, '0, "wait dm abort");
+      accept_reg_command("wait dm abort accepted");
+      dmactive = 1'b0;
+      #1ns;
+      if (!reg_flush) begin
+        $error("wait DM abort did not flush downstream");
+        $fatal(1);
+      end
+      step_clock();
+      dmactive = 1'b1;
+      #1ns;
+      expect_idle("wait DM abort idle");
+      flush_count++;
+    end
+  endtask
+
+  // A command pulse while busy is ignored; original captured fields remain.
+  task automatic check_busy_command_ignored;
+    logic [31:0] second_command;
+    begin
+      start_gpr_transfer(1'b1, 5'd11, 32'h1111_1111, "busy original");
+      second_command = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1012);
+      command = second_command;
+      data0 = 32'h2222_2222;
+      command_valid = 1'b1;
+      step_clock();
+      command_valid = 1'b0;
+      if (!reg_cmd_valid || !reg_cmd_write || (reg_cmd_addr != 5'd11) ||
+          (reg_cmd_wdata != 32'h1111_1111)) begin
+        $error("busy command overwrote captured request");
+        $fatal(1);
+      end
+      busy_ignore_count++;
+      pass_count++;
+      accept_reg_command("busy original accepted");
+      send_reg_response('0, 1'b0, 1'b1, "busy original complete");
+    end
+  endtask
+
+  // Asynchronous reset while issuing immediately restores idle outputs.
+  task automatic check_reset_abort;
+    begin
+      start_gpr_transfer(1'b0, 5'd13, '0, "reset abort");
+      rst_n = 1'b0;
+      #1ns;
+      if (busy || reg_cmd_valid || command_error_valid || data0_we) begin
+        $error("reset did not abort active abstract command");
+        $fatal(1);
+      end
+      repeat (2) @(posedge clk);
+      rst_n = 1'b1;
+      step_clock();
+      expect_idle("reset abort idle");
+      reset_abort_count++;
+    end
+  endtask
+
+  // Randomized valid GPR operations exercise timing and error combinations.
+  task automatic check_random_commands(input int unsigned iterations);
+    logic write_value;
+    logic [4:0] addr_value;
+    logic [31:0] write_data;
+    logic [31:0] read_data;
+    logic error_value;
+    int unsigned issue_delay;
+    int unsigned response_delay;
+    begin
+      void'($urandom(32'h4142_434D));
+      for (int unsigned idx = 0; idx < iterations; idx++) begin
+        write_value = 1'($urandom_range(0, 1));
+        addr_value = 5'($urandom_range(0, 31));
+        write_data = $urandom();
+        read_data = $urandom();
+        error_value = ((idx % 6) == 5);
+        issue_delay = $urandom_range(0, 3);
+        response_delay = $urandom_range(0, 3);
+
+        start_gpr_transfer(write_value, addr_value, write_data, "random command");
+        hold_reg_command(issue_delay, "random issue hold");
+        accept_reg_command("random accepted");
+        repeat (response_delay) begin
+          step_clock();
+          if (!reg_rsp_ready || command_error_valid || data0_we) begin
+            $error("random response wait mismatch");
+            $fatal(1);
+          end
+          wait_count++;
+          pass_count++;
+        end
+        send_reg_response(read_data, error_value, write_value, "random complete");
+        random_count++;
+      end
+    end
+  endtask
+
+  initial begin
+    pass_count = 0;
+    read_count = 0;
+    write_count = 0;
+    noop_count = 0;
+    unsupported_count = 0;
+    halt_error_count = 0;
+    downstream_error_count = 0;
+    issue_hold_count = 0;
+    wait_count = 0;
+    flush_count = 0;
+    busy_ignore_count = 0;
+    reset_abort_count = 0;
+    random_count = 0;
+    rst_n = 1'b1;
+
+    $display("phase reset start=%0t", $time);
+    apply_reset();
+    $display("phase normal start=%0t", $time);
+    check_normal_paths();
+    $display("phase decode start=%0t", $time);
+    check_decode_errors_and_noop();
+    $display("phase abort start=%0t", $time);
+    check_hart_abort();
+    check_dm_abort();
+    check_busy_command_ignored();
+    check_reset_abort();
+    $display("phase random start=%0t", $time);
+    check_random_commands(20);
+    $display("phase complete=%0t", $time);
+
+    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
+             pass_count, read_count, write_count, noop_count, unsupported_count,
+             halt_error_count, downstream_error_count, issue_hold_count,
+             wait_count, flush_count, busy_ignore_count, reset_abort_count,
+             random_count);
+    $display("tb_debug_abstract_cmd PASS");
+    $finish;
+  end
+endmodule

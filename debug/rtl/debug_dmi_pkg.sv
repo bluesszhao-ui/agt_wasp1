@@ -31,4 +31,10 @@ package debug_dmi_pkg;
   localparam logic [2:0] CMDERR_HALT_RESUME  = 3'd4;
   localparam logic [2:0] CMDERR_BUS          = 3'd5;
   localparam logic [2:0] CMDERR_OTHER        = 3'd7;
+
+  // Supported v0.13.x Access Register abstract-command encodings.
+  localparam logic [7:0]  ABSTRACT_CMD_ACCESS_REGISTER = 8'h00;
+  localparam logic [2:0]  ABSTRACT_AARSIZE_32 = 3'd2;
+  localparam logic [15:0] ABSTRACT_GPR_BASE = 16'h1000;
+  localparam logic [15:0] ABSTRACT_GPR_LAST = 16'h101F;
 endpackage
