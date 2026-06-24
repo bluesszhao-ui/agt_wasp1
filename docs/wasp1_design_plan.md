@@ -57,8 +57,12 @@ Mermaid. Preferred diagram formats are:
 
 ```text
 ASCII block diagram
-Graphviz DOT source plus generated image
+editable OmniGraffle .graffle source for detailed engineering figures
+optional PNG/PDF preview export for Markdown viewing
 ```
+
+New or substantially reworked OmniGraffle diagrams must follow
+`docs/wasp1_omnigraffle_diagram_policy.md`.
 
 Each verification plan must include a time-sequenced case table describing the
 actions and expected results during each test interval.

@@ -11,6 +11,7 @@
 | `wasp1_verification_plan.md` | Project-wide verification expectations |
 | `wasp1_implementation_targets.md` | IC/FPGA target macro policy, including Virtex-7 |
 | `wasp1_documentation_policy.md` | Required spec/design spec documentation policy |
+| `wasp1_omnigraffle_diagram_policy.md` | Stable OmniGraffle drawing policy for editable block/FSM figures |
 
 ## Focus Areas
 

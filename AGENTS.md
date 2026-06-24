@@ -167,9 +167,13 @@ Do not use combined timing labels. If one module contains both sequential state
 and combinational logic, draw them as separate connected `SEQ` and `COMB`
 blocks with clear signal flow.
 
-For non-trivial sequential state, include a PNG diagram in `docs/images/` and
-regenerate it with `docs/tools/render_state_pngs.py` when the state behavior
-changes. Keep the text transition description alongside the image.
+For non-trivial sequential state, use an editable OmniGraffle source diagram for
+new or substantially reworked figures. Put the source under
+`<module>/docs/diagrams/` and follow `docs/wasp1_omnigraffle_diagram_policy.md`.
+Existing PNG diagrams remain valid historical documentation, and optional PNG or
+PDF exports may be kept under `docs/images/` for Markdown preview. Keep the text
+transition description alongside the figure because it is the diff-friendly
+engineering contract.
 
 Use diagram detail levels consistently:
 
