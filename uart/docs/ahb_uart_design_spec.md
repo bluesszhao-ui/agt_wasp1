@@ -7,58 +7,19 @@
 It provides an AHB-Lite register interface, configurable baud divisor, TX/RX
 serial logic, TX/RX FIFOs, RX overrun tracking, and interrupt status.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- hsel_i ----------+----------------+
- haddr_i -------->| SEQ addr phase |
- htrans_i ------->| range/alignment|
- hwrite_i ------->| word-only check|
- hsize_i -------->| capture regs   |
-                 +--------+-------+
-                          |
-                          v
-                 +----------------+
- hwdata_i ------>| SEQ UART regs  |
-                 | CTRL BAUD IRQ  |
-                 +--------+-------+
-                          |
-        +-----------------+------------------+
-        |                                    |
-        v                                    v
- +-------------+     +------------+   +-------------+
- | TX FIFO     |---->| uart_tx    |-->| uart_tx_o   |
- +-------------+     | 8N1 shift  |   +-------------+
-                     +-----+------+
-                           |
-                           v
-                    baud tick
-                           ^
-                           |
-                    +------+------+
-                    | uart_baud   |
-                    +------+------+
-                           |
-                           v
- +-------------+     +------------+   +-------------+
- | RX FIFO     |<----| uart_rx    |<--| uart_rx_i   |
- +-------------+     | 8N1 sample |   +-------------+
-        |
-        v
- +-------------+
- | IRQ/status  |---- uart_irq_o
- +------+------+
-        |
-        v
- hrdata_o/hresp_o
- hready_o always 1
+editable source: uart/docs/diagrams/ahb_uart_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates AHB decode/capture, UART control registers, TX/RX FIFOs,
+baud counter state, TX/RX serial state machines, status/IRQ combinational
+logic, and the AHB/pin interfaces. All clocked blocks are drawn independently
+from the combinational decode and status paths.
 
 ## 3. Register Map
 

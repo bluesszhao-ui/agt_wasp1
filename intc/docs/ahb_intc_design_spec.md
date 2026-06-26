@@ -4,46 +4,20 @@
 
 `ahb_intc` is a PLIC-lite AHB-Lite interrupt controller for wasp1.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- irq_src_i ----> +-------------+
-                 | SEQ 2-stage |
-                 +------+------+
-                        |
-                        v
-                 +-------------+
-                 | SEQ pending_q|<--- W1C / complete
-                 +------+------+
-                        |
-     +------------------+-------------------+
-     |                                      |
-     v                                      v
- +-------------+                     +-------------+
- | SEQ enable_q|                     | SEQ priority|
- +------+------+                     +------+------+
-        |                                   |
-        +---------------+-------------------+
-                        |
-                        v
-                 +-------------+
-                 | best source |
-                 | > threshold |
-                 +------+------+
-                        |
-                        v
-                      meip_o
-
- AHB register path:
-
- s_haddr/control --> decode --> registers/read mux --> s_hrdata/s_hresp
+editable source: intc/docs/diagrams/ahb_intc_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates IRQ source synchronization, pending state, enable and
+priority/threshold state, combinational best-source selection, core interrupt
+output, and the AHB register response path. Pending updates from synchronized
+sources, W1C writes, and claim completion are intentionally shown entering the
+same SEQ pending block.
 
 ## 3. Registers
 

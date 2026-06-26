@@ -7,50 +7,19 @@
 It exposes an AHB-Lite slave register interface for software configuration and
 an AHB-Lite master interface for memory-to-memory word copies.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- s_hsel_i --------+----------------+
- s_haddr_i ------>| COMB slave     |
- s_htrans_i ----->| decode/check   |
- s_hwrite_i ----->| read mux/resp  |
- s_hwdata_i ----->+--------+-------+
-                          |
-                          v
-                 +----------------+
-                 | SEQ slave regs |
-                 | SRC DST LEN    |
-                 +--------+-------+
-                          |
-                          v
-                 +----------------+
-                 | SEQ DMA FSM    |
-                 | idle/read/write|
-                 +--------+-------+
-                          |
-         +----------------+----------------+
-         |                                 |
-         v                                 v
- +----------------+               +----------------+
- | AHB master     |-------------->| SoC AHB fabric |
- | read SRC words |<--------------| memories/slaves |
- | write DST words|               +----------------+
- +--------+-------+
-          |
-          v
- +----------------+
- | status / irq   |
- | busy done error|
- +--------+-------+
-          |
-      dma_irq_o
+editable source: dma/docs/diagrams/ahb_dma_block.graffle
+preview export:  none
+detail level:    L3
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates the AHB slave register path, DMA control FSM, AHB master
+drive logic, read-data latch, sticky status registers, interrupt output logic,
+and both AHB interfaces. The control FSM and status registers are separate SEQ
+blocks so their update priorities are not hidden inside the master datapath.
 
 ## 3. Register Map
 
