@@ -64,6 +64,21 @@ package wasp1_pkg;
   localparam int TIMER_CTRL_IRQ_EN_BIT = 1;
   localparam int TIMER_STATUS_PENDING_BIT = 0;
 
+  localparam logic [31:0] WDG_CTRL_OFFSET    = 32'h0000_0000;
+  localparam logic [31:0] WDG_STATUS_OFFSET  = 32'h0000_0004;
+  localparam logic [31:0] WDG_TIMEOUT_OFFSET = 32'h0000_0008;
+  localparam logic [31:0] WDG_COUNT_OFFSET   = 32'h0000_000C;
+  localparam logic [31:0] WDG_KICK_OFFSET    = 32'h0000_0010;
+  localparam logic [31:0] WDG_KICK_VALUE     = 32'h5744_4F47;
+  localparam int WDG_CTRL_ENABLE_BIT   = 0;
+  localparam int WDG_CTRL_IRQ_EN_BIT   = 1;
+  localparam int WDG_CTRL_RESET_EN_BIT = 2;
+  localparam int WDG_CTRL_CLEAR_BIT    = 3;
+  localparam int WDG_STATUS_EXPIRED_BIT   = 0;
+  localparam int WDG_STATUS_RESET_REQ_BIT = 1;
+  localparam int WDG_STATUS_KEYERR_BIT    = 2;
+  localparam int WDG_STATUS_RUNNING_BIT   = 3;
+
   localparam logic [31:0] GPIO_DATA_IN_OFFSET    = 32'h0000_0000;
   localparam logic [31:0] GPIO_DATA_OUT_OFFSET   = 32'h0000_0004;
   localparam logic [31:0] GPIO_DIR_OFFSET        = 32'h0000_0008;
@@ -95,6 +110,24 @@ package wasp1_pkg;
   localparam int UART_IRQ_TX_EMPTY_BIT = 0;
   localparam int UART_IRQ_RX_AVAIL_BIT = 1;
   localparam int UART_IRQ_RX_OVERRUN_BIT = 2;
+
+  localparam logic [31:0] I2C_DATA_OFFSET       = 32'h0000_0000;
+  localparam logic [31:0] I2C_STATUS_OFFSET     = 32'h0000_0004;
+  localparam logic [31:0] I2C_CTRL_OFFSET       = 32'h0000_0008;
+  localparam logic [31:0] I2C_PRESCALE_OFFSET   = 32'h0000_000C;
+  localparam logic [31:0] I2C_CMD_OFFSET        = 32'h0000_0010;
+  localparam int I2C_CTRL_ENABLE_BIT = 0;
+  localparam int I2C_CTRL_IRQ_EN_BIT = 1;
+  localparam int I2C_CTRL_CLEAR_BIT = 2;
+  localparam int I2C_STATUS_BUSY_BIT = 0;
+  localparam int I2C_STATUS_DONE_BIT = 1;
+  localparam int I2C_STATUS_ACKERR_BIT = 2;
+  localparam int I2C_STATUS_RX_VALID_BIT = 3;
+  localparam int I2C_STATUS_IRQ_BIT = 4;
+  localparam int I2C_CMD_START_BIT = 0;
+  localparam int I2C_CMD_READ_BIT = 1;
+  localparam int I2C_CMD_STOP_BIT = 2;
+  localparam int I2C_CMD_ACK_VALUE_BIT = 3;
 
   localparam logic [31:0] DMA_SRC_OFFSET    = 32'h0000_0000;
   localparam logic [31:0] DMA_DST_OFFSET    = 32'h0000_0004;

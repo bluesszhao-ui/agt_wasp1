@@ -175,6 +175,16 @@ PDF exports may be kept under `docs/images/` for Markdown preview. Keep the text
 transition description alongside the figure because it is the diff-friendly
 engineering contract.
 
+OmniGraffle figures must use editable OmniGraffle geometry and ordinary native
+line objects, not automatic connectors. They are not complete until the
+drawing-policy completion checklist passes: visible 5 pt grid, deliberate node
+shapes, grid-aligned node geometry, native line objects with explicit point
+lists, line endpoints and bend points on the grid, at least two 5 pt grid cells
+between unrelated lines/shapes/labels, no unrelated element overlap, V-shaped
+arrowheads made from two short line objects whose tip matches the body-line
+endpoint, timing-class colors, clock/reset labels on every `SEQ` block,
+saved-file coordinate/overlap audit, and final visual inspection.
+
 Use diagram detail levels consistently:
 
 ```text

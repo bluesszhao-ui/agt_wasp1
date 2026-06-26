@@ -33,7 +33,7 @@
 	<key>CanvasOrigin</key>
 	<string>{0, 0}</string>
 	<key>CanvasSize</key>
-	<string>{1460, 880}</string>
+	<string>{1380, 660}</string>
 	<key>ColumnAlign</key>
 	<integer>1</integer>
 	<key>ColumnSpacing</key>
@@ -46,11 +46,11 @@
 	<array>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 20}, {620, 25}}</string>
+			<string>{{40, 20}, {540, 25}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>diagram-title</string>
+			<string>title</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -98,18 +98,18 @@
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\b\fs24 \cf0 core_debug_ctrl FSM / datapath timing-class diagram}</string>
+\f0\b\fs24 \cf0 ahb_wdg block / timing-class diagram}</string>
 			</dict>
 			<key>ID</key>
 			<integer>100</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 65}, {130, 45}}</string>
+			<string>{{40, 90}, {220, 70}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-if-shape</string>
+			<string>if-ahb-request</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -157,19 +157,20 @@
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF\
-external interface}</string>
+\f0\fs22 \cf0 IF AHB request\
+hsel/haddr/htrans/hwrite/hsize\
+hwdata}</string>
 			</dict>
 			<key>ID</key>
 			<integer>101</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{195, 65}, {145, 45}}</string>
+			<string>{{310, 85}, {230, 80}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-comb-shape</string>
+			<string>comb-decode</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -217,19 +218,21 @@ external interface}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB\
-combinational}</string>
+\f0\fs22 \cf0 COMB address decode\
+range/alignment/word size\
+known register select\
+ERROR on illegal access}</string>
 			</dict>
 			<key>ID</key>
 			<integer>102</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{365, 60}, {155, 55}}</string>
+			<string>{{590, 85}, {230, 80}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-seq-shape</string>
+			<string>seq-req</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -277,20 +280,20 @@ combinational}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ\
-clk=clk_i\
-rst=rst_ni}</string>
+\f0\fs22 \cf0 SEQ request phase regs\
+clk=hclk_i rst=hresetn_i\
+req_valid/write/offset/err}</string>
 			</dict>
 			<key>ID</key>
 			<integer>103</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{545, 60}, {240, 55}}</string>
+			<string>{{870, 85}, {245, 80}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-note-shape</string>
+			<string>comb-read</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -298,11 +301,11 @@ rst=rst_ni}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.94</real>
+						<real>1.0</real>
 						<key>g</key>
-						<real>0.94</real>
+						<real>0.900282</real>
 						<key>b</key>
-						<real>0.94</real>
+						<real>0.656138</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -338,20 +341,20 @@ rst=rst_ni}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 NOTE\
-transition conditions live\
-in note boxes}</string>
+\f0\fs22 \cf0 COMB read/status decode\
+CTRL/STATUS/TIMEOUT/COUNT\
+HRDATA/HRESP select}</string>
 			</dict>
 			<key>ID</key>
 			<integer>104</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 145}, {230, 75}}</string>
+			<string>{{1165, 90}, {180, 70}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>if-debug-core-inputs</string>
+			<string>if-ahb-response</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -399,20 +402,20 @@ in note boxes}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF debug/core inputs\
-halt_req_i resume_req_i step_req_i\
-pipe_idle_i retire_valid_i debug_busy_i}</string>
+\f0\fs22 \cf0 IF AHB response\
+hrdata_o\
+hready_o hresp_o}</string>
 			</dict>
 			<key>ID</key>
 			<integer>105</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{320, 140}, {245, 85}}</string>
+			<string>{{40, 260}, {255, 110}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>comb-next-state-priority</string>
+			<string>note-priority</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -420,11 +423,11 @@ pipe_idle_i retire_valid_i debug_busy_i}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>1.0</real>
+						<real>0.94</real>
 						<key>g</key>
-						<real>0.900282</real>
+						<real>0.94</real>
 						<key>b</key>
-						<real>0.656138</real>
+						<real>0.94</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -460,21 +463,21 @@ pipe_idle_i retire_valid_i debug_busy_i}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB next-state priority\
-halt has highest priority\
-debug_busy blocks resume/step\
-state_d generation}</string>
+\f0\fs22 \cf0 NOTE update priority\
+clear or valid KICK\
+overrides watchdog tick\
+bad KICK latches keyerr}</string>
 			</dict>
 			<key>ID</key>
 			<integer>106</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{615, 140}, {245, 85}}</string>
+			<string>{{360, 260}, {270, 110}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>seq-state-register</string>
+			<string>seq-state</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -522,21 +525,21 @@ state_d generation}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ state_q register\
-clk=clk_i rst=rst_ni\
-reset -&gt; DBG_RUNNING\
-updates with state_d}</string>
+\f0\fs22 \cf0 SEQ watchdog state\
+clk=hclk_i rst=hresetn_i\
+CTRL/TIMEOUT/COUNT\
+expired/reset_req/keyerr}</string>
 			</dict>
 			<key>ID</key>
 			<integer>107</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{910, 140}, {250, 85}}</string>
+			<string>{{390, 460}, {240, 85}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>comb-output-decode</string>
+			<string>comb-tick</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -584,20 +587,20 @@ updates with state_d}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB output decode\
-stop_fetch/freeze_pipe\
-halted/running status}</string>
+\f0\fs22 \cf0 COMB tick compare\
+count_plus_one\
+timeout_hit}</string>
 			</dict>
 			<key>ID</key>
 			<integer>108</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{1210, 145}, {220, 75}}</string>
+			<string>{{945, 295}, {220, 75}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>if-debug-core-outputs</string>
+			<string>if-outs</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -645,20 +648,20 @@ halted/running status}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF outputs\
-stop_fetch_o freeze_pipe_o\
-debug_halted_o debug_running_o}</string>
+\f0\fs22 \cf0 IF watchdog outputs\
+wdg_irq_o\
+wdg_reset_req_o}</string>
 			</dict>
 			<key>ID</key>
 			<integer>109</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 275}, {920, 25}}</string>
+			<string>{{700, 535}, {610, 95}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>fsm-section-title</string>
+			<string>checklist</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -706,34 +709,29 @@ debug_halted_o debug_running_o}</string>
 {\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\b\fs20 \cf0 L3 FSM state view: adjacent arrows shown; non-adjacent transitions are listed below states}</string>
+\f0\fs22 \cf0 Native-line checklist\
+1. all non-connected elements keep &gt;=10pt spacing\
+2. native LineGraphic segments with explicit points\
+3. V arrowheads are two short diagonal lines\
+4. saved-file audit and visual inspection must pass}</string>
 			</dict>
 			<key>ID</key>
 			<integer>110</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{70, 360}, {210, 95}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-running</string>
+			<string>manual-conn-line-req-to-decode-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{260, 125}</string>
+				<string>{310, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -741,63 +739,44 @@ debug_halted_o debug_running_o}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_RUNNING\
-running=1\
-fetch allowed unless halt_req_i}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
 			<key>ID</key>
 			<integer>111</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{390, 360}, {230, 95}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-halt-pending</string>
+			<string>manual-conn-line-req-to-decode-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{300, 120}</string>
+				<string>{310, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -805,63 +784,44 @@ fetch allowed unless halt_req_i}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_HALT_PENDING\
-stop_fetch=1\
-wait pipe_idle and !busy}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
 			<key>ID</key>
 			<integer>112</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{720, 360}, {230, 95}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-halted</string>
+			<string>manual-conn-line-req-to-decode-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{300, 130}</string>
+				<string>{310, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -869,63 +829,44 @@ wait pipe_idle and !busy}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_HALTED\
-halted=1 freeze_pipe=1\
-resume/step only when !busy}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
 			<key>ID</key>
 			<integer>113</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{1050, 360}, {240, 95}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-step-running</string>
+			<string>manual-conn-line-decode-to-reqregs-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{540, 125}</string>
+				<string>{590, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -933,63 +874,44 @@ resume/step only when !busy}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_STEP_RUNNING\
-release one instruction\
-retire/halt returns toward halt}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
 			<key>ID</key>
 			<integer>114</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{50, 565}, {290, 100}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>note-run-transitions</string>
+			<string>manual-conn-line-decode-to-reqregs-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{580, 120}</string>
+				<string>{590, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -997,61 +919,44 @@ retire/halt returns toward halt}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 RUNNING transitions\
-halt_req &amp;&amp; idle &amp;&amp; !busy -&gt; HALTED\
-halt_req &amp;&amp; !(idle &amp;&amp; !busy) -&gt; HALT_PENDING\
-else stay RUNNING}</string>
 			</dict>
 			<key>ID</key>
 			<integer>115</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{375, 565}, {300, 100}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>note-pending-transitions</string>
+			<string>manual-conn-line-decode-to-reqregs-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{580, 130}</string>
+				<string>{590, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1059,61 +964,44 @@ else stay RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 HALT_PENDING transitions\
-!halt_req &amp;&amp; resume_req -&gt; RUNNING\
-idle &amp;&amp; !busy -&gt; HALTED\
-else stay HALT_PENDING}</string>
 			</dict>
 			<key>ID</key>
 			<integer>116</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{710, 565}, {330, 115}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>note-halted-transitions</string>
+			<string>manual-conn-line-reqregs-to-read-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{820, 125}</string>
+				<string>{870, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1121,62 +1009,44 @@ else stay HALT_PENDING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 HALTED transitions\
-halt_req -&gt; HALTED\
-!halt_req &amp;&amp; resume_req &amp;&amp; !busy -&gt; RUNNING\
-!halt_req &amp;&amp; step_req &amp;&amp; !busy -&gt; STEP_RUNNING\
-else stay HALTED}</string>
 			</dict>
 			<key>ID</key>
 			<integer>117</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{1080, 565}, {300, 105}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>note-step-transitions</string>
+			<string>manual-conn-line-reqregs-to-read-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{860, 120}</string>
+				<string>{870, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1184,62 +1054,44 @@ else stay HALTED}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 STEP_RUNNING transitions\
-retire_valid || halt_req:\
-  idle -&gt; HALTED\
-  !idle -&gt; HALT_PENDING\
-else stay STEP_RUNNING}</string>
 			</dict>
 			<key>ID</key>
 			<integer>118</integer>
 		</dict>
 		<dict>
-			<key>Bounds</key>
-			<string>{{40, 750}, {640, 95}}</string>
+			<key>AllowLabelDrop</key>
+			<false/>
 			<key>Class</key>
-			<string>ShapedGraphic</string>
+			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>native-line-checklist</string>
+			<string>manual-conn-line-reqregs-to-read-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{860, 130}</string>
+				<string>{870, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1247,35 +1099,26 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<real>2.0</real>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
-					<key>Width</key>
-					<real>1.5</real>
 				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 Native-line checklist\
-1. unrelated elements keep &gt;=10pt spacing\
-2. native LineGraphic segments use explicit points\
-3. V arrowheads are two short diagonal lines\
-4. saved-file audit and visual inspection must pass}</string>
 			</dict>
 			<key>ID</key>
 			<integer>119</integer>
@@ -1286,11 +1129,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-s0</string>
+			<string>manual-conn-line-read-to-response-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{270, 180}</string>
-				<string>{320, 180}</string>
+				<string>{1115, 125}</string>
+				<string>{1165, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1331,11 +1174,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-arrow-a</string>
+			<string>manual-conn-line-read-to-response-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{310, 175}</string>
-				<string>{320, 180}</string>
+				<string>{1155, 120}</string>
+				<string>{1165, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1376,11 +1219,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-arrow-b</string>
+			<string>manual-conn-line-read-to-response-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{310, 185}</string>
-				<string>{320, 180}</string>
+				<string>{1155, 130}</string>
+				<string>{1165, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1421,11 +1264,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-s0</string>
+			<string>manual-conn-line-reqregs-to-state-write-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{565, 180}</string>
-				<string>{615, 180}</string>
+				<string>{705, 165}</string>
+				<string>{705, 210}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1466,11 +1309,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-arrow-a</string>
+			<string>manual-conn-line-reqregs-to-state-write-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{605, 175}</string>
-				<string>{615, 180}</string>
+				<string>{705, 210}</string>
+				<string>{495, 210}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1511,11 +1354,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-arrow-b</string>
+			<string>manual-conn-line-reqregs-to-state-write-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{605, 185}</string>
-				<string>{615, 180}</string>
+				<string>{495, 210}</string>
+				<string>{495, 260}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1556,11 +1399,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-s0</string>
+			<string>manual-conn-line-reqregs-to-state-write-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{860, 180}</string>
-				<string>{910, 180}</string>
+				<string>{490, 250}</string>
+				<string>{495, 260}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1601,11 +1444,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-arrow-a</string>
+			<string>manual-conn-line-reqregs-to-state-write-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{900, 175}</string>
-				<string>{910, 180}</string>
+				<string>{500, 250}</string>
+				<string>{495, 260}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1646,11 +1489,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-arrow-b</string>
+			<string>manual-conn-line-state-to-readback-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{900, 185}</string>
-				<string>{910, 180}</string>
+				<string>{630, 285}</string>
+				<string>{840, 285}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1691,11 +1534,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-s0</string>
+			<string>manual-conn-line-state-to-readback-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{1160, 180}</string>
-				<string>{1210, 180}</string>
+				<string>{840, 285}</string>
+				<string>{840, 150}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1736,11 +1579,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-arrow-a</string>
+			<string>manual-conn-line-state-to-readback-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{1200, 175}</string>
-				<string>{1210, 180}</string>
+				<string>{840, 150}</string>
+				<string>{870, 150}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1781,11 +1624,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-arrow-b</string>
+			<string>manual-conn-line-state-to-readback-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1200, 185}</string>
-				<string>{1210, 180}</string>
+				<string>{860, 145}</string>
+				<string>{870, 150}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1826,11 +1669,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-s0</string>
+			<string>manual-conn-line-state-to-readback-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{280, 405}</string>
-				<string>{390, 405}</string>
+				<string>{860, 155}</string>
+				<string>{870, 150}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1871,11 +1714,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-arrow-a</string>
+			<string>manual-conn-line-state-to-outputs-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{380, 400}</string>
-				<string>{390, 405}</string>
+				<string>{630, 335}</string>
+				<string>{945, 335}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1916,11 +1759,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-arrow-b</string>
+			<string>manual-conn-line-state-to-outputs-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{380, 410}</string>
-				<string>{390, 405}</string>
+				<string>{935, 330}</string>
+				<string>{945, 335}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1961,11 +1804,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-s0</string>
+			<string>manual-conn-line-state-to-outputs-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{390, 430}</string>
-				<string>{280, 430}</string>
+				<string>{935, 340}</string>
+				<string>{945, 335}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2006,11 +1849,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-arrow-a</string>
+			<string>manual-conn-line-state-to-tick-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{290, 425}</string>
-				<string>{280, 430}</string>
+				<string>{450, 370}</string>
+				<string>{450, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2051,11 +1894,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-arrow-b</string>
+			<string>manual-conn-line-state-to-tick-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{290, 435}</string>
-				<string>{280, 430}</string>
+				<string>{445, 450}</string>
+				<string>{450, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2096,11 +1939,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-s0</string>
+			<string>manual-conn-line-state-to-tick-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{620, 405}</string>
-				<string>{720, 405}</string>
+				<string>{455, 450}</string>
+				<string>{450, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2141,11 +1984,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-arrow-a</string>
+			<string>manual-conn-line-tick-to-state-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{710, 400}</string>
-				<string>{720, 405}</string>
+				<string>{560, 460}</string>
+				<string>{560, 370}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2186,11 +2029,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-arrow-b</string>
+			<string>manual-conn-line-tick-to-state-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{710, 410}</string>
-				<string>{720, 405}</string>
+				<string>{555, 380}</string>
+				<string>{560, 370}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2231,11 +2074,11 @@ else stay STEP_RUNNING}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-s0</string>
+			<string>manual-conn-line-tick-to-state-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{950, 405}</string>
-				<string>{1050, 405}</string>
+				<string>{565, 380}</string>
+				<string>{560, 370}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2269,231 +2112,6 @@ else stay STEP_RUNNING}</string>
 			</dict>
 			<key>ID</key>
 			<integer>141</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-arrow-a</string>
-			<key>Points</key>
-			<array>
-				<string>{1040, 400}</string>
-				<string>{1050, 405}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>HeadArrow</key>
-					<string>0</string>
-					<key>Legacy</key>
-					<false/>
-					<key>TailArrow</key>
-					<string>0</string>
-					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>ID</key>
-			<integer>142</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-arrow-b</string>
-			<key>Points</key>
-			<array>
-				<string>{1040, 410}</string>
-				<string>{1050, 405}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>HeadArrow</key>
-					<string>0</string>
-					<key>Legacy</key>
-					<false/>
-					<key>TailArrow</key>
-					<string>0</string>
-					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>ID</key>
-			<integer>143</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-s0</string>
-			<key>Points</key>
-			<array>
-				<string>{1050, 430}</string>
-				<string>{950, 430}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>HeadArrow</key>
-					<string>0</string>
-					<key>Legacy</key>
-					<false/>
-					<key>TailArrow</key>
-					<string>0</string>
-					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>ID</key>
-			<integer>144</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-arrow-a</string>
-			<key>Points</key>
-			<array>
-				<string>{960, 425}</string>
-				<string>{950, 430}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>HeadArrow</key>
-					<string>0</string>
-					<key>Legacy</key>
-					<false/>
-					<key>TailArrow</key>
-					<string>0</string>
-					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>ID</key>
-			<integer>145</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-arrow-b</string>
-			<key>Points</key>
-			<array>
-				<string>{960, 435}</string>
-				<string>{950, 430}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>HeadArrow</key>
-					<string>0</string>
-					<key>Legacy</key>
-					<false/>
-					<key>TailArrow</key>
-					<string>0</string>
-					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-			</dict>
-			<key>ID</key>
-			<integer>146</integer>
 		</dict>
 	</array>
 	<key>GridInfo</key>
@@ -2599,7 +2217,7 @@ else stay STEP_RUNNING}</string>
 		<key>NSPaperSize</key>
 		<array>
 			<string>size</string>
-			<string>{1460, 880}</string>
+			<string>{1380, 660}</string>
 		</array>
 		<key>NSPrintReverseOrientation</key>
 		<array>
@@ -2626,13 +2244,13 @@ else stay STEP_RUNNING}</string>
 	<key>RowSpacing</key>
 	<real>36.0</real>
 	<key>SheetTitle</key>
-	<string>core_debug_ctrl_fsm</string>
+	<string>ahb_wdg_block</string>
 	<key>SmartAlignmentGuidesActive</key>
 	<string>YES</string>
 	<key>SmartDistanceGuidesActive</key>
 	<string>YES</string>
 	<key>UniqueID</key>
-	<integer>147</integer>
+	<integer>142</integer>
 	<key>UseEntirePage</key>
 	<false/>
 	<key>VPages</key>

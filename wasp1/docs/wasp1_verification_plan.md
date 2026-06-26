@@ -1,0 +1,31 @@
+# wasp1 Verification Plan
+
+## 1. Scope
+
+The top-level verification target is `wasp1`. Module-level functional coverage
+remains owned by each lower-level module; this plan focuses on integration
+elaboration, reset connectivity, and first fetch-path activity.
+
+## 2. Test Items
+
+| Item | Goal | Method |
+| --- | --- | --- |
+| Generic lint | Check full SoC elaboration | Run Verilator lint on 54 integrated modules. |
+| IC target lint | Check IC macro path | Run lint with `WASP1_TARGET_IC`. |
+| Virtex-7 lint | Check FPGA macro path | Run lint with `WASP1_TARGET_FPGA_XILINX_VIRTEX7`. |
+| Reset defaults | Check benign IO after reset | Hold reset for four 10ns cycles and inspect UART/I2C/GPIO/WDG outputs. |
+| Fetch-path activity | Check tile -> bridge -> fabric path | Wait for the core AHB master to issue a valid transfer after reset. |
+| Debug status | Check core debug status is driven | Wait for either running or halted status to become asserted. |
+| Idle peripheral stability | Check inactive peripherals stay benign | Run additional cycles and ensure WDG reset and I2C OE remain deasserted. |
+
+## 3. Coverage Intent
+
+The smoke test intentionally does not duplicate module-level register and data
+coverage. It verifies that the full SoC hierarchy elaborates and that the first
+reset-time CPU traffic can traverse the integrated memory path.
+
+## 4. Pass Criteria
+
+All lint targets and `tb_wasp1` simulation must pass without `$error` or
+`$fatal`. The verification report must record the observed time-sequenced test
+actions and pass counter.

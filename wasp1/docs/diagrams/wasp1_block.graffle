@@ -14,7 +14,7 @@
 	<key>BackgroundGraphic</key>
 	<dict>
 		<key>Bounds</key>
-		<string>{{0, 0}, {1900, 1000}}</string>
+		<string>{{0, 0}, {1680, 580}}</string>
 		<key>Class</key>
 		<string>ShapedGraphic</string>
 		<key>ID</key>
@@ -33,7 +33,7 @@
 	<key>CanvasOrigin</key>
 	<string>{0, 0}</string>
 	<key>CanvasSize</key>
-	<string>{1460, 880}</string>
+	<string>{1680, 580}</string>
 	<key>ColumnAlign</key>
 	<integer>1</integer>
 	<key>ColumnSpacing</key>
@@ -46,82 +46,25 @@
 	<array>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 20}, {620, 25}}</string>
+			<string>{{40, 20}, {560, 30}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
-			<key>Name</key>
-			<string>diagram-title</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\b\fs24 \cf0 core_debug_ctrl FSM / datapath timing-class diagram}</string>
-			</dict>
 			<key>ID</key>
 			<integer>100</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{40, 65}, {130, 45}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-if-shape</string>
+			<string>title</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.793469</real>
-						<key>g</key>
-						<real>0.900282</real>
 						<key>b</key>
-						<real>1.0</real>
+						<real>0.94</real>
+						<key>g</key>
+						<real>0.94</real>
+						<key>r</key>
+						<real>0.94</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -135,11 +78,11 @@
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -152,36 +95,34 @@
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF\
-external interface}</string>
+\f0\b\fs22 \cf0 wasp1 top / timing-class integration diagram}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{40, 95}, {185, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>101</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{195, 65}, {145, 45}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-comb-shape</string>
+			<string>if-reset-io</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>1.0</real>
 						<key>g</key>
-						<real>0.900282</real>
-						<key>b</key>
-						<real>0.656138</real>
+						<real>0.9</real>
+						<key>r</key>
+						<real>0.79</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -195,11 +136,11 @@ external interface}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -212,36 +153,36 @@ external interface}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB\
-combinational}</string>
+\f0\fs17 \cf0 IF reset / IO / debug\
+hclk_i hresetn_i\
+UART I2C GPIO debug}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{300, 80}, {215, 110}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>102</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{365, 60}, {155, 55}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-seq-shape</string>
+			<string>seq-tile</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
 						<key>b</key>
-						<real>0.77821</real>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -255,11 +196,11 @@ combinational}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -272,37 +213,37 @@ combinational}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ\
-clk=clk_i\
-rst=rst_ni}</string>
+\f0\fs17 \cf0 SEQ tile\
+clk=hclk_i rst=hresetn_i\
+frontend core I$ D$\
+boot_pc=OTP_BASE}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{585, 80}, {190, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>103</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{545, 60}, {240, 55}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>legend-note-shape</string>
+			<string>comb-core-arb</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
 						<key>b</key>
-						<real>0.94</real>
+						<real>0.66</real>
+						<key>g</key>
+						<real>0.9</real>
+						<key>r</key>
+						<real>1.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -316,11 +257,11 @@ rst=rst_ni}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -333,37 +274,36 @@ rst=rst_ni}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 NOTE\
-transition conditions live\
-in note boxes}</string>
+\f0\fs17 \cf0 COMB core I/D arb\
+D-cache priority\
+request select}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{845, 80}, {220, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>104</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{40, 145}, {230, 75}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>if-debug-core-inputs</string>
+			<string>seq-core-bridge</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.793469</real>
-						<key>g</key>
-						<real>0.900282</real>
 						<key>b</key>
-						<real>1.0</real>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -377,11 +317,11 @@ in note boxes}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -394,37 +334,36 @@ in note boxes}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF debug/core inputs\
-halt_req_i resume_req_i step_req_i\
-pipe_idle_i retire_valid_i debug_busy_i}</string>
+\f0\fs17 \cf0 SEQ core AHB bridge\
+clk=hclk_i rst=hresetn_i\
+BR_IDLE/ADDR/RESP/HOLD}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{845, 255}, {220, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>105</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{320, 140}, {245, 85}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>comb-next-state-priority</string>
+			<string>seq-dma</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>1.0</real>
-						<key>g</key>
-						<real>0.900282</real>
 						<key>b</key>
-						<real>0.656138</real>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -438,11 +377,11 @@ pipe_idle_i retire_valid_i debug_busy_i}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -455,38 +394,36 @@ pipe_idle_i retire_valid_i debug_busy_i}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB next-state priority\
-halt has highest priority\
-debug_busy blocks resume/step\
-state_d generation}</string>
+\f0\fs17 \cf0 SEQ DMA\
+clk=hclk_i rst=hresetn_i\
+control regs + AHB master}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1135, 100}, {205, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>106</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{615, 140}, {245, 85}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>seq-state-register</string>
+			<string>seq-fabric</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
 						<key>b</key>
-						<real>0.77821</real>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -500,11 +437,11 @@ state_d generation}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -517,38 +454,36 @@ state_d generation}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ state_q register\
-clk=clk_i rst=rst_ni\
-reset -&gt; DBG_RUNNING\
-updates with state_d}</string>
+\f0\fs17 \cf0 SEQ AHB arbiter/default\
+clk=hclk_i rst=hresetn_i\
+2 masters}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1410, 100}, {205, 85}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>107</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{910, 140}, {250, 85}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>comb-output-decode</string>
+			<string>comb-fabric</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
+						<key>b</key>
+						<real>0.66</real>
+						<key>g</key>
+						<real>0.9</real>
 						<key>r</key>
 						<real>1.0</real>
-						<key>g</key>
-						<real>0.900282</real>
-						<key>b</key>
-						<real>0.656138</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -562,11 +497,11 @@ updates with state_d}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -579,36 +514,215 @@ updates with state_d}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 COMB output decode\
-stop_fetch/freeze_pipe\
-halted/running status}</string>
+\f0\fs17 \cf0 COMB AHB decode/mux\
+10 external slaves\
+response select}</string>
 			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1410, 280}, {225, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>108</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{1210, 145}, {220, 75}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>if-debug-core-outputs</string>
+			<string>seq-mem</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.793469</real>
-						<key>g</key>
-						<real>0.900282</real>
 						<key>b</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>r</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\pard\qc\partightenfactor0
+
+\f0\fs17 \cf0 SEQ memories\
+clk=hclk_i rst=hresetn_i\
+OTP / I-SRAM / D-SRAM}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1135, 430}, {210, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>109</integer>
+			<key>Name</key>
+			<string>seq-periph-a</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>r</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\pard\qc\partightenfactor0
+
+\f0\fs17 \cf0 SEQ peripherals A\
+clk=hclk_i rst=hresetn_i\
+WDG TIMER INTC}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{1410, 430}, {210, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>110</integer>
+			<key>Name</key>
+			<string>seq-periph-b</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.98</real>
+						<key>r</key>
+						<real>0.78</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>r</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\pard\qc\partightenfactor0
+
+\f0\fs17 \cf0 SEQ peripherals B\
+clk=hclk_i rst=hresetn_i\
+UART I2C GPIO}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{845, 430}, {220, 80}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>111</integer>
+			<key>Name</key>
+			<string>comb-irq</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.66</real>
+						<key>g</key>
+						<real>0.9</real>
+						<key>r</key>
 						<real>1.0</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -623,11 +737,11 @@ halted/running status}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -640,224 +754,36 @@ halted/running status}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 IF outputs\
-stop_fetch_o freeze_pipe_o\
-debug_halted_o debug_running_o}</string>
+\f0\fs17 \cf0 COMB IRQ pack\
+wdg/uart/i2c/gpio/dma\
+-&gt; INTC sources}</string>
 			</dict>
-			<key>ID</key>
-			<integer>109</integer>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{40, 275}, {920, 25}}</string>
+			<string>{{300, 270}, {420, 100}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
-			<key>Name</key>
-			<string>fsm-section-title</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\b\fs20 \cf0 L3 FSM state view: adjacent arrows shown; non-adjacent transitions are listed below states}</string>
-			</dict>
-			<key>ID</key>
-			<integer>110</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{70, 360}, {210, 95}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>Name</key>
-			<string>state-dbg-running</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_RUNNING\
-running=1\
-fetch allowed unless halt_req_i}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
-			<key>ID</key>
-			<integer>111</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{390, 360}, {230, 95}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>Name</key>
-			<string>state-dbg-halt-pending</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
-						<key>b</key>
-						<real>0.77821</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_HALT_PENDING\
-stop_fetch=1\
-wait pipe_idle and !busy}</string>
-			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
 			<key>ID</key>
 			<integer>112</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{720, 360}, {230, 95}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-halted</string>
+			<string>note-bridge</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
 						<key>b</key>
-						<real>0.77821</real>
+						<real>0.94</real>
+						<key>g</key>
+						<real>0.94</real>
+						<key>r</key>
+						<real>0.94</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -871,11 +797,11 @@ wait pipe_idle and !busy}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -888,40 +814,37 @@ wait pipe_idle and !busy}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_HALTED\
-halted=1 freeze_pipe=1\
-resume/step only when !busy}</string>
+\f0\fs16 \cf0 Core master contract\
+I-cache and D-cache share one AHB master.\
+D-cache wins simultaneous requests.\
+Only one outstanding beat is held.}</string>
 			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
+		</dict>
+		<dict>
+			<key>Bounds</key>
+			<string>{{40, 430}, {430, 95}}</string>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
 			<key>ID</key>
 			<integer>113</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{1050, 360}, {240, 95}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>state-dbg-step-running</string>
+			<string>note-debug</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.77821</real>
-						<key>g</key>
-						<real>0.976577</real>
 						<key>b</key>
-						<real>0.77821</real>
+						<real>0.94</real>
+						<key>g</key>
+						<real>0.94</real>
+						<key>r</key>
+						<real>0.94</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -935,11 +858,11 @@ resume/step only when !busy}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.18</real>
 						<key>g</key>
 						<real>0.18</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.18</real>
 						<key>space</key>
 						<string>srgb</string>
@@ -952,44 +875,31 @@ resume/step only when !busy}</string>
 			<dict>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
 \pard\qc\partightenfactor0
 
-\f0\fs20 \cf0 SEQ clk=clk_i rst=rst_ni\
-DBG_STEP_RUNNING\
-release one instruction\
-retire/halt returns toward halt}</string>
+\f0\fs16 \cf0 Debug boundary\
+Top exposes discrete core debug handshake.\
+Full JTAG DTM + Debug Module integration remains a follow-on item.}</string>
 			</dict>
-			<key>Shape</key>
-			<string>Circle</string>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>114</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{50, 565}, {290, 100}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>note-run-transitions</string>
+			<string>manual-conn-line-io-to-tile-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{225, 135}</string>
+				<string>{300, 135}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -999,59 +909,42 @@ retire/halt returns toward halt}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
 					<key>Width</key>
-					<real>1.5</real>
+					<integer>2</integer>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 RUNNING transitions\
-halt_req &amp;&amp; idle &amp;&amp; !busy -&gt; HALTED\
-halt_req &amp;&amp; !(idle &amp;&amp; !busy) -&gt; HALT_PENDING\
-else stay RUNNING}</string>
-			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>115</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{375, 565}, {300, 100}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>note-pending-transitions</string>
+			<string>manual-conn-line-io-to-tile-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{290, 130}</string>
+				<string>{300, 135}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1061,59 +954,42 @@ else stay RUNNING}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
 					<key>Width</key>
-					<real>1.5</real>
+					<integer>2</integer>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 HALT_PENDING transitions\
-!halt_req &amp;&amp; resume_req -&gt; RUNNING\
-idle &amp;&amp; !busy -&gt; HALTED\
-else stay HALT_PENDING}</string>
-			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>116</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{710, 565}, {330, 115}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>note-halted-transitions</string>
+			<string>manual-conn-line-io-to-tile-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{290, 140}</string>
+				<string>{300, 135}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1123,60 +999,42 @@ else stay HALT_PENDING}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
 					<key>Width</key>
-					<real>1.5</real>
+					<integer>2</integer>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 HALTED transitions\
-halt_req -&gt; HALTED\
-!halt_req &amp;&amp; resume_req &amp;&amp; !busy -&gt; RUNNING\
-!halt_req &amp;&amp; step_req &amp;&amp; !busy -&gt; STEP_RUNNING\
-else stay HALTED}</string>
-			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>117</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{1080, 565}, {300, 105}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>note-step-transitions</string>
+			<string>manual-conn-line-tile-to-arb-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{515, 125}</string>
+				<string>{585, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1186,60 +1044,42 @@ else stay HALTED}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
 					<key>Width</key>
-					<real>1.5</real>
+					<integer>2</integer>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs18 \cf0 STEP_RUNNING transitions\
-retire_valid || halt_req:\
-  idle -&gt; HALTED\
-  !idle -&gt; HALT_PENDING\
-else stay STEP_RUNNING}</string>
-			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>118</integer>
-		</dict>
-		<dict>
-			<key>Bounds</key>
-			<string>{{40, 750}, {640, 95}}</string>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
 			<key>Name</key>
-			<string>native-line-checklist</string>
+			<string>manual-conn-line-tile-to-arb-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{575, 120}</string>
+				<string>{585, 125}</string>
+			</array>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.94</real>
-						<key>g</key>
-						<real>0.94</real>
-						<key>b</key>
-						<real>0.94</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1249,48 +1089,39 @@ else stay STEP_RUNNING}</string>
 				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
 						<key>b</key>
-						<real>0.18</real>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
 					<key>Width</key>
-					<real>1.5</real>
+					<integer>2</integer>
 				</dict>
 			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\pard\qc\partightenfactor0
-
-\f0\fs20 \cf0 Native-line checklist\
-1. unrelated elements keep &gt;=10pt spacing\
-2. native LineGraphic segments use explicit points\
-3. V arrowheads are two short diagonal lines\
-4. saved-file audit and visual inspection must pass}</string>
-			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>119</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-s0</string>
+			<string>manual-conn-line-tile-to-arb-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{270, 180}</string>
-				<string>{320, 180}</string>
+				<string>{575, 130}</string>
+				<string>{585, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1301,6 +1132,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1308,34 +1150,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>120</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-arrow-a</string>
+			<string>manual-conn-line-arb-to-bridge-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{310, 175}</string>
-				<string>{320, 180}</string>
+				<string>{775, 125}</string>
+				<string>{845, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1346,6 +1177,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1353,34 +1195,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>121</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-if-to-next-arrow-b</string>
+			<string>manual-conn-line-arb-to-bridge-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{310, 185}</string>
-				<string>{320, 180}</string>
+				<string>{835, 120}</string>
+				<string>{845, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1391,6 +1222,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1398,34 +1240,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>122</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-s0</string>
+			<string>manual-conn-line-arb-to-bridge-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{565, 180}</string>
-				<string>{615, 180}</string>
+				<string>{835, 130}</string>
+				<string>{845, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1436,6 +1267,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1443,34 +1285,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>123</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-arrow-a</string>
+			<string>manual-conn-line-bridge-to-fabric-seq-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{605, 175}</string>
-				<string>{615, 180}</string>
+				<string>{1065, 125}</string>
+				<string>{1135, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1481,6 +1312,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1488,34 +1330,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>124</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-next-to-state-arrow-b</string>
+			<string>manual-conn-line-bridge-to-fabric-seq-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{605, 185}</string>
-				<string>{615, 180}</string>
+				<string>{1125, 120}</string>
+				<string>{1135, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1526,6 +1357,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1533,34 +1375,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>125</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-s0</string>
+			<string>manual-conn-line-bridge-to-fabric-seq-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{860, 180}</string>
-				<string>{910, 180}</string>
+				<string>{1125, 130}</string>
+				<string>{1135, 125}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1571,6 +1402,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1578,34 +1420,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>126</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-arrow-a</string>
+			<string>manual-conn-line-dma-to-fabric-seq-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{900, 175}</string>
-				<string>{910, 180}</string>
+				<string>{1065, 300}</string>
+				<string>{1100, 300}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1616,6 +1447,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1623,34 +1465,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>127</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-state-to-output-arrow-b</string>
+			<string>manual-conn-line-dma-to-fabric-seq-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{900, 185}</string>
-				<string>{910, 180}</string>
+				<string>{1100, 300}</string>
+				<string>{1100, 160}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1661,6 +1492,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1668,34 +1510,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>128</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-s0</string>
+			<string>manual-conn-line-dma-to-fabric-seq-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{1160, 180}</string>
-				<string>{1210, 180}</string>
+				<string>{1100, 160}</string>
+				<string>{1135, 160}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1706,6 +1537,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1713,34 +1555,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>129</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-arrow-a</string>
+			<string>manual-conn-line-dma-to-fabric-seq-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1200, 175}</string>
-				<string>{1210, 180}</string>
+				<string>{1125, 155}</string>
+				<string>{1135, 160}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1751,6 +1582,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1758,34 +1600,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>130</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-top-output-to-if-arrow-b</string>
+			<string>manual-conn-line-dma-to-fabric-seq-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1200, 185}</string>
-				<string>{1210, 180}</string>
+				<string>{1125, 165}</string>
+				<string>{1135, 160}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1796,6 +1627,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1803,34 +1645,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>131</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-s0</string>
+			<string>manual-conn-line-fabric-seq-to-comb-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{280, 405}</string>
-				<string>{390, 405}</string>
+				<string>{1340, 145}</string>
+				<string>{1410, 145}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1841,6 +1672,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1848,34 +1690,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>132</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-arrow-a</string>
+			<string>manual-conn-line-fabric-seq-to-comb-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{380, 400}</string>
-				<string>{390, 405}</string>
+				<string>{1400, 140}</string>
+				<string>{1410, 145}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1886,6 +1717,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1893,34 +1735,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>133</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-running-to-pending-arrow-b</string>
+			<string>manual-conn-line-fabric-seq-to-comb-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{380, 410}</string>
-				<string>{390, 405}</string>
+				<string>{1400, 150}</string>
+				<string>{1410, 145}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1931,6 +1762,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1938,34 +1780,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>134</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-s0</string>
+			<string>manual-conn-line-comb-to-mem-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{390, 430}</string>
-				<string>{280, 430}</string>
+				<string>{1480, 185}</string>
+				<string>{1480, 280}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1976,6 +1807,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -1983,34 +1825,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>135</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-arrow-a</string>
+			<string>manual-conn-line-comb-to-mem-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{290, 425}</string>
-				<string>{280, 430}</string>
+				<string>{1475, 270}</string>
+				<string>{1480, 280}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2021,6 +1852,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2028,34 +1870,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>136</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-running-arrow-b</string>
+			<string>manual-conn-line-comb-to-mem-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{290, 435}</string>
-				<string>{280, 430}</string>
+				<string>{1485, 270}</string>
+				<string>{1480, 280}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2066,6 +1897,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2073,34 +1915,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>137</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-s0</string>
+			<string>manual-conn-line-comb-to-periph-b-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{620, 405}</string>
-				<string>{720, 405}</string>
+				<string>{1615, 145}</string>
+				<string>{1650, 145}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2111,6 +1942,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2118,34 +1960,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>138</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-arrow-a</string>
+			<string>manual-conn-line-comb-to-periph-b-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{710, 400}</string>
-				<string>{720, 405}</string>
+				<string>{1650, 145}</string>
+				<string>{1650, 475}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2156,6 +1987,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2163,34 +2005,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>139</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-pending-to-halted-arrow-b</string>
+			<string>manual-conn-line-comb-to-periph-b-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{710, 410}</string>
-				<string>{720, 405}</string>
+				<string>{1650, 475}</string>
+				<string>{1620, 475}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2201,6 +2032,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2208,34 +2050,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>140</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-s0</string>
+			<string>manual-conn-line-comb-to-periph-b-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{950, 405}</string>
-				<string>{1050, 405}</string>
+				<string>{1630, 470}</string>
+				<string>{1620, 475}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2246,6 +2077,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2253,34 +2095,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>141</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-arrow-a</string>
+			<string>manual-conn-line-comb-to-periph-b-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1040, 400}</string>
-				<string>{1050, 405}</string>
+				<string>{1630, 480}</string>
+				<string>{1620, 475}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2291,6 +2122,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2298,34 +2140,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>142</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-halted-to-step-arrow-b</string>
+			<string>manual-conn-line-comb-to-periph-a-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{1040, 410}</string>
-				<string>{1050, 405}</string>
+				<string>{1435, 185}</string>
+				<string>{1435, 220}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2336,6 +2167,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2343,34 +2185,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>143</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-s0</string>
+			<string>manual-conn-line-comb-to-periph-a-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{1050, 430}</string>
-				<string>{950, 430}</string>
+				<string>{1435, 220}</string>
+				<string>{1240, 220}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2381,6 +2212,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2388,34 +2230,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>144</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-arrow-a</string>
+			<string>manual-conn-line-comb-to-periph-a-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{960, 425}</string>
-				<string>{950, 430}</string>
+				<string>{1240, 220}</string>
+				<string>{1240, 430}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2426,6 +2257,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2433,34 +2275,23 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
 			<integer>145</integer>
-		</dict>
-		<dict>
-			<key>AllowLabelDrop</key>
-			<false/>
-			<key>Class</key>
-			<string>LineGraphic</string>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-step-to-halted-arrow-b</string>
+			<string>manual-conn-line-comb-to-periph-a-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{960, 435}</string>
-				<string>{950, 430}</string>
+				<string>{1235, 420}</string>
+				<string>{1240, 430}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2471,6 +2302,17 @@ else stay STEP_RUNNING}</string>
 				</dict>
 				<key>stroke</key>
 				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
 					<key>HeadArrow</key>
 					<string>0</string>
 					<key>Legacy</key>
@@ -2478,40 +2320,651 @@ else stay STEP_RUNNING}</string>
 					<key>TailArrow</key>
 					<string>0</string>
 					<key>Width</key>
-					<real>2.0</real>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>146</integer>
+			<key>Name</key>
+			<string>manual-conn-line-comb-to-periph-a-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1245, 420}</string>
+				<string>{1240, 430}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
 					<key>Color</key>
 					<dict>
-						<key>r</key>
+						<key>b</key>
 						<real>0.0</real>
 						<key>g</key>
 						<real>0.0</real>
-						<key>b</key>
+						<key>r</key>
 						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
 				</dict>
 			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>146</integer>
+			<integer>147</integer>
+			<key>Name</key>
+			<string>manual-conn-line-dma-irq-to-pack-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{955, 350}</string>
+				<string>{955, 430}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>148</integer>
+			<key>Name</key>
+			<string>manual-conn-line-dma-irq-to-pack-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{950, 420}</string>
+				<string>{955, 430}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>149</integer>
+			<key>Name</key>
+			<string>manual-conn-line-dma-irq-to-pack-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{960, 420}</string>
+				<string>{955, 430}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>155</integer>
+			<key>Name</key>
+			<string>manual-conn-line-pack-to-peripha-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{1065, 470}</string>
+				<string>{1135, 470}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>156</integer>
+			<key>Name</key>
+			<string>manual-conn-line-pack-to-peripha-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1125, 465}</string>
+				<string>{1135, 470}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>157</integer>
+			<key>Name</key>
+			<string>manual-conn-line-pack-to-peripha-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1125, 475}</string>
+				<string>{1135, 470}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>158</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{1240, 525}</string>
+				<string>{1240, 575}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>159</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-s1</string>
+			<key>Points</key>
+			<array>
+				<string>{1240, 575}</string>
+				<string>{1660, 575}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>160</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-s2</string>
+			<key>Points</key>
+			<array>
+				<string>{1660, 575}</string>
+				<string>{1660, 60}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>161</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-s3</string>
+			<key>Points</key>
+			<array>
+				<string>{1660, 60}</string>
+				<string>{450, 60}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>165</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-s4</string>
+			<key>Points</key>
+			<array>
+				<string>{450, 60}</string>
+				<string>{450, 80}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>163</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{445, 70}</string>
+				<string>{450, 80}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>AllowLabelDrop</key>
+			<false/>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>164</integer>
+			<key>Name</key>
+			<string>manual-conn-line-timer-intc-to-tile-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{455, 70}</string>
+				<string>{450, 80}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>b</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>r</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>HeadArrow</key>
+					<string>0</string>
+					<key>Legacy</key>
+					<false/>
+					<key>TailArrow</key>
+					<string>0</string>
+					<key>Width</key>
+					<integer>2</integer>
+				</dict>
+			</dict>
 		</dict>
 	</array>
 	<key>GridInfo</key>
 	<dict>
 		<key>GridSpacing</key>
-		<real>5.0</real>
+		<real>2.5</real>
 		<key>MajorGridSpacing</key>
-		<integer>2</integer>
+		<integer>4</integer>
 		<key>MinorGridColor</key>
 		<dict>
-			<key>b</key>
-			<string>0.457771</string>
-			<key>g</key>
-			<string>0.457771</string>
-			<key>r</key>
-			<string>0.457771</string>
-			<key>space</key>
-			<string>srgb</string>
+			<key>w</key>
+			<string>0.810453</string>
 		</dict>
 		<key>ShowsGrid</key>
 		<string>YES</string>
@@ -2536,7 +2989,7 @@ else stay STEP_RUNNING}</string>
 			<key>Lock</key>
 			<false/>
 			<key>Name</key>
-			<string>图层 1</string>
+			<string>Layer 1</string>
 			<key>Print</key>
 			<true/>
 			<key>View</key>
@@ -2549,6 +3002,8 @@ else stay STEP_RUNNING}</string>
 		<string>NO</string>
 		<key>circoMinDist</key>
 		<real>18.0</real>
+		<key>circoSeparation</key>
+		<real>0.0</real>
 		<key>layoutEngine</key>
 		<string>dot</string>
 		<key>neatoLineLength</key>
@@ -2561,7 +3016,7 @@ else stay STEP_RUNNING}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2026-06-25 01:47:41 +0000</string>
+	<string>2026-06-25 14:45:21 +0000</string>
 	<key>Modifier</key>
 	<string>bluess</string>
 	<key>MovementHandleVisible</key>
@@ -2591,15 +3046,10 @@ else stay STEP_RUNNING}</string>
 			<string>float</string>
 			<string>0</string>
 		</array>
-		<key>NSPaperName</key>
-		<array>
-			<string>string</string>
-			<string>081D318A-89CC-4778-83DD-581CC21FB9E2</string>
-		</array>
 		<key>NSPaperSize</key>
 		<array>
 			<string>size</string>
-			<string>{1460, 880}</string>
+			<string>{1680, 580}</string>
 		</array>
 		<key>NSPrintReverseOrientation</key>
 		<array>
@@ -2626,19 +3076,19 @@ else stay STEP_RUNNING}</string>
 	<key>RowSpacing</key>
 	<real>36.0</real>
 	<key>SheetTitle</key>
-	<string>core_debug_ctrl_fsm</string>
+	<string>wasp1_block</string>
 	<key>SmartAlignmentGuidesActive</key>
 	<string>YES</string>
 	<key>SmartDistanceGuidesActive</key>
 	<string>YES</string>
 	<key>UniqueID</key>
-	<integer>147</integer>
+	<integer>10001</integer>
 	<key>UseEntirePage</key>
-	<false/>
+	<true/>
 	<key>VPages</key>
 	<integer>1</integer>
 	<key>VisibleVoidKey</key>
-	<real>0.0</real>
+	<real>1.0</real>
 	<key>WindowInfo</key>
 	<dict>
 		<key>CurrentSheet</key>
@@ -2646,23 +3096,25 @@ else stay STEP_RUNNING}</string>
 		<key>Frame</key>
 		<string>{{1440, -180}, {1920, 1016}}</string>
 		<key>ShowInfo</key>
-		<false/>
-		<key>Sidebar</key>
 		<true/>
+		<key>ShowRuler</key>
+		<true/>
+		<key>Sidebar</key>
+		<false/>
 		<key>SidebarWidth</key>
-		<integer>234</integer>
+		<integer>0</integer>
 		<key>Sidebar_Tab</key>
 		<integer>0</integer>
 		<key>VisibleRegion</key>
-		<string>{{0, 0}, {1899.3865354138445, 999.54427644369753}}</string>
+		<string>{{172.43983010854072, -84.945729117508336}, {1365.077866918358, 794.24256724870224}}</string>
 		<key>Zoom</key>
-		<real>0.699999988079071</real>
+		<real>1.04</real>
 		<key>ZoomValues</key>
 		<array>
 			<array>
-				<string>版面 1</string>
-				<real>0.699999988079071</real>
-				<real>0.7</real>
+				<string>wasp1_block</string>
+				<real>1.04</real>
+				<real>1.03</real>
 			</array>
 		</array>
 	</dict>

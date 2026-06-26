@@ -79,9 +79,13 @@ OmniGraffle source files. Keep them under:
 <module>/docs/diagrams/
 ```
 
-Follow the stable drawing method in `docs/wasp1_omnigraffle_diagram_policy.md`:
-no automatic connectors, grid-aligned native objects, explicit line segments,
-V-shaped arrowheads, coordinate audit, and final visual inspection.
+Follow the drawing method in `docs/wasp1_omnigraffle_diagram_policy.md`: avoid
+automatic connectors, use grid-aligned editable OmniGraffle geometry, build
+wires from native line objects with explicit point lists, split bent paths into
+horizontal and vertical segments, use two-line V arrowheads for directed flows,
+keep unrelated elements from overlapping, keep ordinary lines at least two grid
+cells away from unrelated shapes/labels, run a saved-file coordinate/overlap
+audit, and perform final visual inspection.
 
 When a design spec uses a PNG or PDF preview, keep the export under the
 module's `docs/images/` directory and keep the editable source in the repo.
