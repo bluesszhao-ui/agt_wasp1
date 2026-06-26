@@ -6,40 +6,20 @@
 responses. The current frontend integration uses the default depth of two
 entries.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF fetch response
- push_valid/pc/instr/fault/misaligned
-           |
-           v
- +-----------------------+
- | COMB push_fire/full   |---- push_ready_o
- | flush gate            |
- +----------+------------+
-            |
-            v
- +-------------------------------+
- | SEQ clk_i/rst_ni              |
- | pc_q/instr_q/fault_q/mis_q    |
- | rd_ptr_q/wr_ptr_q/count_q     |
- +-------------+-----------------+
-               |
-               v
- +-------------------------------+
- | COMB oldest-entry mux         |---- pop_pc/instr/fault/misaligned
- | pop_fire/empty/flush gate     |---- pop_valid_o, empty_o, full_o
- +-------------+-----------------+
-               |
-               v
-          IF core side
-          pop_ready_i
+editable source: frontend/docs/diagrams/frontend_ibuf_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
 
-PNG state diagram:
+The diagram separates fetch response input, combinational push gating, FIFO
+storage and pointer/count state, combinational oldest-entry/pop logic, core
+output, and flush/pop-ready control.
+
+Legacy PNG state diagram:
 
 ```text
 frontend/docs/images/frontend_ibuf_state.png

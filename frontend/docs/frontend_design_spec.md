@@ -8,52 +8,21 @@ single redirect input and drives it directly into PC retargeting plus fetch/ibuf
 flush. A separate `frontend_redirect` arbitration leaf is deferred until later
 multi-source redirect integration.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Current frontend clock/reset domain: clk=clk_i, rst=rst_ni
-
- IF boot_pc/stall/redirect
-              |
-              v
- +------------------------+
- | frontend_pc            |
- | SEQ clk_i/rst_ni       |
- +-----------+------------+
-             | IF pc_valid/pc/misaligned
-             v
- +------------------------+       IF imem_if
- | frontend_fetch COMB    |<----------------------> instruction cache/memory
- | req/rsp control        |
- +-----+-------------+----+
-       |             ^
-       v             |
- +------------------------+
- | frontend_fetch SEQ     |
- | clk_i/rst_ni state     |
- +-----------+------------+
-             | IF fetch response
-             v
- +------------------------+
- | frontend_ibuf COMB     |
- | ready/data/status mux  |
- +-----+-------------+----+
-       |             ^
-       v             |
- +------------------------+
- | frontend_ibuf SEQ      |
- | clk_i/rst_ni FIFO      |
- +-----------+------------+
-             | IF instr_valid/ready/pc/instr/fault
-             v
-        core/tile side
-
- redirect_valid_i also drives combinational flush control and sequential clear
- actions in frontend_fetch and frontend_ibuf.
+editable source: frontend/docs/diagrams/frontend_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
 
-PNG integration diagram:
+The diagram separates redirect/flush fanout, PC state, fetch classify/request
+logic, fetch outstanding state, fetch response muxing, ibuf FIFO state, ibuf pop
+logic, and the instruction memory/core interfaces. The wrapper itself owns no
+additional sequential state beyond the child SEQ blocks shown in the diagram.
+
+Legacy PNG integration diagram:
 
 ```text
 frontend/docs/images/frontend_state.png

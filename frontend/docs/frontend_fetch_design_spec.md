@@ -6,35 +6,20 @@
 PC requests from `frontend_pc` to the common `mem_req_rsp_if` instruction memory
 interface and returns instruction responses to the later ibuf/core side.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF pc_valid/pc/misaligned
-           |
-           v
- +-----------------------+
- | COMB accept/classify  |---- misaligned ----+
- +----------+------------+                    |
-           | aligned                          v
-           v                           +------------------+
- +-----------------------+             | COMB local fault |
- | COMB imem req driver  |             +---------+--------+
- +----------+------------+                       |
-           |                                    |
-           v                                    v
- +-----------------------+             +-------------------+
- | SEQ clk_i/rst_ni      |------------>| COMB response mux |---- IF instr_valid/pc/instr/fault
- | state_q, pc_q, kill_q |<----flush---|                   |
- +----------+------------+             +-------------------+
-           |
-           v
- IF imem response consume/drop
+editable source: frontend/docs/diagrams/frontend_fetch_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
 
-PNG state diagram:
+The diagram separates PC classification, instruction-memory request drive,
+local misaligned-fault logic, one-outstanding fetch state, response mux/drop
+logic, and instruction-memory/output interfaces.
+
+Legacy PNG state diagram:
 
 ```text
 frontend/docs/images/frontend_fetch_state.png

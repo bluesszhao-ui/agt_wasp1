@@ -5,35 +5,20 @@
 `frontend_pc` is a small sequential PC register and valid generator for the
 instruction frontend.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF boot_pc_i -----------------------------+
-                                           |
- IF redirect_valid_i/redirect_pc_i ----+    |
-                                      |    v
- IF fetch_ready_i ----+          +----+----------------+
-                      |          | COMB priority mux   |
- IF stall_i ----------+--------->| reset/redirect/     |
-                                 | fetch_fire/hold     |
-                                 +----------+----------+
-                                            |
-                                            v
-                                 +---------------------+
-                                 | SEQ clk_i/rst_ni    |
-                                 | pc_q, valid_q       |
-                                 +----------+----------+
-                                            |
-                       +--------------------+--------------------+
-                       |                    |                    |
-                       v                    v                    v
-                  IF pc_o              IF pc_valid_o      IF pc_misaligned_o
+editable source: frontend/docs/diagrams/frontend_pc_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
 
-PNG state diagram:
+The diagram separates external PC control inputs, the combinational update
+priority mux, the PC/valid sequential state, derived output logic, and the PC
+output interface.
+
+Legacy PNG state diagram:
 
 ```text
 frontend/docs/images/frontend_pc_state.png
