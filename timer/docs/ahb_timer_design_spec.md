@@ -7,50 +7,19 @@
 It exposes a 64-bit `mtime`, a 64-bit `mtimecmp`, control/status registers, and
 a timer interrupt output for the core interrupt path.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- hsel_i ----------+----------------+
- haddr_i -------->| SEQ addr phase |
- htrans_i ------->| range/alignment|
- hwrite_i ------->| word-only check|
- hsize_i -------->| capture regs   |
-                 +--------+-------+
-                          |
-                          v
-                 +----------------+
- hwdata_i ------>| SEQ reg write  |
-                 | CTRL MTIME CMP |
-                 +--------+-------+
-                          |
-          +---------------+----------------+
-          |                                |
-          v                                v
- +----------------+              +----------------+
- | 64-bit mtime   |------------->| compare logic  |
- | enable gated   |              | mtime >= cmp   |
- +----------------+              +--------+-------+
-                                           |
-                                           v
-                                  timer_irq_o
-                                           |
-              +----------------------------+
-              |
-              v
-       +---------------+
-       | read mux      |
-       | HRDATA/HRESP  |
-       +-------+-------+
-               |
-       hrdata_o/hresp_o
-       hready_o always 1
+editable source: timer/docs/diagrams/ahb_timer_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates address decode, request capture, timer counter/compare
+state, combinational compare/interrupt generation, read mux, and response
+interface. The `mtime` and `mtimecmp` storage is shown as clocked state, while
+the pending and read-data paths are shown as combinational logic.
 
 ## 3. Register Map
 

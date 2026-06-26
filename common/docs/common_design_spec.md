@@ -8,39 +8,18 @@ RTL cells used by wasp1 first-level modules.
 It does not implement SoC-visible behavior by itself. Its purpose is to keep
 module interfaces consistent and avoid repeated local definitions.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domains are module-local and shown in each block spec.
-
-+------------------------------------------------------------------+
-|                              common                              |
-|                                                                  |
-|  +-------------+      +---------------+      +----------------+  |
-|  | wasp1_pkg   |      | ahb_lite_if   |      | mem_req_rsp_if |  |
-|  | parameters  |      | AHB signals   |      | core/cache req |  |
-|  | typedefs    |      | modports      |      | rsp channel    |  |
-|  +-------------+      +---------------+      +----------------+  |
-|                                                                  |
-|  +-------------+      +---------------+      +----------------+  |
-|  | irq_if      |      | debug_if      |      | reset_sync     |  |
-|  | irq vector  |      | core/debug    |      | async assert   |  |
-|  | modports    |      | handshake     |      | sync release   |  |
-|  +-------------+      +---------------+      +----------------+  |
-|                                                                  |
-|  +-------------+      +---------------+                         |
-|  | sync_reg    |      | simple_fifo   |                         |
-|  | CDC helper  |      | ready/valid   |                         |
-|  +-------------+      +---------------+                         |
-|                                                                  |
-|  +-------------+                                               |
-|  | skid_buffer |                                               |
-|  | one-entry   |                                               |
-|  | backpressure|                                               |
-|  +-------------+                                               |
-+------------------------------------------------------------------+
+editable source: common/docs/diagrams/common_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   module-local, shown inside each SEQ block
 ```
+
+`common` is a reusable library, so the diagram is a dependency and ownership
+diagram rather than a fixed datapath. It separates package/macro definitions,
+SystemVerilog interfaces, sequential helper cells, and first-level module users.
 
 ## 3. Files
 

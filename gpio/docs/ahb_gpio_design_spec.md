@@ -8,54 +8,20 @@ It provides synchronized input sampling, software-controlled output value,
 output enable direction control, atomic set/clear/toggle helpers, and per-bit
 interrupt generation.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- hsel_i ----------+----------------+
- haddr_i -------->| SEQ addr phase |
- htrans_i ------->| range/alignment|
- hwrite_i ------->| word-only check|
- hsize_i -------->| capture regs   |
-                 +--------+-------+
-                          |
-                          v
-                 +----------------+
- hwdata_i ------>| SEQ reg write  |
-                 | OUT DIR IRQCFG |
-                 +--------+-------+
-                          |
-       +------------------+-------------------+
-       |                                      |
-       v                                      v
- +------------+                      +----------------+
- | OUT / DIR  |---- gpio_out_o       | input sync     |<--- gpio_in_i
- | registers  |---- gpio_oe_o        | 2-stage sample |
- +------------+                      +--------+-------+
-                                             |
-                                             v
-                                    +----------------+
-                                    | irq detect     |
-                                    | level / edge   |
-                                    | polarity / W1C |
-                                    +--------+-------+
-                                             |
-                                             v
-                                      gpio_irq_o
-
-                 +----------------+
-                 | read mux       |
-                 | HRDATA/HRESP   |
-                 +--------+-------+
-                          |
-                  hrdata_o/hresp_o
-                  hready_o always 1
+editable source: gpio/docs/diagrams/ahb_gpio_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates AHB decode/capture, output and direction state, input
+synchronization, combinational interrupt detection, latched interrupt status,
+read/output decode, and the external pin and AHB response interfaces. All
+clocked storage is drawn as independent SEQ blocks so it is not mixed with the
+COMB IRQ and readback paths.
 
 ## 3. Register Map
 

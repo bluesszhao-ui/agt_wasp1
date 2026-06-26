@@ -27,46 +27,18 @@ GPIO
 default error slave
 ```
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-AHB timing domain where SEQ appears: clk=hclk_i, rst=hresetn_i
-
-                         +-------------------+
- core AHB master ------->|                   |
-                         | ahb_arbiter_2m    |
- dma AHB master -------->| round-robin grant |
-                         |                   |
-                         +---------+---------+
-                                   |
-                                   | selected AHB address/control/write data
-                                   v
-                         +-------------------+
-                         | ahb_decoder       |
-                         | address -> HSEL   |
-                         +---------+---------+
-                                   |
-            +----------------------+----------------------+
-            |                                             |
-            v                                             v
-  +-------------------+                         +-------------------+
-  | selected slave    |                         | ahb_default_slave |
-  | OTP/SRAM/periph   |                         | unmapped error    |
-  +---------+---------+                         +---------+---------+
-            |                                             |
-            +----------------------+----------------------+
-                                   |
-                                   | HRDATA/HRESP/HREADY
-                                   v
-                         +-------------------+
-                         | ahb_slave_mux     |
-                         | return selected   |
-                         +---------+---------+
-                                   |
-                                   v
-                         granted master response
+editable source: bus/docs/diagrams/bus_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates the SEQ grant/default-response ownership from the COMB
+address decode and response mux logic. External slave register timing remains
+owned by each peripheral or memory module.
 
 ## 3. Submodules
 

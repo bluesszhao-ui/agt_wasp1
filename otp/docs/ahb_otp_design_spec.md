@@ -8,46 +8,19 @@ The lower part of the address range is a read-only executable OTP data window.
 The upper 256 bytes are a control register window used by CPU software to
 program OTP contents.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- hsel_i ----------+----------------+
- haddr_i -------->| SEQ addr phase |
- htrans_i ------->| range/alignment|
- hwrite_i ------->| region decode  |
- hsize_i -------->| capture regs   |
-                 +--------+-------+
-                          |
-          +---------------+---------------+
-          |                               |
-          v                               v
- +----------------+              +----------------+
- | SEQ OTP array  |              | SEQ OTP regs   |
- | default all 1s |              | CTRL STATUS    |
- | 1 -> 0 only    |              | ADDR WDATA     |
- +-------+--------+              | RDATA KEY LOCK |
-         |                       +--------+-------+
-         |                                |
-         +---------------+----------------+
-                         |
-                         v
-                +----------------+
-                | response mux   |
-                | HRDATA/HRESP   |
-                +--------+-------+
-                         |
-       +-----------------+----------------+
-       |                                  |
-       v                                  v
- hrdata_o registered read data       hresp_o OKAY/ERROR
- hready_o always 1
+editable source: otp/docs/diagrams/ahb_otp_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates AHB region decode, captured request state, OTP data array
+storage, programming register/status state, and the combinational program/read
+response mux. All sequential state is drawn separately from combinational
+decode and mux logic.
 
 ## 3. Address Layout
 

@@ -9,41 +9,18 @@ IC and FPGA implementation targets through `common/rtl/wasp1_target_defs.svh`.
 The current open-source RTL uses a synthesizable word-array model behind a
 stable AHB-facing behavior.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
-              hclk_i / hresetn_i
-                      |
-                      v
- hsel_i ----------+----------------+
- haddr_i -------->| SEQ addr phase |
- htrans_i ------->| valid/range/   |
- hwrite_i ------->| alignment check|
- hsize_i -------->| capture regs   |
-                 +--------+-------+
-                          |
-                          | one-cycle AHB response/data phase
-                          v
-                 +----------------+
- hwdata_i ------>| COMB byte lane |
-                 | write merge    |
-                 +--------+-------+
-                          |
-                          v
-                 +----------------+
-                 | SRAM word array|
-                 | 32-bit words   |
-                 +--------+-------+
-                          |
-       +------------------+-------------------+
-       |                                      |
-       v                                      v
- hrdata_o read data                    hresp_o OKAY/ERROR
- hready_o always 1
+editable source: sram/docs/diagrams/ahb_sram_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates AHB address-phase decode, captured request state,
+combinational byte-lane merge logic, the target memory array, and registered
+response outputs.
 
 ## 3. Ports
 
