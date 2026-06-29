@@ -7,53 +7,20 @@ not store tag bits, cache-line data, refill beat state, or downstream store
 transaction state; those are owned by `dcache_tag`, `dcache_data`,
 `dcache_refill`, and `dcache_store`.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF core_if.req
-        |
-        v
- +-----------------------------+
- | COMB request classify       |
- | invalid/load/store/hit/miss |
- +-----+-----------------------+
-       | lookup_valid_o/lookup_addr_o
-       v
- IF tag_hit_i/data_word_i
-       |
-       v
- +-----------------------------+
- | SEQ control FSM             |
- | clk=clk_i rst=rst_ni        |
- | state_q/request registers   |
- | store_hit_q/rsp registers   |
- +---+-----------+-------------+
-     |           |
-     |           +------------------+
-     |                              |
-     v                              v
- +------------------+       +------------------+
- | COMB refill      |       | COMB store       |
- | start/update     |       | start/update     |
- +--------+---------+       +--------+---------+
-          |                          |
-          v                          v
-    IF dcache_refill           IF dcache_store
-          |                          |
-          +-----------+--------------+
-                      |
-                      v
-             +------------------+
-             | COMB response    |
-             | data/error mux   |
-             +--------+---------+
-                      |
-                      v
-                IF core_if.rsp
+editable source: dcache/docs/diagrams/dcache_ctrl_block.graffle
+preview export:  none
+detail level:    L3
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates core request classification, tag/data inputs, control FSM
+state, refill control, store control, subordinate refill/store interfaces,
+response muxing, and core response output. Dense subordinate-completion
+feedback is described in the FSM text below rather than drawn as crossing
+long-wire bundles.
 
 PNG state diagram:
 

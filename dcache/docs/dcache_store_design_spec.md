@@ -6,36 +6,18 @@
 only request capture, downstream write sequencing, response error capture, and
 completion handoff.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF start_valid/addr/size/wdata/wstrb
-          |
-          v
- +-----------------------------+
- | COMB start fire / ready     |---- start_ready_o
- +--------------+--------------+
-                |
-                v
- +-----------------------------+
- | SEQ store FSM               |
- | clk=clk_i rst=rst_ni        |
- | state_q/addr_q/size_q       |
- | wdata_q/wstrb_q/error_q     |
- +------+--------------+-------+
-        |              ^
-        v              |
- +-------------+   +----------------+
- | COMB write  |   | COMB response  |
- | req encoder |   | done controls  |
- +------+------+   +-------+--------+
-        |                  |
-        v                  v
- IF downstream mem_if   IF done_valid/payload/error
+editable source: dcache/docs/diagrams/dcache_store_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates store start input, start-fire/ready logic, store FSM and
+captured request state, downstream write request encoding, response/done
+control, downstream memory interface, and completed-store output.
 
 PNG state diagram:
 

@@ -6,34 +6,17 @@
 It does not store cache data, sequence refills, sequence stores, or talk
 directly to AHB-Lite.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for all SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF lookup_addr/valid
-          |
-          v
- +--------------------------+
- | COMB index/tag extract   |---- lookup_index_o
- +-----------+--------------+
-             |
-             v
- +--------------------------+
- | SEQ clk_i/rst_ni         |
- | valid_q[LINE_COUNT]      |
- | tag_q[LINE_COUNT]        |
- +-----------+--------------+
-             |
-             v
- +--------------------------+
- | COMB valid && tag match  |---- lookup_hit_o
- +--------------------------+
-
- IF refill_addr/valid/error ----> SEQ tag write / valid update
- IF invalidate_i          -----> SEQ clear all valid bits
+editable source: dcache/docs/diagrams/dcache_tag_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates lookup inputs, index/tag extraction, valid/tag sequential
+state, hit comparison, refill/invalidate update selection, and outputs.
 
 PNG state diagram:
 

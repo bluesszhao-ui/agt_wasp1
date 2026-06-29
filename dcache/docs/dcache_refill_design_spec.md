@@ -6,35 +6,18 @@
 tag lookup, select the requested load word, or decide whether a request should
 allocate.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF start_valid/start_addr
-          |
-          v
- +----------------------------+
- | COMB line align / fire     |---- start_ready_o
- +-------------+--------------+
-               |
-               v
- +----------------------------+
- | SEQ refill FSM             |
- | state_q/line_addr_q/beat_q |
- | line_data_q/error_q        |
- +------+-------------+-------+
-        |             ^
-        v             |
- +-------------+  +----------------+
- | COMB req    |  | COMB rsp/store |
- | encoder     |  | next controls  |
- +------+------+  +-------+--------+
-        |                 |
-        v                 v
- IF downstream mem_if  IF line_valid/line_data/error
+editable source: dcache/docs/diagrams/dcache_refill_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates refill start input, line alignment/start-fire logic,
+refill FSM and line assembly state, downstream request encoding,
+response/store control, downstream memory interface, and completed-line output.
 
 PNG state diagram:
 

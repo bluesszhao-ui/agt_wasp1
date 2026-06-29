@@ -6,34 +6,18 @@
 and store-hit byte-lane merge updates. It does not check tags, sequence
 write-through stores, sequence refills, or decide hit/miss policy.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ block: clk=clk_i
-
- IF lookup_addr
-        |
-        v
- +--------------------------+
- | COMB index/word decode   |---- lookup_index_o
- +-----------+--------------+
-             |
-             v
- +--------------------------+
- | SEQ clk_i                |
- | data_q[LINE_COUNT]       |
- | line RAM                 |
- +-----------+--------------+
-             |
-             v
- +--------------------------+
- | COMB line read / word mux|---- lookup_line_o
- +--------------------------+---- lookup_word_o
-
- IF refill line ----> SEQ full-line write
- IF store hit   ----> COMB byte merge ----> SEQ selected-line write
+editable source: dcache/docs/diagrams/dcache_data_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i; data RAM is not reset
 ```
+
+The diagram separates lookup address decode, line-RAM state, load word
+selection, refill write input, store-hit byte-merge input, and RAM write update
+selection.
 
 PNG state diagram:
 
