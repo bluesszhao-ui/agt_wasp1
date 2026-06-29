@@ -4,25 +4,17 @@
 
 `uart_baud` is a small reload-style baud tick generator used by UART TX and RX.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
- clk_i / rst_ni
-      |
-      v
- +-------------+
- | SEQ count_q |<--- enable_i
- +------+------+     divisor_i
-        |
-        v
- +-------------+
- | COMB compare|---- tick_o
- | count == N  |
- +-------------+
+editable source: uart/docs/diagrams/uart_baud_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates control inputs, terminal-count calculation, counter
+state, tick compare logic, and the one-cycle tick output.
 
 ## 3. Design
 

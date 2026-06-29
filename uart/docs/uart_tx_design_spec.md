@@ -4,29 +4,18 @@
 
 `uart_tx` serializes one 8-bit data byte into an 8N1 UART frame.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
- data_valid_i/data_i
-        |
-        v
- +-------------+
- | COMB frame  |  {stop, data[7:0], start}
- +------+------+
-        |
-        v
- +-------------+    baud_tick_i
- | SEQ shifter |<----------------+
- +------+------+                 |
-        |                        |
-        v                        |
-      tx_o                +------+------+
-                          | SEQ bit_cnt |
-                          +-------------+
+editable source: uart/docs/diagrams/uart_tx_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates transmit input, frame construction, shifter/busy state,
+bit counter state, baud tick input, TX output selection, and ready/output
+signals.
 
 ## 3. Design
 

@@ -5,30 +5,17 @@
 `uart_rx` receives one 8N1 UART frame and emits a one-cycle valid pulse with
 the received byte.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
- uart_rx_i
-    |
-    v
- +----------+    baud_tick_i    +----------+
- | SEQ IDLE |------------------>| SEQ START|
- +----------+                   +----+-----+
-                                     |
-                                     v
-                                +----------+
-                                | SEQ DATA |
-                                | bit_idx  |
-                                +----+-----+
-                                     |
-                                     v
-                                +----------+
-                                | SEQ STOP |--> data_valid_o/frame_error_o
-                                +----------+
+editable source: uart/docs/diagrams/uart_rx_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates RX input, receive FSM state, baud tick input, data/bit
+index state, sample/control logic, and data-valid/frame-error outputs.
 
 ## 3. FSM
 
