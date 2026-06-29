@@ -4,21 +4,19 @@
 
 `core_trap` is a combinational trap and redirect priority helper.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- exception inputs ----+
- ecall/ebreak --------+--> COMB sync priority -----+
- lsu faults ----------+                             |
-                                                   v
- irq pending/enables ---> COMB irq qualify ---> COMB redirect/trap mux ---> trap outputs
-                                                   |
- mret_i / mepc_i ----------------------------------+
- mtvec_i ------------------------------------------+
+editable source: core/docs/diagrams/core_trap_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates synchronous trap inputs and priority logic, interrupt
+qualification, the MRET redirect path, final trap/redirect muxing, and trap
+outputs. No DUT clock, reset, register, counter, or FSM state exists in this
+module.
 
 ## 3. Design
 

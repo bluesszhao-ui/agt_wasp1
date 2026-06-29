@@ -4,38 +4,19 @@
 
 `core_csr` is a sequential machine-mode CSR file.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
- csr_addr_i/cmd/wdata
-          |
-          v
- +------------------+      timer_irq_i
- | COMB CSR decode  |<-----external_irq_i
- | read mux / masks |
- +---+----------+---+
-     |          |
-     v          v
- csr write   mip read image
-     |
-     v
- +------------------+
- | SEQ CSR regs     |
- | clk_i/rst_ni     |
- +---+----------+---+
-     |
-     +----> csr_rdata_o / csr_illegal_o
-     |
- trap_valid_i/mret_i
-     |
-     v
- mstatus/mepc/mcause/mtval update
-     |
-     +----> mtvec_o, mepc_o, interrupt enable/pending outputs
+editable source: core/docs/diagrams/core_csr_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates CSR operation inputs, combinational CSR decode/read/mask
+logic, update-priority logic, the sequential machine CSR register file,
+interrupt pending-image logic, trap/MRET metadata inputs, and CSR outputs.
+Legal CSR writes, trap entry, and MRET all converge at the SEQ CSR state block.
 
 ## 3. Design
 

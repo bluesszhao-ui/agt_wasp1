@@ -5,24 +5,19 @@
 `core_lsu` is a combinational load/store helper. It does not own memory
 handshake state.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- base_i ----+
- imm_i -----+----> COMB effective addr --+----> req_addr_o
-                                      alignment
-                                          |
- store_data_i --> COMB lane shifter ------+----> req_wdata_o
- size_i -------> COMB strobe gen ---------+----> req_wstrb_o
- load_i/store_i -------------------------------> req_valid_o/req_write_o
-
- rsp_rdata_i --> byte/half/word select --> sign/zero extend --> load_data_o
- rsp_err_i ------------------------------+
- misaligned -----------------------------+--------------------> fault_o
+editable source: core/docs/diagrams/core_lsu_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates execute-stage address inputs, effective-address and
+alignment logic, memory request encoding, store-lane generation, memory response
+load-data selection, fault muxing, and LSU output interfaces. Memory handshake
+state is owned by pipeline/cache integration, not by this module.
 
 ## 3. Design
 
