@@ -6,72 +6,21 @@
 `dcache` modules into one CPU tile with independent instruction and data
 downstream memory ports.
 
-## 2. Planned Block Diagram
+## 2. Editable Timing-Ownership Diagram
 
-![tile timing and state ownership](images/tile_state.png)
+editable source: `tile/docs/diagrams/tile_block.graffle`
+preview export: none
+detail level: L2
+clock domains: `clk_i/rst_ni` for every child-module `SEQ` block
 
-This is a historical PNG timing-class view. New or substantially reworked tile
-figures should use editable OmniGraffle source under `tile/docs/diagrams/`. The
-text diagram below retains signal-level detail for reviews and plain-text
-tooling.
+The editable OmniGraffle diagram separates tile external interfaces, frontend,
+icache, core, dcache, and tile-owned structural wiring into explicit `IF`,
+`SEQ`, and `COMB` timing-class blocks. The tile wrapper itself owns no
+architectural state, cache state, CSR state, pipeline state, or hidden request
+buffer in this milestone; every `SEQ` block in the figure is a child module.
 
-```text
-Legend:
-  SEQ  = sequential state, pale green in generated diagrams/PPT
-  COMB = combinational logic, pale amber/yellow
-  IF   = external/interface boundary, pale blue
-
-Clock/reset domain:
-  all SEQ blocks below use clk=clk_i, rst=rst_ni
-
- IF clk_i/rst_ni/boot_pc/irq/cache control/debug
-        |
-        v
-+------------------------------------------------------------------------+
-| tile                                                                   |
-|                                                                        |
-|  +-----------------------------+                                       |
-|  | SEQ clk_i/rst_ni            |                                       |
-|  | frontend                    |<-----------+                          |
-|  | PC/redirect/ibuf state      |            |                          |
-|  +------+----------------------+            |                          |
-|         | frontend imem_if                  | core redirect            |
-|         v                                   | valid/pc                 |
-|  +-----------------------------+            |                          |
-|  | IF icache front_if.target   |            |                          |
-|  +-------------+---------------+            |                          |
-|                |                            |                          |
-|                v                            |                          |
-|  +-----------------------------+            |                          |
-|  | SEQ clk_i/rst_ni            |            |                          |
-|  | icache tag/data/refill/ctrl |            |                          |
-|  +-------------+---------------+            |                          |
-|                |                            |                          |
-|                v                            |                          |
-|  IF imem_if downstream initiator            |                          |
-|                                             |                          |
-|  +-----------------------------+            |                          |
-|  | SEQ clk_i/rst_ni            |------------+                          |
-|  | core pipe/rf/csr/trap/lsu   |                                       |
-|  +-------------+---------------+                                       |
-|                ^                                                       |
-|                | frontend instr_valid/ready/pc/instr/fault             |
-|                +-------------------------------------------------------+
-|                                                                        |
-|  | COMB core/D-cache request-response wiring |                         |
-|  +----------------------+--------------------+                         |
-|                         v                                              |
-|  +-----------------------------+                                       |
-|  | SEQ clk_i/rst_ni            |                                       |
-|  | dcache tag/data/refill/ctrl |                                       |
-|  +-------------+---------------+                                       |
-|                |                                                       |
-|                v                                                       |
-|  IF dmem_if downstream initiator                                       |
-|  IF commit/trap/hazard/debug-observe outputs                           |
-|  IF debug_if.core pass-through to core                                  |
-+------------------------------------------------------------------------+
-```
+The historical PNG `tile/docs/images/tile_state.png` remains as a reference
+export.
 
 ## 3. Child Instances
 
