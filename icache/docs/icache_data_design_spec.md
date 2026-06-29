@@ -5,34 +5,17 @@
 `icache_data` implements direct-mapped cache-line storage and word selection. It
 does not track valid bits, compare tags, or sequence refills.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ storage: clk=clk_i
-Reset note: rst_ni does not clear data RAM contents
-
- IF lookup_addr_i
-        |
-        v
- +-----------------------------+
- | COMB index/word decode      |---- lookup_index_o
- +-------------+---------------+
-               |
-               v
- +-----------------------------+
- | SEQ line RAM                |
- | clk_i write on refill_valid |
- +-------------+---------------+
-               |
-               v
- +-----------------------------+
- | COMB line read / word mux   |---- lookup_line_o
- | little-endian word select   |---- lookup_word_o
- +-----------------------------+
-
- IF refill_addr_i/refill_line_i/refill_valid_i -> SEQ line RAM write port
+editable source: icache/docs/diagrams/icache_data_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   SEQ clk=clk_i; data RAM is not reset
 ```
+
+The diagram separates lookup address input, index/word decode, line-RAM state,
+word selection, refill write controls, and lookup outputs.
 
 PNG state diagram:
 

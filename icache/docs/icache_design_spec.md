@@ -5,64 +5,18 @@
 `icache` integrates `icache_tag`, `icache_data`, `icache_refill`, and
 `icache_ctrl` into the first complete instruction-cache wrapper.
 
-## 2. Integrated Block Diagram
+## 2. Editable Integrated Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Current I-cache clock/reset domain: clk=clk_i, rst=rst_ni
-
- IF front_if req/rsp
-        |
-        v
- +----------------------------+
- | IF icache front_if.target  |
- +-------------+--------------+
-               |
-               v
- +----------------------------+
- | COMB icache_ctrl outputs   |
- | lookup/refill/rsp controls |
- +-------------+--------------+
-               |
-               v
- +----------------------------+
- | SEQ icache_ctrl            |
- | clk=clk_i rst=rst_ni       |
- | request/miss/response FSM  |
- +---+--------------------+---+
-     |                    |
-     v                    v
- +-----------+        +-----------+
- | COMB tag  |        | COMB data |
- | compare   |        |word select|
- +-----+-----+        +-----+-----+
-       |                    |
-       v                    v
- +-----------+        +-----------+
- | SEQ tag   |        | SEQ data  |
- | clk/rst   |        | clk=clk_i |
- | valid/tag |        | line RAM  |
- +-----+-----+        +-----+-----+
-       ^                    ^
-       |                    |
-       +---------+----------+
-                 |
-                 v
-       +--------------------+
-       | COMB refill update |
-       | tag/data write bus |
-       +---------+----------+
-                 |
-                 v
-       +--------------------+
-       | SEQ icache_refill  |
-       | clk=clk_i rst=rst_ni |
-       | beat/line/error FSM|
-       +---------+----------+
-                 |
-                 v
-        IF mem_if downstream
+editable source: icache/docs/diagrams/icache_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni; icache_data RAM uses clk_i only
 ```
+
+The diagram separates frontend interface, control logic and state, tag state,
+data state, lookup result logic, refill state, downstream memory interface, and
+refill update interface. The top wrapper owns no additional sequential state.
 
 ## 3. Current Implementation Status
 

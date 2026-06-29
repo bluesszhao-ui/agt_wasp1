@@ -6,47 +6,18 @@
 bits, cache-line data, or refill beat state; those are owned by `icache_tag`,
 `icache_data`, and `icache_refill`.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Clock/reset domain for SEQ blocks: clk=clk_i, rst=rst_ni
-
- IF front_if.req
-        |
-        v
- +--------------------------+
- | COMB request classify    |
- | invalid/hit/miss select  |
- +-----+--------------------+
-       | lookup_valid_o/lookup_addr_o
-       v
- IF tag_hit_i/data_word_i
-       |
-       v
- +--------------------------+
- | SEQ control FSM          |
- | state_q/miss_addr_q      |
- | rsp_data_q/rsp_err_q     |
- +---+----------+-----------+
-     |          |
-     |          v
-     |   +------------------+
-     |   | COMB refill      |
-     |   | start/update     |
-     |   +--------+---------+
-     |            |
-     |            v
-     |       IF icache_refill
-     v
- +--------------------------+
- | COMB response mux        |
- | hit/refill/error data    |
- +------------+-------------+
-              |
-              v
-        IF front_if.rsp
+editable source: icache/docs/diagrams/icache_ctrl_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates frontend request classification, tag/data inputs, control
+FSM state, refill start/update controls, refill interface, response muxing, and
+frontend response output.
 
 PNG state diagram:
 
