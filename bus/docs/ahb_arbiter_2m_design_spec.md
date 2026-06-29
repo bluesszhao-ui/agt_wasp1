@@ -12,48 +12,18 @@ m1 = dma
 It forwards one selected master's address/control/write-data channel to the
 shared AHB fabric and routes the shared response back to the granted master.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
- m0_haddr/m0_htrans/m0_hwrite/...      m1_haddr/m1_htrans/m1_hwrite/...
-                 |                                      |
-                 v                                      v
-       +-------------------+                  +-------------------+
-       | m0 request detect |                  | m1 request detect |
-       | req = htrans[1]   |                  | req = htrans[1]   |
-       +---------+---------+                  +---------+---------+
-                 |                                      |
-                 +------------------+-------------------+
-                                    |
-                                    v
-                         +--------------------+
-                         | round-robin grant  |
-                         |                    |
-                         | last_grant_q       |
-                         | grant_idx_q        |
-                         | grant_valid_q      |
-                         | update if HREADY=1 |
-                         +---------+----------+
-                                   |
-                    +--------------+--------------+
-                    |                             |
-                    v                             v
-        +----------------------+       +----------------------+
-        | address/control mux  |       | response route mux   |
-        | selected master ->   |       | shared response ->   |
-        | shared AHB bus       |       | granted master       |
-        +----------+-----------+       +----------+-----------+
-                   |                              |
-                   v                              v
-        haddr/htrans/hwrite/...        m0_hrdata/hready/hresp
-        hwdata                         m1_hrdata/hready/hresp
-                   ^
-                   |
-        hrdata_i / hready_i / hresp_i from slave mux
+editable source: bus/docs/diagrams/ahb_arbiter_2m_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
+
+The diagram separates master inputs, request detection, sequential grant state,
+shared address/control muxing, shared response input, response routing, and
+master response outputs.
 
 ## 3. Ports
 

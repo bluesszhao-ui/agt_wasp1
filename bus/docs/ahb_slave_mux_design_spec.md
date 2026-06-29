@@ -7,38 +7,17 @@ granted master.
 
 It is a pure combinational block.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- hsel_i[10:0] ---------------------------+
-                                         |
- slave_hrdata_i[0]  slave_hready_i[0]  slave_hresp_i[0]
- slave_hrdata_i[1]  slave_hready_i[1]  slave_hresp_i[1]
-        ...              ...                 ...
- slave_hrdata_i[10] slave_hready_i[10] slave_hresp_i[10]
-        |                |                   |
-        +----------------+-------------------+
-                         |
-                         v
-             +----------------------+
-             |  one-hot checker     |
-             |                      |
-             | no select: OKAY      |
-             | one select: forward  |
-             | multi select: ERROR  |
-             +----------+-----------+
-                        |
-        +---------------+----------------+
-        |               |                |
-        v               v                v
-   hrdata_o        hready_o          hresp_o
-                        |
-                        v
-                  select_err_o
+editable source: bus/docs/diagrams/ahb_slave_mux_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates select/response array inputs, one-hot checking, selected
+response muxing, and fabric response outputs.
 
 ## 3. Ports
 

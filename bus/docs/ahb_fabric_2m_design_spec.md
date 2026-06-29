@@ -16,55 +16,18 @@
   unmapped address error response
 ```
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=hclk_i, rst=hresetn_i
-
- m0/core AHB address/control/write-data
-        |
-        v
- +------------------+
- |                  |
- | ahb_arbiter_2m   |<---- m1/dma AHB address/control/write-data
- |                  |
- +--------+---------+
-          |
-          | shared address/control/write-data
-          v
- +------------------+
- | ahb_decoder      |
- | haddr -> hsel    |
- +---+----------+---+
-     |          |
-     |          +----------------------+
-     |                                 |
-     v                                 v
- external hsel[9:0]             default hsel[10]
- OTP/I-SRAM/.../GPIO                  |
-     |                                v
-     |                       +-------------------+
-     |                       | ahb_default_slave |
-     |                       +---------+---------+
-     |                                 |
-     +---------------+-----------------+
-                     |
-                     v
-            +----------------+
-            | ahb_slave_mux  |
-            | selected resp  |
-            +-------+--------+
-                    |
-                    | shared HRDATA/HREADY/HRESP
-                    v
-             ahb_arbiter_2m response route
-                    |
-          +---------+---------+
-          |                   |
-          v                   v
-      m0/core resp        m1/dma resp
+editable source: bus/docs/diagrams/ahb_fabric_2m_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=hclk_i rst=hresetn_i in ahb_arbiter_2m
 ```
+
+The diagram separates master interfaces, arbiter grant state, address decoder,
+external slave interface, default slave, slave response mux, and response route
+back to the masters.
 
 ## 3. Ports
 

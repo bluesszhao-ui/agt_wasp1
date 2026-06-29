@@ -7,34 +7,18 @@
 The first implementation is zero-wait and combinational, but the module exposes
 `hclk_i` and `hresetn_i` to match the interface shape of other AHB-Lite slaves.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All response logic in this diagram is COMB. hclk_i/hresetn_i are IF-only
-reserved pins in this revision.
-
- hclk_i --------------------+
- hresetn_i -----------------+  reserved for future registered behavior
-                             |
- hsel_i -------------------->|\
- htrans_i[1:0] ------------>| | active transfer detect
-                             | | active = hsel_i && htrans_i[1]
-                             |/
-                              |
-                              v
-                    +------------------+
- hwrite_i --------->| ignored for resp |
- hsize_i[2:0] ----->| policy          |
- hwdata_i[31:0] --->|                 |
-                    +--------+---------+
-                             |
-           +-----------------+-----------------+
-           |                                   |
-           v                                   v
-  hresp_o = ERROR when active          hready_o = 1
-  hresp_o = OKAY otherwise            hrdata_o = 0
+editable source: bus/docs/diagrams/ahb_default_slave_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none in current response logic; hclk_i/hresetn_i are IF-only
 ```
+
+The diagram separates AHB inputs, active-transfer detection, combinational
+response policy, and response outputs. No sequential response state exists in
+this revision.
 
 ## 3. Ports
 
