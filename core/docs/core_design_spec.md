@@ -7,33 +7,19 @@
 it instantiates `core_int_datapath` and exposes the core boundary expected by
 later frontend, cache, tile, debug, and SoC integration.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-Core datapath clock/reset domain: clk=clk_i, rst=rst_ni
-
-+---------------------------------------------------------------+
-| core                                                          |
-|                                                               |
-|  IF clk/rst, frontend instr stream, irq, data response, debug  |
-|        |                                                      |
-|        v                                                      |
-|  +------------------------------+                             |
-|  | SEQ clk_i/rst_ni             |                             |
-|  | datapath state               |                             |
-|  | pipe/rf/csr registers        |                             |
-|  +---------------+--------------+                             |
-|                  |                                            |
-|                  v                                            |
-|  +------------------------------+                             |
-|  | COMB datapath control        |---- IF commit/ex/trap/hazard|
-|  | decode/alu/branch/lsu/trap   |---- IF dmem req/rsp handshake|
-|  | hazard/wb/redirect           |---- IF instr stream/redirect|
-|  +------------------------------+                             |
-|                                                               |
-+---------------------------------------------------------------+
+editable source: core/docs/diagrams/core_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   child SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates the wrapper boundary, pass-through interface mapping,
+child-owned sequential state, child-owned combinational logic, and core output
+interfaces. The wrapper itself owns no sequential state and performs no
+combinational transformation.
 
 Historical PNG diagram:
 

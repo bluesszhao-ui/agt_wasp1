@@ -7,73 +7,21 @@ it exists to verify the first executable integer, load/store, CSR, trap, and
 interrupt datapath with load-use hazard control before full EX/WB forwarding mux
 integration.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
- frontend instruction stream
-      |
-      v
- +-----------+
- | SEQ core_pipe |-- ex_pc/ex_instr/ex_valid/fault
- +-----+-----+
-       |
-       v
- +-------------+      +--------------+
- | COMB decode |----->| SEQ regfile  |
- +------+------+      +------+-------+
-        |                    ^
-        v                    |
- +--------------+      stall/bubble
- | COMB hazard  |-------------+
- +------+-------+             |
-        |                    v
- +--------------+      rs1/rs2 data
- | wb selector  |             |
- +------+-------+             v
-        |              +--------------+      +---------------+
-        +------------->| core_alu     |      | core_branch   |
-        |              +------+-------+      +-------+-------+
-        |                     |                      |
-        |                     v                      v
-        |              +--------------+       branch redirect
-        +------------->| core_lsu     |------------+
-        |              +------+-------+            |
-        |                     |                    v
-        |              dmem valid/ready    +---------------+
-        |                     |            | core_trap     |
-        |                     v            +-------+-------+
-        |              +--------------+            |
-        +------------->| core_csr     |<-----------+
-        |              +------+-------+     trap state/irq
-        |                     |
-        |                     v
-        |              +--------------+
-        +------------->| core_wb      |
-                       +------+-------+
-                              |
-                              v
-                        regfile write
-                        commit observe
-
- IF debug_if.core
-        |
-        v
- +------------------+       +---------------------+
- | SEQ debug_ctrl   |------>| COMB pipe stall mux |
- | clk=clk_i        |       | stop/freeze control |
- | rst=rst_ni       |       +---------------------+
- +--------+---------+
-          |
-          v
- +---------------------------+
- | COMB/SEQ halted GPR path  |
- | read mux / write mux /    |
- | registered response       |
- +---------------------------+
+editable source: core/docs/diagrams/core_int_datapath_block.graffle
+preview export:  none
+detail level:    L3
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates frontend, pipe, decode/hazard, regfile, execute, CSR/debug
+state, writeback/trap/redirect, data-memory, IRQ/debug input, and debug-control
+logic. Long writeback and redirect relationships are documented in the blocks
+and in the datapath text below; the diagram keeps only the redirect-to-pipe
+feedback wire explicit so the flush priority is visually clear without creating
+a line bundle.
 
 ## 3. Datapath
 

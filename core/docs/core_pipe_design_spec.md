@@ -7,37 +7,19 @@ planned simple in-order core. This milestone intentionally does not execute
 instruction semantics; it establishes the pipeline state machinery that later
 connects decode, regfile, ALU, LSU, CSR, trap, hazard, and writeback logic.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
-SEQ clock/reset domain: clk=clk_i, rst=rst_ni
-
-  IF frontend instruction stream
-  instr_valid/ready/pc/instr/fault
-                |
-                v
-        +------------------+
-        | COMB accept ctrl |
-        | stalls/redirect  |
-        +--------+---------+
-                 |
-                 v
-        +------------------+
-        | SEQ IF/ID slot   |
-        | clk_i/rst_ni     |
-        | pc/instr/fault   |
-        +--------+---------+
-                 |
-                 v
-        +------------------+
-        | SEQ EX/WB slot   |
-        | clk_i/rst_ni     |
-        | pc/instr/fault   |
-        +------------------+
-
-  COMB redirect forwarding: redirect_valid_i/pc_i -> redirect_valid_o/pc_o
+editable source: core/docs/diagrams/core_pipe_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
+
+The diagram separates frontend stream input, combinational accept/redirect
+control, IF/ID slot state, EX/WB slot state, execute-slot outputs, redirect
+input, and redirect output. Redirect control is drawn separately from the normal
+instruction flow because it has highest update priority.
 
 ## 3. Design
 
