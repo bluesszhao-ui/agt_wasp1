@@ -5,20 +5,18 @@
 `core_wb` is a combinational helper at the execute/writeback boundary of the
 planned simple in-order core pipeline.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- alu/load/csr/pc4/imm data ---> COMB source mux ----> rf_wdata
-                                     ^
-                                     |
-                                wb_sel_i
-
- valid/rd_write/rd/trap/fault ---> COMB write qualifier ---> rf_we
- rd_i ------------------------------------------------> rf_waddr
+editable source: core/docs/diagrams/core_wb_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates candidate writeback data inputs, the source mux,
+retirement/write qualifiers, write-enable generation, and the register-file
+write interface. The destination register state is owned by `core_regfile`.
 
 ## 3. Design
 

@@ -4,32 +4,18 @@
 
 `core_decode` is a combinational instruction decoder.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- instr_i[31:0]
-      |
-      v
- +-------------------+
- | COMB field extract|
- | opcode/funct/regs |
- +---------+---------+
-           |
-           v
- +-------------------+       +----------------+
- | COMB opcode case  |------>| COMB illegal   |
- +----+----+----+----+       +--------+-------+
-      |    |    |                     |
-      |    |    +------ immediates ---+
-      |    +----------- control flags |
-      +---------------- reg fields    |
-           |
-           v
- decoded pipeline control outputs
+editable source: core/docs/diagrams/core_decode_block.graffle
+preview export:  none
+detail level:    L2
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates instruction input, field extraction, opcode/funct case
+decode, immediate generation, illegal-encoding detection, and decoded pipeline
+outputs. No sequential state exists in this module.
 
 ## 3. Design
 

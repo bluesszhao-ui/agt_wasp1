@@ -5,18 +5,19 @@
 `core_hazard` is a combinational helper for the planned simple in-order core
 pipeline.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- id rs1/rs2 use ----+
-                    v
- ex rd/write/load --> COMB dependency compare ---> load-use stall controls
-                    |
- wb rd/write -------+----> EX/WB forwarding selects
+editable source: core/docs/diagrams/core_hazard_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates decode source inputs, execute/writeback destination
+inputs, register-match comparison, forwarding selection, load-use stall
+generation, and hazard-control outputs. No pipeline state is stored in this
+module.
 
 ## 3. Design
 

@@ -5,28 +5,18 @@
 `core_branch` is a combinational branch and jump helper used by the core
 execute stage.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- rs1_i --------+---------------------+
- rs2_i -------->| COMB branch cmp    |
- branch_op_i -->| eq/ne/signed/uns   |
-                +----------+---------+
-                           |
- pc_i ----+                v
- imm_i ---+-------> +-------------+
-                  ->| COMB target |----> target_o
- jal_i -----------> | JAL/JALR/BR |
- jalr_i ----------> +------+------+
- branch_i ---------------> |
-                           v
-                        taken_o
-
- pc_i -------------------------> link_o = pc_i + 4
+editable source: core/docs/diagrams/core_branch_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates branch comparison, target-address generation,
+taken-selection, link calculation, and the branch/jump output interface. No DUT
+clock, reset, or sequential state exists in this module.
 
 ## 3. Design
 

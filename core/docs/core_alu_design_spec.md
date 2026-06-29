@@ -4,24 +4,18 @@
 
 `core_alu` is a combinational execution submodule.
 
-## 2. Block Diagram
+## 2. Editable Block Diagram
 
 ```text
-Legend: IF=interface, COMB=combinational logic
-All logic blocks in this diagram are COMB. No DUT clock/reset is used.
-
- lhs_i --------+
-               |
- rhs_i ----+   v
-          | +----------------+
- op_i ----->| COMB op mux    |
-            | add/sub/logic  |
-            | shift/compare  |
-            +--------+-------+
-                     |
-                     v
-                  result_o
+editable source: core/docs/diagrams/core_alu_block.graffle
+preview export:  none
+detail level:    L1
+clock domains:   none; pure combinational logic
 ```
+
+The diagram separates operand/opcode inputs, the combinational ALU operation
+mux, and the result interface. No DUT clock, reset, register, counter, or FSM
+state exists in this module.
 
 ## 3. Design
 
