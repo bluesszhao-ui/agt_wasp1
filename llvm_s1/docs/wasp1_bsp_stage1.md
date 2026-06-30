@@ -26,6 +26,7 @@ software boot regression.
 | `bsp/runtime/` | Minimal freestanding runtime helpers |
 | `bsp/examples/` | Tiny UART and GPIO examples |
 | `scripts/check_bsp.sh` | Structural BSP check that avoids requiring a RISC-V compiler |
+| `scripts/run_smoke_tests.sh` | Toolchain discovery plus syntax/compile/link smoke tests |
 
 The startup/trap code is intentionally minimal. `trap.S` forwards `mcause`,
 `mepc`, and `mtval` to `wasp1_trap_handler`, but it does not save the full
@@ -44,12 +45,24 @@ heap/stack     run in D-SRAM
 
 ## 4. Next Steps
 
-The current `make test` target checks BSP structure, key symbols, and aggregate
-C header syntax. Follow-up work should replace that with real RV32I build and
-boot regressions:
+The current `make test` target checks BSP structure, key symbols, aggregate C
+header syntax, tool discovery, and example/runtime source syntax. If a full
+RISC-V LLVM toolchain is available, the smoke script also attempts RV32I object
+generation, startup assembly, bare-metal ELF linking, and optional binary image
+generation.
 
-1. Add toolchain discovery and build rules for `clang`, `ld.lld`, `llvm-objcopy`,
-   and `llvm-objdump`.
-2. Add compile/link smoke tests under `llvm_s1/tests`.
-3. Convert linked ELF output into OTP initialization images.
-4. Connect the generated OTP image to `wasp1` top-level simulation.
+By default, missing RISC-V code generation or LLVM binary utilities are reported
+as `SKIP` so a normal workstation can still validate the BSP source tree. To
+make those gaps fail a CI run, use:
+
+```text
+REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
+```
+
+Follow-up work should replace this smoke layer with real RV32I boot regressions:
+
+1. Add an installed LLVM bundle under `llvm_s1/toolchain/install` or document
+   an external LLVM install path.
+2. Convert linked ELF output into OTP initialization images.
+3. Connect the generated OTP image to `wasp1` top-level simulation.
+4. Add directed firmware tests for timer interrupts, DMA copy, and OTP program.

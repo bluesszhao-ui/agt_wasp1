@@ -117,12 +117,13 @@ implemented:
   memcpy/memset/syscall stubs
   UART and GPIO examples
   structural BSP self-check
+  toolchain discovery and syntax/codegen/link smoke-test harness
 
 not yet implemented:
   bootloader sources
   LLVM source build flow
   wasp1-specific LLVM patches
-  RV32I compile/link smoke tests
+  passing RV32I object/link smoke tests on this workstation
   OTP image generation and SoC boot regression
 ```
 
@@ -151,7 +152,19 @@ DMA copy program
 OTP programming program
 ```
 
-The current `llvm_s1/Makefile` provides a stage-1 `make test` target that checks
-file completeness, critical linker/startup symbols, and host C syntax for the
-aggregate BSP header. RV32I compile/link tests are the next milestone once the
-toolchain wrapper exists.
+The current `llvm_s1/Makefile` provides:
+
+```text
+make -C llvm_s1 toolchain
+make -C llvm_s1 test
+REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
+```
+
+The default test target checks file completeness, critical linker/startup
+symbols, aggregate-header syntax, tool discovery, and BSP source syntax. It also
+attempts RV32I object generation, startup assembly, ELF linking, and optional
+binary image generation when a full RISC-V LLVM toolchain is installed.
+
+On a workstation without RISC-V LLVM code generation support, unavailable
+compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode
+turns those gaps into failures for CI or toolchain-validation machines.

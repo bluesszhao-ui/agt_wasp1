@@ -2,17 +2,22 @@ MODULE := llvm_s1
 
 CHECK_SCRIPT := scripts/check_bsp.sh
 CHECK_LOG := logs/check_bsp.log
+SMOKE_SCRIPT := scripts/run_smoke_tests.sh
+SMOKE_LOG := logs/smoke_tests.log
 
-.PHONY: all toolchain bsp test check-files clean
+.PHONY: all toolchain bsp smoke test check-files clean
 
-all: bsp
+all: test
 
 toolchain:
-	@echo "$(MODULE): LLVM build flow is planned but not implemented in stage 1."
+	@$(SMOKE_SCRIPT) --toolchain-only $(SMOKE_LOG)
 
 bsp: check-files
 
-test: check-files
+smoke: check-files
+	@$(SMOKE_SCRIPT) $(SMOKE_LOG)
+
+test: smoke
 
 check-files:
 	@$(CHECK_SCRIPT) $(CHECK_LOG)

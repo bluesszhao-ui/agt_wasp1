@@ -67,13 +67,13 @@ PASS       Current verification target passes
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, first core AHB transfer, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | SPEC | Stage-1 BSP/startup/linker/runtime skeleton and structural self-check exist; LLVM build flow and RV32I compile/link/boot regressions remain |
+| `llvm_s1` | SPEC | Stage-1 BSP/startup/linker/runtime skeleton plus toolchain/smoke harness exist; local RISC-V codegen/link currently SKIP without full LLVM install |
 | full system software | TODO | OTP program load/boot, interrupt-driven firmware, DMA real-memory copy, and OpenOCD/GDB end-to-end remain |
 
 ## Near-Term Plan
 
 ```text
-1. Add `llvm_s1` toolchain discovery plus RV32I compile/link smoke tests for the BSP examples
+1. Install/build a full RISC-V LLVM toolchain path and make `REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test` pass
 2. Add a simulation flow that converts/link-loads a tiny OTP program and checks first real software boot behavior
 3. Continue `debug` integration with a Debug Module top around DMI regs, halt control, abstract command, and core hooks
 4. Add JTAG TAP/DTM transport around the verified DMI register boundary
