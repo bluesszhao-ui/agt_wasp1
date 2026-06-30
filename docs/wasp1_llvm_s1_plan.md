@@ -168,3 +168,10 @@ binary image generation when a full RISC-V LLVM toolchain is installed.
 On a workstation without RISC-V LLVM code generation support, unavailable
 compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode
 turns those gaps into failures for CI or toolchain-validation machines.
+
+Toolchain setup details live in:
+
+```text
+llvm_s1/toolchain/docs/wasp1_toolchain_setup.md
+llvm_s1/toolchain/configs/wasp1_llvm_cmake_cache.cmake
+```

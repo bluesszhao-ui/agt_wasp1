@@ -19,15 +19,24 @@ log_dir=$(dirname "$log_file")
 mkdir -p "$log_dir" build/smoke
 : > "$log_file"
 
+if [ -z "${WASP1_TOOLCHAIN_ENV_LOADED:-}" ] && [ -x scripts/wasp1_toolchain_env.sh ]; then
+  # Import discovered tool paths while still allowing caller-provided variables
+  # to take priority inside the environment script.
+  eval "$(scripts/wasp1_toolchain_env.sh)"
+fi
+
 clang_bin="${WASP1_CLANG:-clang}"
 objcopy_bin="${WASP1_OBJCOPY:-llvm-objcopy}"
 objdump_bin="${WASP1_OBJDUMP:-llvm-objdump}"
+target="${WASP1_TARGET:-riscv32-unknown-elf}"
+march="${WASP1_MARCH:-rv32i_zicsr}"
+mabi="${WASP1_MABI:-ilp32}"
 require_toolchain="${REQUIRE_RISCV_TOOLCHAIN:-0}"
 failures=0
 skips=0
 
-cflags="-target riscv32-unknown-elf -march=rv32i_zicsr -mabi=ilp32 -ffreestanding -fno-builtin -nostdlib -Wall -Wextra -Werror -Ibsp/include"
-ldflags="-target riscv32-unknown-elf -march=rv32i_zicsr -mabi=ilp32 -ffreestanding -fno-builtin -nostdlib -Wl,-T,bsp/linker/wasp1.ld"
+cflags="-target $target -march=$march -mabi=$mabi -ffreestanding -fno-builtin -nostdlib -Wall -Wextra -Werror -Ibsp/include"
+ldflags="-target $target -march=$march -mabi=$mabi -ffreestanding -fno-builtin -nostdlib -Wl,-T,bsp/linker/wasp1.ld"
 
 log()
 {
@@ -82,7 +91,7 @@ fi
 if command -v "$objcopy_bin" >/dev/null 2>&1; then
   log "PASS tool objcopy=$(command -v "$objcopy_bin")"
 else
-  skip "llvm-objcopy not found; binary/hex image generation unavailable"
+  require_or_skip "llvm-objcopy not found; binary/hex image generation unavailable"
 fi
 
 if command -v "$objdump_bin" >/dev/null 2>&1; then

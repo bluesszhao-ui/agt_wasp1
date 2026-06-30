@@ -21,6 +21,7 @@
 | `wasp1_debug_strategy.md` | RISC-V debug/OpenOCD/GDB strategy |
 | `wasp1_otp_boot_strategy.md` | OTP boot and programming model |
 | `wasp1_llvm_s1_plan.md` | LLVM/BSP/toolchain plan and stage-1 BSP status |
+| `../llvm_s1/toolchain/docs/wasp1_toolchain_setup.md` | LLVM toolchain discovery, local build, and strict smoke-test setup |
 
 ## Module Documentation
 
