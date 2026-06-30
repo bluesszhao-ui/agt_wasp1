@@ -20,7 +20,7 @@
 | --- | --- |
 | `wasp1_debug_strategy.md` | RISC-V debug/OpenOCD/GDB strategy |
 | `wasp1_otp_boot_strategy.md` | OTP boot and programming model |
-| `wasp1_llvm_s1_plan.md` | LLVM/BSP/toolchain plan |
+| `wasp1_llvm_s1_plan.md` | LLVM/BSP/toolchain plan and stage-1 BSP status |
 
 ## Module Documentation
 

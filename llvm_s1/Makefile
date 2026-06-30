@@ -1,18 +1,21 @@
 MODULE := llvm_s1
 
-.PHONY: all toolchain bsp test clean
+CHECK_SCRIPT := scripts/check_bsp.sh
+CHECK_LOG := logs/check_bsp.log
 
-all:
-	@echo "$(MODULE): toolchain and BSP are not implemented yet."
+.PHONY: all toolchain bsp test check-files clean
+
+all: bsp
 
 toolchain:
-	@echo "$(MODULE): LLVM build flow is not implemented yet."
+	@echo "$(MODULE): LLVM build flow is planned but not implemented in stage 1."
 
-bsp:
-	@echo "$(MODULE): BSP is not implemented yet."
+bsp: check-files
 
-test:
-	@echo "$(MODULE): tests are not implemented yet."
+test: check-files
+
+check-files:
+	@$(CHECK_SCRIPT) $(CHECK_LOG)
 
 clean:
 	@rm -rf build/* logs/*

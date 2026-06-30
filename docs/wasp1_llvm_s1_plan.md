@@ -6,7 +6,7 @@
 BSP needed to build programs for the SoC.
 
 The first stage uses the upstream LLVM RISC-V backend with wasp1-specific BSP,
-linker script, startup code, runtime stubs, and tool wrapper scripts.
+linker script, startup code, runtime stubs, and later tool wrapper scripts.
 
 ## 2. Directory Structure
 
@@ -76,12 +76,15 @@ add wasp1 builtin helpers
 bsp/include
   wasp1.h
   wasp1_memory_map.h
+  wasp1_mmio.h
   wasp1_uart.h
   wasp1_gpio.h
   wasp1_timer.h
+  wasp1_wdg.h
   wasp1_dma.h
   wasp1_otp.h
   wasp1_intc.h
+  wasp1_i2c.h
 
 bsp/startup
   crt0.S
@@ -100,6 +103,27 @@ bsp/runtime
   syscalls.c
   memcpy.c
   memset.c
+```
+
+Stage-1 status:
+
+```text
+implemented:
+  memory map and MMIO helpers
+  UART/GPIO/timer/WDG/DMA/INTC/OTP/I2C register helpers
+  OTP-first linker script
+  crt0 reset entry
+  minimal trap stub
+  memcpy/memset/syscall stubs
+  UART and GPIO examples
+  structural BSP self-check
+
+not yet implemented:
+  bootloader sources
+  LLVM source build flow
+  wasp1-specific LLVM patches
+  RV32I compile/link smoke tests
+  OTP image generation and SoC boot regression
 ```
 
 ## 5. Linker Layout
@@ -126,3 +150,8 @@ timer interrupt program
 DMA copy program
 OTP programming program
 ```
+
+The current `llvm_s1/Makefile` provides a stage-1 `make test` target that checks
+file completeness, critical linker/startup symbols, and host C syntax for the
+aggregate BSP header. RV32I compile/link tests are the next milestone once the
+toolchain wrapper exists.
