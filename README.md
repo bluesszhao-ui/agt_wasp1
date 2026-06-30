@@ -55,32 +55,41 @@ Each hardware module owns its own `rtl/`, `tb/`, `filelists/`, `docs/`,
 Implemented and verified:
 
 ```text
-common RTL foundation
-  wasp1_pkg
-  ahb_lite_if
-  mem_req_rsp_if
-  irq_if
-  debug_if
-  reset_sync
-  sync_reg
-  simple_fifo
-  skid_buffer
-
-bus ahb_decoder
-  address decode
-  one-hot select
-  default select
-  directed boundary tests
-  deterministic random tests
+common
+bus
+sram
+otp
+timer
+gpio
+uart
+dma
+intc
+core
+frontend
+icache
+dcache
+tile
+debug leaf blocks
+wdg
+i2c
+wasp1 top integration smoke
 ```
 
-The current early implementation path is:
+Current residual scope:
 
 ```text
-common -> bus -> sram -> otp -> timer -> gpio -> uart -> dma -> intc
+debug integration:
+  Debug Module top, JTAG DTM/TAP, OpenOCD/GDB end-to-end flow
+
+software/toolchain:
+  llvm_s1 BSP, linker script, startup code, runtime, examples, tests
+
+full-system validation:
+  OTP program load/boot, DMA memory-copy through real contents,
+  interrupt-driven firmware, complete SoC software regressions
 ```
 
-See [ROADMAP.md](ROADMAP.md) for the live module progress list.
+See [ROADMAP.md](ROADMAP.md) for the live progress list and next steps.
 
 ## Quick Commands
 
@@ -90,10 +99,10 @@ Run all currently wired lint targets:
 make lint
 ```
 
-Run the AHB decoder simulation:
+Run all currently wired module simulations:
 
 ```sh
-make -C bus sim
+make sim
 ```
 
 Run common lint only:
@@ -115,6 +124,7 @@ docs/index.md
 Important project documents:
 
 ```text
+ROADMAP.md
 docs/wasp1_architecture.md
 docs/wasp1_module_hierarchy.md
 docs/wasp1_memory_map.md
@@ -123,6 +133,9 @@ docs/wasp1_verification_plan.md
 docs/wasp1_debug_strategy.md
 docs/wasp1_otp_boot_strategy.md
 docs/wasp1_llvm_s1_plan.md
+docs/wasp1_implementation_targets.md
+docs/wasp1_documentation_policy.md
+docs/wasp1_omnigraffle_diagram_policy.md
 ```
 
 ## Contributor and Agent Rules

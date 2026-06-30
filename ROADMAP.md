@@ -61,15 +61,23 @@ PASS       Current verification target passes
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, cmderr mapping, aborts, and random commands pass |
-| `debug` | TODO | Debug Module integration, JTAG DTM, and OpenOCD/GDB remain |
-| `wasp1` top | TODO | Full SoC integration |
-| `llvm_s1` | TODO | LLVM/BSP/startup/linker/tool scripts |
+| `debug` | SPEC | Verified leaf blocks exist; Debug Module top, JTAG DTM/TAP, and OpenOCD/GDB remain |
+| `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
+| `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, first core AHB transfer, debug status, and idle IO stability pass |
+| Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
+| Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
+| `llvm_s1` | TODO | Directory and plan exist; BSP/startup/linker/runtime/tool scripts/tests remain |
+| full system software | TODO | OTP program load/boot, interrupt-driven firmware, DMA real-memory copy, and OpenOCD/GDB end-to-end remain |
 
 ## Near-Term Plan
 
 ```text
-1. Continue `debug` with Debug Module integration around DMI regs, halt control, abstract command, and core hooks
-2. Add JTAG TAP/DTM transport around the verified DMI register boundary
+1. Implement `llvm_s1` stage-1 BSP: memory map headers, linker script, crt0/trap stubs, runtime helpers, and simple examples
+2. Add a simulation flow that converts/link-loads a tiny OTP program and checks first real software boot behavior
+3. Continue `debug` integration with a Debug Module top around DMI regs, halt control, abstract command, and core hooks
+4. Add JTAG TAP/DTM transport around the verified DMI register boundary
+5. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after the JTAG/DTM path exists
 ```
 
 ## Commit Policy Going Forward

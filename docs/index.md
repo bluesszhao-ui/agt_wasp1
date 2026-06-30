@@ -12,6 +12,7 @@
 | `wasp1_implementation_targets.md` | IC/FPGA target macro policy, including Virtex-7 |
 | `wasp1_documentation_policy.md` | Required spec/design spec documentation policy |
 | `wasp1_omnigraffle_diagram_policy.md` | Stable OmniGraffle drawing policy for editable block/FSM figures |
+| `../ROADMAP.md` | Current implementation, verification, documentation, and residual-work status |
 
 ## Focus Areas
 
@@ -40,6 +41,13 @@ Current module docs:
 | `intc` | AHB interrupt controller spec, design spec, verification plan, verification report |
 | `core` | core spec/design skeleton and core_alu/core_regfile/core_decode/core_branch/core_csr/core_lsu/core_trap/core_hazard/core_wb/core_debug_ctrl/core_pipe/core_int_datapath specs, design specs, verification plans, verification reports |
 | `debug` | DMI, halt control, GPR transport, and abstract-command specs, design specs, verification plans, verification reports |
+| `frontend` | PC, fetch, instruction buffer, top specs, design specs, verification plans, verification reports |
+| `icache` | integrated I-cache and tag/data/refill/control specs, design specs, verification plans, verification reports |
+| `dcache` | integrated D-cache and tag/data/refill/store/control specs, design specs, verification plans, verification reports |
+| `tile` | core/frontend/cache integration spec, design spec, verification plan, verification report |
+| `wdg` | AHB watchdog spec, design spec, verification plan, verification report |
+| `i2c` | AHB I2C master spec, design spec, verification plan, verification report |
+| `wasp1` | SoC top spec, design spec, verification plan, verification report |
 
 Current implemented block specs:
 
@@ -79,6 +87,25 @@ debug/docs/debug_dmi_regs_spec.md
 debug/docs/debug_halt_ctrl_spec.md
 debug/docs/debug_reg_access_spec.md
 debug/docs/debug_abstract_cmd_spec.md
+frontend/docs/frontend_spec.md
+frontend/docs/frontend_pc_spec.md
+frontend/docs/frontend_fetch_spec.md
+frontend/docs/frontend_ibuf_spec.md
+icache/docs/icache_spec.md
+icache/docs/icache_tag_spec.md
+icache/docs/icache_data_spec.md
+icache/docs/icache_refill_spec.md
+icache/docs/icache_ctrl_spec.md
+dcache/docs/dcache_spec.md
+dcache/docs/dcache_tag_spec.md
+dcache/docs/dcache_data_spec.md
+dcache/docs/dcache_refill_spec.md
+dcache/docs/dcache_store_spec.md
+dcache/docs/dcache_ctrl_spec.md
+tile/docs/tile_spec.md
+wdg/docs/ahb_wdg_spec.md
+i2c/docs/ahb_i2c_spec.md
+wasp1/docs/wasp1_spec.md
 ```
 
 Current implemented block design specs:
@@ -119,8 +146,34 @@ debug/docs/debug_dmi_regs_design_spec.md
 debug/docs/debug_halt_ctrl_design_spec.md
 debug/docs/debug_reg_access_design_spec.md
 debug/docs/debug_abstract_cmd_design_spec.md
+frontend/docs/frontend_design_spec.md
+frontend/docs/frontend_pc_design_spec.md
+frontend/docs/frontend_fetch_design_spec.md
+frontend/docs/frontend_ibuf_design_spec.md
+icache/docs/icache_design_spec.md
+icache/docs/icache_tag_design_spec.md
+icache/docs/icache_data_design_spec.md
+icache/docs/icache_refill_design_spec.md
+icache/docs/icache_ctrl_design_spec.md
+dcache/docs/dcache_design_spec.md
+dcache/docs/dcache_tag_design_spec.md
+dcache/docs/dcache_data_design_spec.md
+dcache/docs/dcache_refill_design_spec.md
+dcache/docs/dcache_store_design_spec.md
+dcache/docs/dcache_ctrl_design_spec.md
+tile/docs/tile_design_spec.md
+wdg/docs/ahb_wdg_design_spec.md
+i2c/docs/ahb_i2c_design_spec.md
+wasp1/docs/wasp1_design_spec.md
 ```
 
 ## Project Status
 
 See the root-level `ROADMAP.md` for current progress and next steps.
+
+## Presentation Decks
+
+Detailed design presentation decks live beside their module documents under
+`<module>/docs/wasp1_*_design.pptx`. Current decks cover common, bus, SRAM,
+OTP, timer, GPIO, UART, DMA, INTC, core, frontend, I-cache, D-cache, tile,
+debug, watchdog, I2C, and the `wasp1` SoC top.
