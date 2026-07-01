@@ -66,6 +66,8 @@ bsp_files="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
   docs/wasp1_bsp_stage1.md
+  scripts/check_otp_image.sh
+  scripts/wasp1_make_otp_image.py
 "
 
 for file in $bsp_files; do
@@ -95,6 +97,19 @@ if command -v cc >/dev/null 2>&1; then
   rm -f "$tmp_c"
 else
   log "SKIP host C syntax check: cc not found"
+fi
+
+if command -v python3 >/dev/null 2>&1; then
+  pycache_dir="${TMPDIR:-/tmp}/wasp1_pycache"
+  mkdir -p "$pycache_dir"
+  if PYTHONPYCACHEPREFIX="$pycache_dir" python3 -m py_compile scripts/wasp1_make_otp_image.py >> "$log_file" 2>&1; then
+    log "PASS python syntax for OTP image utility"
+  else
+    log "FAIL python syntax for OTP image utility"
+    failures=$((failures + 1))
+  fi
+else
+  log "SKIP python syntax check: python3 not found"
 fi
 
 if [ "$failures" -eq 0 ]; then

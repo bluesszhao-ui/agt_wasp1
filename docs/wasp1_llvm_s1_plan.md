@@ -119,12 +119,13 @@ implemented:
   structural BSP self-check
   toolchain discovery and syntax/codegen/link smoke-test harness
   project-local LLVM build wrapper
+  OTP image generation utility and format self-check
 
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
   passing RV32I object/link smoke tests on this workstation
-  OTP image generation and SoC boot regression
+  SoC boot regression that consumes generated OTP images
 ```
 
 ## 5. Linker Layout

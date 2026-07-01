@@ -27,6 +27,7 @@ software boot regression.
 | `bsp/examples/` | Tiny UART and GPIO examples |
 | `scripts/check_bsp.sh` | Structural BSP check that avoids requiring a RISC-V compiler |
 | `scripts/run_smoke_tests.sh` | Toolchain discovery plus syntax/compile/link smoke tests |
+| `scripts/wasp1_make_otp_image.py` | ELF/raw-binary to OTP `$readmemh` image converter |
 
 The startup/trap code is intentionally minimal. `trap.S` forwards `mcause`,
 `mepc`, and `mtval` to `wasp1_trap_handler`, but it does not save the full
@@ -46,10 +47,10 @@ heap/stack     run in D-SRAM
 ## 4. Next Steps
 
 The current `make test` target checks BSP structure, key symbols, aggregate C
-header syntax, tool discovery, and example/runtime source syntax. If a full
-RISC-V LLVM toolchain is available, the smoke script also attempts RV32I object
-generation, startup assembly, bare-metal ELF linking, and optional binary image
-generation.
+header syntax, tool discovery, example/runtime source syntax, and OTP image
+format generation. If a full RISC-V LLVM toolchain is available, the smoke
+script also attempts RV32I object generation, startup assembly, bare-metal ELF
+linking, and optional binary image generation.
 
 By default, missing RISC-V code generation or LLVM binary utilities are reported
 as `SKIP` so a normal workstation can still validate the BSP source tree. To
