@@ -118,10 +118,10 @@ implemented:
   UART and GPIO examples
   structural BSP self-check
   toolchain discovery and syntax/codegen/link smoke-test harness
+  project-local LLVM build wrapper
 
 not yet implemented:
   bootloader sources
-  LLVM source build flow
   wasp1-specific LLVM patches
   passing RV32I object/link smoke tests on this workstation
   OTP image generation and SoC boot regression

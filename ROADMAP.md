@@ -67,7 +67,7 @@ PASS       Current verification target passes
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, first core AHB transfer, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | SPEC | Stage-1 BSP/startup/linker/runtime skeleton plus toolchain/smoke harness exist; local RISC-V codegen/link currently SKIP without full LLVM install |
+| `llvm_s1` | SPEC | Stage-1 BSP, smoke harness, toolchain env, and local LLVM build wrapper exist; LLVM source/install and strict RV32I link pass remain |
 | full system software | TODO | OTP program load/boot, interrupt-driven firmware, DMA real-memory copy, and OpenOCD/GDB end-to-end remain |
 
 ## Near-Term Plan

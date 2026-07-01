@@ -49,6 +49,12 @@ After placing LLVM source under `llvm_s1/toolchain/llvm-project`, configure a
 minimal RISC-V LLVM build with:
 
 ```text
+make -C llvm_s1 build-toolchain
+```
+
+The make target runs `scripts/build_local_llvm.sh`, which is equivalent to:
+
+```text
 cd llvm_s1/toolchain/build
 cmake -G Ninja -C ../configs/wasp1_llvm_cmake_cache.cmake ../llvm-project/llvm
 ninja
@@ -57,6 +63,12 @@ ninja install
 
 The cache installs into `llvm_s1/toolchain/install`, which is the first project
 local path discovered by the smoke-test environment script.
+
+The build script does not download LLVM. If the source tree is elsewhere, set:
+
+```text
+WASP1_LLVM_SOURCE_DIR=/path/to/llvm-project/llvm make -C llvm_s1 build-toolchain
+```
 
 ## 4. Expected First Pass
 
