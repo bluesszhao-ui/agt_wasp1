@@ -13,6 +13,10 @@ tool paths. Discovery order is:
 5. clang/llvm-objcopy/llvm-objdump from PATH
 ```
 
+`ld.lld` may come from a separate Homebrew `lld` formula. The environment script
+exports `WASP1_LD` from `WASP1_LLVM_ROOT/bin/ld.lld`,
+`/opt/homebrew/opt/lld/bin/ld.lld`, `/usr/local/opt/lld/bin/ld.lld`, or PATH.
+
 To inspect the selected tools:
 
 ```text
@@ -79,5 +83,27 @@ make -C llvm_s1 toolchain
 REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
 ```
 
+On this workstation, the strict smoke target is known to pass with:
+
+```text
+WASP1_LLVM_ROOT=/opt/homebrew/opt/llvm
+WASP1_LD=/opt/homebrew/opt/lld/bin/ld.lld
+```
+
 The next milestone after this is converting the linked ELF into an OTP image and
 loading it into the `wasp1` top-level simulation.
+
+## 5. Local Source Checkout
+
+The local LLVM source checkout is intentionally ignored by the wasp1 git repo
+because it is a large third-party tree. The current checkout is:
+
+```text
+path: llvm_s1/toolchain/llvm-project
+upstream: https://github.com/llvm/llvm-project.git
+commit: 14d9c0c46
+sparse paths: llvm, clang, lld
+```
+
+This source tree is the baseline for future wasp1-specific LLVM patches under
+`llvm_s1/toolchain/patches`.

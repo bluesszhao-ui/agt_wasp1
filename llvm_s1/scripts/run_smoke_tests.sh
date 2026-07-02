@@ -26,6 +26,7 @@ if [ -z "${WASP1_TOOLCHAIN_ENV_LOADED:-}" ] && [ -x scripts/wasp1_toolchain_env.
 fi
 
 clang_bin="${WASP1_CLANG:-clang}"
+ld_bin="${WASP1_LD:-ld.lld}"
 objcopy_bin="${WASP1_OBJCOPY:-llvm-objcopy}"
 objdump_bin="${WASP1_OBJDUMP:-llvm-objdump}"
 target="${WASP1_TARGET:-riscv32-unknown-elf}"
@@ -36,7 +37,7 @@ failures=0
 skips=0
 
 cflags="-target $target -march=$march -mabi=$mabi -ffreestanding -fno-builtin -nostdlib -Wall -Wextra -Werror -Ibsp/include"
-ldflags="-target $target -march=$march -mabi=$mabi -ffreestanding -fno-builtin -nostdlib -Wl,-T,bsp/linker/wasp1.ld"
+ldflags="-target $target -march=$march -mabi=$mabi -ffreestanding -fno-builtin -nostdlib -fuse-ld=$ld_bin -Wl,-T,bsp/linker/wasp1.ld"
 
 log()
 {
@@ -88,6 +89,12 @@ else
   exit "$failures"
 fi
 
+if command -v "$ld_bin" >/dev/null 2>&1 || [ -x "$ld_bin" ]; then
+  log "PASS tool ld=$ld_bin"
+else
+  require_or_skip "ld.lld not found; bare-metal ELF linking unavailable"
+fi
+
 if command -v "$objcopy_bin" >/dev/null 2>&1; then
   log "PASS tool objcopy=$(command -v "$objcopy_bin")"
 else
@@ -135,11 +142,15 @@ else
 fi
 
 if [ "$codegen_ok" -eq 1 ]; then
-  objects=""
+  runtime_objects=""
   for src in $syntax_sources; do
     obj="build/smoke/$(basename "$src" .c).o"
     if run_capture "compile $src" "$clang_bin" $cflags -c "$src" -o "$obj"; then
-      objects="$objects $obj"
+      case "$src" in
+        bsp/runtime/*)
+          runtime_objects="$runtime_objects $obj"
+          ;;
+      esac
     else
       failures=$((failures + 1))
     fi
@@ -155,9 +166,9 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   done
 
-  if [ -n "$objects" ] && [ -n "$asm_objects" ]; then
-    if run_capture "link hello_uart ELF" "$clang_bin" $ldflags $asm_objects $objects -o build/smoke/hello_uart.elf; then
-      log "PASS link hello_uart ELF"
+  hello_obj="build/smoke/hello_uart.o"
+  if [ -f "$hello_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link hello_uart ELF" "$clang_bin" $ldflags $asm_objects "$hello_obj" $runtime_objects -o build/smoke/hello_uart.elf; then
       if command -v "$objcopy_bin" >/dev/null 2>&1; then
         run_capture "objcopy hello_uart binary" "$objcopy_bin" -O binary build/smoke/hello_uart.elf build/smoke/hello_uart.bin || failures=$((failures + 1))
       fi

@@ -120,11 +120,12 @@ implemented:
   toolchain discovery and syntax/codegen/link smoke-test harness
   project-local LLVM build wrapper
   OTP image generation utility and format self-check
+  Homebrew LLVM/lld strict RV32I compile/link smoke pass
+  local sparse LLVM source checkout for llvm/clang/lld
 
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  passing RV32I object/link smoke tests on this workstation
   SoC boot regression that consumes generated OTP images
 ```
 

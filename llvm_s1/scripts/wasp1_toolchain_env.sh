@@ -46,11 +46,27 @@ else
   objdump_default=$(command -v llvm-objdump 2>/dev/null || printf "llvm-objdump")
 fi
 
+ld_default=""
+for candidate in \
+  "${root:+$root/bin/ld.lld}" \
+  "/opt/homebrew/opt/lld/bin/ld.lld" \
+  "/usr/local/opt/lld/bin/ld.lld"
+do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    ld_default="$candidate"
+    break
+  fi
+done
+if [ -z "$ld_default" ]; then
+  ld_default=$(command -v ld.lld 2>/dev/null || printf "ld.lld")
+fi
+
 printf 'export WASP1_TOOLCHAIN_ENV_LOADED=1\n'
 if [ -n "$root" ]; then
   printf 'export WASP1_LLVM_ROOT=%s\n' "$(quote_sh "$root")"
 fi
 printf 'export WASP1_CLANG=%s\n' "$(quote_sh "${WASP1_CLANG:-$clang_default}")"
+printf 'export WASP1_LD=%s\n' "$(quote_sh "${WASP1_LD:-$ld_default}")"
 printf 'export WASP1_OBJCOPY=%s\n' "$(quote_sh "${WASP1_OBJCOPY:-$objcopy_default}")"
 printf 'export WASP1_OBJDUMP=%s\n' "$(quote_sh "${WASP1_OBJDUMP:-$objdump_default}")"
 printf 'export WASP1_TARGET=%s\n' "$(quote_sh "${WASP1_TARGET:-riscv32-unknown-elf}")"

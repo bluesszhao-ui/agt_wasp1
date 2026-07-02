@@ -18,6 +18,11 @@ wave/*
 *.wlf
 *.log
 
+# Local LLVM source/build/install payloads are large third-party artifacts.
+llvm_s1/toolchain/llvm-project/
+llvm_s1/toolchain/install/*
+!llvm_s1/toolchain/install/.gitkeep
+
 # Local OS/editor noise
 .DS_Store
 *.swp
