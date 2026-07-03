@@ -59,6 +59,6 @@ debug_abstract_cmd_verification_report.md
 
 ## 5. Residual Scope
 
-JTAG TAP/DTM scan transport, OpenOCD/GDB end-to-end flow, single-step, program
+SoC-level JTAG integration, OpenOCD/GDB end-to-end flow, single-step, program
 buffer, abstract memory access, debug ROM, and multi-hart behavior beyond
 nonexistent-hart reporting remain future work.

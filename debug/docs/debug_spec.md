@@ -6,9 +6,10 @@
 RISC-V External Debug Specification 0.13.x behavior sufficient for hart
 discovery, halt/resume control, and RV32 integer GPR abstract access.
 
-The JTAG TAP/DTM transport is not part of this module. A later `debug_jtag`
-stage will translate JTAG DMI scans into the ready/valid `debug_dmi_if` used by
-this module.
+The JTAG TAP/DTM transport is implemented as the standalone `debug_jtag_dtm`
+submodule and is intentionally not part of this Debug Module register wrapper.
+The next integration stage will connect `debug_jtag_dtm` to this module's
+ready/valid `debug_dmi_if`.
 
 ## 2. External Contract
 
@@ -40,7 +41,7 @@ later Debug Module milestone.
 The following are intentionally outside this module:
 
 ```text
-JTAG TAP and DTM scan chain
+SoC-level JTAG pin integration
 OpenOCD/GDB end-to-end transport
 single-step
 program buffer

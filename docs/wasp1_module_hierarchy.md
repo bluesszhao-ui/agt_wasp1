@@ -196,8 +196,7 @@ dma
 ```text
 debug
   debug
-  jtag_tap
-  riscv_dtm
+  debug_jtag_dtm
   riscv_dm
   debug_rom
   debug_halt_ctrl
