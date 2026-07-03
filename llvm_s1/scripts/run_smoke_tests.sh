@@ -170,7 +170,15 @@ if [ "$codegen_ok" -eq 1 ]; then
   if [ -f "$hello_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
     if run_capture "link hello_uart ELF" "$clang_bin" $ldflags $asm_objects "$hello_obj" $runtime_objects -o build/smoke/hello_uart.elf; then
       if command -v "$objcopy_bin" >/dev/null 2>&1; then
-        run_capture "objcopy hello_uart binary" "$objcopy_bin" -O binary build/smoke/hello_uart.elf build/smoke/hello_uart.bin || failures=$((failures + 1))
+        if run_capture "objcopy hello_uart binary" "$objcopy_bin" -O binary build/smoke/hello_uart.elf build/smoke/hello_uart.bin; then
+          run_capture "make hello_uart OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/hello_uart.bin \
+            --output-hex build/smoke/hello_uart_otp.hex \
+            --output-bin build/smoke/hello_uart_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
       fi
     else
       require_or_skip "bare-metal linker unavailable for riscv32"

@@ -7,6 +7,7 @@ make -C wasp1 lint
 make -C wasp1 lint-ic
 make -C wasp1 lint-fpga-v7
 make -C wasp1 sim
+make -C wasp1 sim-sw
 ```
 
 ## 2. Results
@@ -17,11 +18,14 @@ make -C wasp1 sim
 | IC-target lint | PASS |
 | Virtex-7-target lint | PASS |
 | `tb_wasp1` simulation | PASS |
+| `tb_wasp1` OTP firmware simulation | PASS |
 
 Simulation output:
 
 ```text
 tb_wasp1 PASS pass_count=5 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0
+tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/hello_uart_otp.hex
+tb_wasp1 PASS pass_count=6 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0
 ```
 
 ## 3. Time-Sequenced Case Table
@@ -34,10 +38,13 @@ tb_wasp1 PASS pass_count=5 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_runn
 | 55ns-95ns | Wait for core AHB master transfer | Core-side bridge/fabric path observes valid transfer | PASS |
 | 95ns-105ns | Wait for debug status | Core debug status reports running or halted | PASS |
 | 105ns-276ns | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
+| 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte | PASS |
+| 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
 
 ## 4. Residual Risk
 
 This is an integration smoke test, not a full system software test. Remaining
 top-level work includes integrated Debug Module/JTAG/OpenOCD flow, software
-programming of OTP, end-to-end DMA memory-copy through real slave contents,
-interrupt-driven software, and full SoC boot tests from `llvm_s1` output.
+programming of OTP through the programming registers, end-to-end DMA memory-copy
+through real slave contents, interrupt-driven software, and longer SoC boot
+tests from `llvm_s1` output.

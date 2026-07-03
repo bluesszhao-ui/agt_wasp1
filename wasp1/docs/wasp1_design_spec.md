@@ -27,8 +27,8 @@ fabric decode/muxing, and peripheral sequential blocks.
 | Tile | `SEQ hclk_i/hresetn_i` | Frontend, core, I-cache, and D-cache integration. |
 | Core I/D arbitration | `COMB` | Selects D-cache request over I-cache request while bridge is idle. |
 | Core AHB bridge state | `SEQ hclk_i/hresetn_i` | Holds selected request, AHB phase state, and cache response. |
-| AHB fabric arbiter/default | `SEQ hclk_i/hresetn_i` | Arbitrates core/DMA and registers default-slave response. |
-| AHB decoder/mux | `COMB` | Decodes slave select and multiplexes slave responses. |
+| AHB fabric arbiter/default | `SEQ hclk_i/hresetn_i` | Arbitrates core/DMA, holds response-route master, and registers default-slave response. |
+| AHB decoder/mux | `COMB` + `SEQ hclk_i/hresetn_i` | Decodes address-phase slave select, registers data-phase select, and multiplexes slave responses. |
 | DMA | `SEQ hclk_i/hresetn_i` | AHB slave control register block plus AHB master transfer engine. |
 | OTP/I-SRAM/D-SRAM | `SEQ hclk_i/hresetn_i` | Executable OTP and scratch SRAM targets. |
 | Peripherals | `SEQ hclk_i/hresetn_i` | WDG, timer, INTC, UART, I2C, and GPIO register/state blocks. |
@@ -36,18 +36,22 @@ fabric decode/muxing, and peripheral sequential blocks.
 
 ## 4. Core AHB Bridge FSM
 
-`wasp1_core_ahb_bridge` uses four states:
+`wasp1_core_ahb_bridge` uses five states:
 
 | State | Meaning | Transition |
 | --- | --- | --- |
 | `BR_IDLE` | No outstanding request | D-cache valid -> `BR_ADDR`; else I-cache valid -> `BR_ADDR`. |
-| `BR_ADDR` | AHB address phase is driven | `hready_i=1` -> `BR_RESP`; otherwise hold. |
+| `BR_ADDR` | AHB address phase is driven | `hready_i=1` -> `BR_DATA_WAIT`; otherwise hold. |
+| `BR_DATA_WAIT` | Registered SoC slave/fabric response path advances one cycle | `hready_i=1` -> `BR_RESP`; otherwise hold. |
 | `BR_RESP` | AHB response phase is sampled | `hready_i=1` -> latch `hrdata_i/hresp_i`, then `BR_RSP_HOLD`. |
 | `BR_RSP_HOLD` | Selected cache response is held | Selected cache `rsp_ready=1` -> `BR_IDLE`. |
 
 D-cache wins when both cache ports request while the bridge is idle. The bridge
 allows only one outstanding transfer, which matches the simple single-beat
 AHB-Lite transfers used by current caches and SRAM/peripheral targets.
+`BR_DATA_WAIT` matches the project slave contract: SRAM, OTP, and peripherals
+capture the address phase first and drive their registered read data/response on
+the following clock.
 
 ## 5. Address and Interrupt Integration
 

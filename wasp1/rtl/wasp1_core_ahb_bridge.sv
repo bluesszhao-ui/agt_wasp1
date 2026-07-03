@@ -29,10 +29,11 @@ module wasp1_core_ahb_bridge #(
 );
   import wasp1_pkg::*;
 
-  typedef enum logic [1:0] {
+  typedef enum logic [2:0] {
     BR_IDLE,      // No cached request is outstanding.
     BR_ADDR,      // AHB address phase is being presented.
-    BR_RESP,      // AHB data/response phase is being sampled.
+    BR_DATA_WAIT, // Registered SoC slaves are producing read data/response.
+    BR_RESP,      // Stable AHB data/response phase is being sampled.
     BR_RSP_HOLD   // Cache response is held until consumed.
   } bridge_state_e;
 
@@ -118,6 +119,12 @@ module wasp1_core_ahb_bridge #(
         end
 
         BR_ADDR: begin
+          if (hready_i) begin
+            state_q <= BR_DATA_WAIT;
+          end
+        end
+
+        BR_DATA_WAIT: begin
           if (hready_i) begin
             state_q <= BR_RESP;
           end

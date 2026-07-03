@@ -66,6 +66,8 @@ module ahb_fabric_2m #(
   logic                  mux_hresp;
 
   logic [SLAVE_COUNT-1:0] decoder_hsel;
+  logic [SLAVE_COUNT-1:0] data_hsel_q;
+  logic [SLAVE_COUNT-1:0] mux_hsel;
   logic [SLAVE_COUNT-1:0][DATA_WIDTH-1:0] mux_slave_hrdata;
   logic [SLAVE_COUNT-1:0] mux_slave_hready;
   logic [SLAVE_COUNT-1:0] mux_slave_hresp;
@@ -157,11 +159,21 @@ module ahb_fabric_2m #(
     mux_slave_hresp[AHB_SLAVE_DEFAULT] = default_hresp;
   end
 
+  always_ff @(posedge hclk_i or negedge hresetn_i) begin
+    if (!hresetn_i) begin
+      data_hsel_q <= '0;
+    end else if (mux_hready && |decoder_hsel) begin
+      data_hsel_q <= decoder_hsel;
+    end
+  end
+
+  assign mux_hsel = (|decoder_hsel) ? decoder_hsel : data_hsel_q;
+
   ahb_slave_mux #(
     .DATA_WIDTH(DATA_WIDTH),
     .SLAVE_COUNT(SLAVE_COUNT)
   ) u_ahb_slave_mux (
-    .hsel_i(decoder_hsel),
+    .hsel_i(mux_hsel),
     .slave_hrdata_i(mux_slave_hrdata),
     .slave_hready_i(mux_slave_hready),
     .slave_hresp_i(mux_slave_hresp),

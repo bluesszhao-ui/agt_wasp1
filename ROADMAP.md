@@ -64,19 +64,19 @@ PASS       Current verification target passes
 | `debug` | SPEC | Verified leaf blocks exist; Debug Module top, JTAG DTM/TAP, and OpenOCD/GDB remain |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, first core AHB transfer, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, generated OTP firmware boot-to-UART smoke, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, and local sparse LLVM source checkout pass; SoC boot regression remains |
-| full system software | TODO | OTP program load/boot, interrupt-driven firmware, DMA real-memory copy, and OpenOCD/GDB end-to-end remain |
+| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, local sparse LLVM source checkout, and wasp1 OTP boot smoke pass |
+| full system software | TODO | OTP programming-register flow, interrupt-driven firmware, DMA real-memory copy, and OpenOCD/GDB end-to-end remain |
 
 ## Near-Term Plan
 
 ```text
-1. Connect generated OTP images to `otp`/`wasp1` simulation and check first real software boot behavior
-2. Continue `debug` integration with a Debug Module top around DMI regs, halt control, abstract command, and core hooks
-3. Add JTAG TAP/DTM transport around the verified DMI register boundary
-4. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after the JTAG/DTM path exists
+1. Continue `debug` integration with a Debug Module top around DMI regs, halt control, abstract command, and core hooks
+2. Add JTAG TAP/DTM transport around the verified DMI register boundary
+3. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after the JTAG/DTM path exists
+4. Add OTP programming-register firmware flow and longer software boot regressions
 ```
 
 ## Commit Policy Going Forward

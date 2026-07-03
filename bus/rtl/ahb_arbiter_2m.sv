@@ -55,9 +55,18 @@ module ahb_arbiter_2m #(
   logic grant_valid_q;
   logic grant_idx_q;
   logic last_grant_q;
+  logic route_valid_q;
+  logic route_idx_q;
+  logic active_grant_req;
+  logic resp_route_valid;
+  logic resp_route_idx;
 
   assign m0_req = m0_htrans_i[1];
   assign m1_req = m1_htrans_i[1];
+  assign active_grant_req = grant_valid_q &&
+                            ((grant_idx_q == 1'b0) ? m0_req : m1_req);
+  assign resp_route_valid = grant_valid_q || route_valid_q;
+  assign resp_route_idx = grant_valid_q ? grant_idx_q : route_idx_q;
 
   always_comb begin
     next_grant_valid = m0_req || m1_req;
@@ -76,7 +85,13 @@ module ahb_arbiter_2m #(
       grant_valid_q <= 1'b0;
       grant_idx_q   <= 1'b0;
       last_grant_q  <= 1'b1;
+      route_valid_q <= 1'b0;
+      route_idx_q   <= 1'b0;
     end else if (hready_i) begin
+      if (active_grant_req) begin
+        route_valid_q <= 1'b1;
+        route_idx_q <= grant_idx_q;
+      end
       grant_valid_q <= next_grant_valid;
       grant_idx_q   <= next_grant_idx;
       if (next_grant_valid) begin
@@ -124,13 +139,15 @@ module ahb_arbiter_2m #(
     m1_hready_o = !m1_req;
     m1_hresp_o  = AHB_HRESP_OKAY;
 
-    if (grant_valid_q && (grant_idx_q == 1'b0)) begin
+    if (resp_route_valid && (resp_route_idx == 1'b0)) begin
       m0_hrdata_o = hrdata_i;
-      m0_hready_o = hready_i;
+      m0_hready_o = ((grant_valid_q && (grant_idx_q == 1'b0)) || !m0_req) ?
+                    hready_i : 1'b0;
       m0_hresp_o  = hresp_i;
-    end else if (grant_valid_q && (grant_idx_q == 1'b1)) begin
+    end else if (resp_route_valid && (resp_route_idx == 1'b1)) begin
       m1_hrdata_o = hrdata_i;
-      m1_hready_o = hready_i;
+      m1_hready_o = ((grant_valid_q && (grant_idx_q == 1'b1)) || !m1_req) ?
+                    hready_i : 1'b0;
       m1_hresp_o  = hresp_i;
     end
   end

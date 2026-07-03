@@ -22,7 +22,7 @@
 editable source: bus/docs/diagrams/ahb_fabric_2m_block.graffle
 preview export:  none
 detail level:    L2
-clock domains:   SEQ clk=hclk_i rst=hresetn_i in ahb_arbiter_2m
+clock domains:   SEQ clk=hclk_i rst=hresetn_i in ahb_arbiter_2m and data_hsel_q
 ```
 
 The diagram separates master interfaces, arbiter grant state, address decoder,
@@ -68,11 +68,17 @@ ahb_default_slave:
   handles unmapped address errors
 
 ahb_slave_mux:
-  returns selected slave response
+  returns the registered data-phase selected slave response
 ```
 
 External slaves see the same shared address/control/write-data bus. Only the
 selected slave has its `slave_hsel_o` bit asserted.
+
+The response mux uses the current decoder select while an address phase is
+active. When the address phase returns to IDLE, `data_hsel_q` holds the most
+recent non-idle decoder select as the response mux select. This keeps
+registered slave read data connected after the address phase has returned to
+IDLE.
 
 Unmapped addresses do not assert any external `slave_hsel_o` bit. Instead,
 `default_sel_o` is asserted and the internal default slave returns ERROR.
@@ -107,7 +113,10 @@ Active transfer:
         +-- unmapped address -> default_sel_o asserted
         |
         v
-  ahb_slave_mux returns selected slave/default response
+  data_hsel_q captures and holds response slave select
+        |
+        v
+  ahb_slave_mux returns held slave/default response
         |
         v
   ahb_arbiter_2m routes response to granted master
@@ -118,7 +127,8 @@ Downstream HREADY=0:
   non-granted requesting master observes HREADY low
 ```
 
-The fabric itself does not add another FSM beyond these submodule states.
+The fabric itself has no named FSM, but `data_hsel_q` is sequential state used
+to align the data-phase response mux with registered slaves.
 
 ## 6. Verification Summary
 

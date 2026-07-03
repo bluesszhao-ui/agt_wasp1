@@ -3,8 +3,9 @@ VERILATOR ?= verilator
 RTL_FILELIST := filelists/wasp1.f
 TB_WASP1_FILELIST := filelists/tb_wasp1.f
 WASP1_TOP := tb_wasp1
+OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
 
-.PHONY: all lint sim clean
+.PHONY: all lint sim sim-sw clean
 
 all: lint
 
@@ -16,6 +17,8 @@ lint:
 	@cat logs/lint.log
 
 sim: sim-wasp1
+
+sim-sw: sim-wasp1-sw
 
 lint-ic:
 	@mkdir -p build logs
@@ -41,6 +44,15 @@ sim-wasp1:
 		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_build.log 2>&1
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) > logs/tb_wasp1.log 2>&1
 	@cat logs/tb_wasp1.log
+
+sim-wasp1-sw:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_sw_build.log 2>&1
+	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(OTP_HEX) > logs/tb_wasp1_sw.log 2>&1
+	@cat logs/tb_wasp1_sw.log
 
 clean:
 	@rm -rf build/* logs/* wave/*

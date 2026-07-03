@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-06-10 |
+| Date | 2026-07-02 |
 | Tool | Verilator 5.046 |
 | Lint command | `make -C bus lint` |
 | Simulation command | `make -C bus sim` |
@@ -159,6 +159,7 @@ These are initial parameters, not final capacity decisions.
 | downstream stall hold checks | 3 |
 | selected HREADY low checks | 3 |
 | response ERROR route checks | 7 |
+| held response route after address phase | PASS |
 | deterministic random request patterns | 64 |
 
 ## 12. ahb_fabric_2m Case Table
@@ -182,4 +183,5 @@ These are initial parameters, not final capacity decisions.
 | m1 route count | 5 |
 | default error count | 1 |
 | selected slave stall count | 1 |
+| data-phase slave select hold | PASS |
 | round-robin integration count | 8 |
