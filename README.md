@@ -19,6 +19,7 @@ Core plan: simple 3-stage pipeline
 I-cache: direct-mapped, 16-byte line
 D-cache: direct-mapped, 16-byte line, write-through
 Debug target: RISC-V External Debug Spec 0.13.x / OpenOCD / GDB
+Final debug probe: FT2232H-based external hardware debugger
 Program storage: executable OTP
 Compiler work: LLVM-based bare-metal wasp1 toolchain and BSP
 ```
@@ -45,10 +46,13 @@ uart
 i2c
 gpio
 llvm_s1
+ftdi_debugger
 ```
 
 Each hardware module owns its own `rtl/`, `tb/`, `filelists/`, `docs/`,
 `build/`, `logs/`, `wave/`, and `Makefile` directories.
+`ftdi_debugger` is not chip RTL; it owns the external FTDI debugger hardware,
+OpenOCD, and board bring-up collateral.
 
 ## Current Status
 
@@ -79,7 +83,10 @@ Current residual scope:
 
 ```text
 debug integration:
-  Debug Module top, JTAG DTM/TAP, OpenOCD/GDB end-to-end flow
+  true DPC/DCSR capture, single-step, breakpoints, abstract memory access
+
+external debugger:
+  FT2232H hardware debugger schematic/PCB, OpenOCD config, FPGA/board bring-up
 
 software/toolchain:
   llvm_s1 BSP, linker script, startup code, runtime, examples, tests

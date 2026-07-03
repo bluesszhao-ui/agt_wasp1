@@ -37,7 +37,8 @@ integration are implemented and verified.
 | 15 | debug | RISC-V debug flow for OpenOCD/GDB |
 | 16 | wasp1 | Full SoC integration |
 | 17 | llvm_s1 | BSP, linker, startup, boot/program software |
-| 18 | full system | End-to-end SoC simulation |
+| 18 | ftdi_debugger | External FT2232H hardware debugger for OpenOCD/GDB |
+| 19 | full system | End-to-end SoC simulation and board-level bring-up |
 
 ## 3. First RTL Milestone
 

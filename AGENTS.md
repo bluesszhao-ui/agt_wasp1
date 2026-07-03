@@ -19,6 +19,7 @@ SoC bus: AHB-Lite
 Core/cache internal interface: lightweight valid/ready request-response
 Debug: RISC-V External Debug Spec 0.13.x target
 Program storage: executable OTP
+External debugger: FT2232H-based hardware debugger for final OpenOCD/GDB bring-up
 Implementation targets: IC and Xilinx Virtex-7 FPGA
 Target selection: compile-time macros in common/rtl/wasp1_target_defs.svh
 ```
@@ -47,6 +48,10 @@ root.
 
 `llvm_s1/` is the exception and follows the compiler/BSP structure documented in
 `docs/wasp1_llvm_s1_plan.md`.
+
+`ftdi_debugger/` is also outside the chip RTL module tree. It tracks the final
+external FTDI hardware debugger requirements, OpenOCD configuration, schematic,
+PCB, BOM, and board bring-up collateral.
 
 ## Design Flow
 
@@ -273,6 +278,7 @@ tile
 debug
 wasp1
 llvm_s1
+ftdi_debugger
 ```
 
 See `docs/wasp1_design_plan.md` for the broader plan.

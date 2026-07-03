@@ -70,6 +70,7 @@ PASS       Current verification target passes
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
 | `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, local sparse LLVM source checkout, and wasp1 OTP boot smoke pass |
+| `ftdi_debugger` | TODO | FT2232H external hardware debugger requirements are captured; schematic, PCB, OpenOCD board config validation, and FPGA/board bring-up remain |
 | full system software | TODO | OTP programming-register flow, interrupt-driven firmware, and DMA real-memory copy remain |
 
 ## Near-Term Plan
@@ -78,6 +79,7 @@ PASS       Current verification target passes
 1. Add OTP programming-register firmware flow and longer software boot regressions
 2. Add interrupt-driven firmware and DMA real-memory-copy software tests
 3. Extend debug beyond smoke: true DPC capture, single-step, breakpoints, and abstract memory access
+4. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 ```
 
 ## Commit Policy Going Forward
