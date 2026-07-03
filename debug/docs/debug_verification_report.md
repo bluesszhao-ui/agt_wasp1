@@ -55,10 +55,12 @@ debug_dmi_regs_verification_report.md
 debug_halt_ctrl_verification_report.md
 debug_reg_access_verification_report.md
 debug_abstract_cmd_verification_report.md
+debug_jtag_dtm_verification_report.md
+debug_jtag_verification_report.md
 ```
 
 ## 5. Residual Scope
 
-SoC-level JTAG integration, OpenOCD/GDB end-to-end flow, single-step, program
-buffer, abstract memory access, debug ROM, and multi-hart behavior beyond
-nonexistent-hart reporting remain future work.
+SoC-level JTAG integration through the wasp1 top, OpenOCD/GDB end-to-end flow,
+single-step, program buffer, abstract memory access, debug ROM, and multi-hart
+behavior beyond nonexistent-hart reporting remain future work.

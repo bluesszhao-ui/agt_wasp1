@@ -18,19 +18,22 @@ ABSTRACT_CMD_TB_TOP := tb_debug_abstract_cmd
 JTAG_DTM_RTL_FILELIST := filelists/debug_jtag_dtm.f
 JTAG_DTM_TB_FILELIST := filelists/tb_debug_jtag_dtm.f
 JTAG_DTM_TB_TOP := tb_debug_jtag_dtm
+JTAG_RTL_FILELIST := filelists/debug_jtag.f
+JTAG_TB_FILELIST := filelists/tb_debug_jtag.f
+JTAG_TB_TOP := tb_debug_jtag
 
 .PHONY: all lint lint-top lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd \
-	lint-jtag-dtm \
+	lint-jtag-dtm lint-jtag \
 	lint-ic lint-top-ic lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
-	lint-jtag-dtm-ic \
+	lint-jtag-dtm-ic lint-jtag-ic \
 	lint-fpga-v7 lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7 \
 	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 \
-	lint-jtag-dtm-fpga-v7 \
-	sim sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm clean
+	lint-jtag-dtm-fpga-v7 lint-jtag-fpga-v7 \
+	sim sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag clean
 
 all: lint sim
 
-lint: lint-top lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd lint-jtag-dtm
+lint: lint-top lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd lint-jtag-dtm lint-jtag
 
 lint-top:
 	@mkdir -p build logs
@@ -74,8 +77,15 @@ lint-jtag-dtm:
 		-Wno-UNDRIVEN -f $(JTAG_DTM_RTL_FILELIST) > logs/lint_jtag_dtm.log 2>&1
 	@cat logs/lint_jtag_dtm.log
 
+lint-jtag:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_jtag \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag.log 2>&1
+	@cat logs/lint_jtag.log
+
 lint-ic: lint-top-ic lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
-	lint-jtag-dtm-ic
+	lint-jtag-dtm-ic lint-jtag-ic
 
 lint-top-ic:
 	@mkdir -p build logs
@@ -125,8 +135,17 @@ lint-jtag-dtm-ic:
 		-Wno-UNDRIVEN -f $(JTAG_DTM_RTL_FILELIST) > logs/lint_jtag_dtm_ic.log 2>&1
 	@cat logs/lint_jtag_dtm_ic.log
 
+lint-jtag-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_jtag \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag_ic.log 2>&1
+	@cat logs/lint_jtag_ic.log
+
 lint-fpga-v7: lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7 \
-	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 lint-jtag-dtm-fpga-v7
+	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 \
+	lint-jtag-dtm-fpga-v7 lint-jtag-fpga-v7
 
 lint-top-fpga-v7:
 	@mkdir -p build logs
@@ -176,7 +195,15 @@ lint-jtag-dtm-fpga-v7:
 		-Wno-UNDRIVEN -f $(JTAG_DTM_RTL_FILELIST) > logs/lint_jtag_dtm_fpga_v7.log 2>&1
 	@cat logs/lint_jtag_dtm_fpga_v7.log
 
-sim: sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm
+lint-jtag-fpga-v7:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_jtag \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag_fpga_v7.log 2>&1
+	@cat logs/lint_jtag_fpga_v7.log
+
+sim: sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag
 
 sim-top:
 	@mkdir -p build logs
@@ -235,6 +262,16 @@ sim-jtag-dtm:
 	@./build/obj_$(JTAG_DTM_TB_TOP)/V$(JTAG_DTM_TB_TOP) \
 		> logs/tb_debug_jtag_dtm.log 2>&1
 	@cat logs/tb_debug_jtag_dtm.log
+
+sim-jtag:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(JTAG_TB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(JTAG_TB_TOP) -f $(JTAG_TB_FILELIST) \
+		> logs/tb_debug_jtag_build.log 2>&1
+	@./build/obj_$(JTAG_TB_TOP)/V$(JTAG_TB_TOP) \
+		> logs/tb_debug_jtag.log 2>&1
+	@cat logs/tb_debug_jtag.log
 
 clean:
 	@rm -rf build/* logs/* wave/*

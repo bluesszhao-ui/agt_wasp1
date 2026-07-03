@@ -196,6 +196,7 @@ dma
 ```text
 debug
   debug
+  debug_jtag
   debug_jtag_dtm
   riscv_dm
   debug_rom

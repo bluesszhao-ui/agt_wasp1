@@ -62,7 +62,8 @@ PASS       Current verification target passes
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
-| `debug` | PASS | Debug Module top integrates DMI regs, halt/resume, abstract command, and GPR access; standalone JTAG DTM exists; SoC/OpenOCD integration remains |
+| `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
+| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified; SoC pin exposure and OpenOCD/GDB integration remain |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, generated OTP firmware boot-to-UART smoke, debug status, and idle IO stability pass |
@@ -74,8 +75,8 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Connect `debug_jtag_dtm` to the `debug` Debug Module top and expose JTAG pins at the SoC boundary
-2. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after the JTAG/DTM path is integrated
+1. Expose `debug_jtag` pins at the wasp1 SoC boundary and connect it to the tile core-debug channel
+2. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after SoC-level JTAG exists
 3. Add OTP programming-register firmware flow and longer software boot regressions
 ```
 
