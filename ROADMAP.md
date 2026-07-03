@@ -63,10 +63,10 @@ PASS       Current verification target passes
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
 | `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
-| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified; SoC pin exposure and OpenOCD/GDB integration remain |
+| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, generated OTP firmware boot-to-UART smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, generated OTP firmware boot-to-UART smoke, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
 | `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, local sparse LLVM source checkout, and wasp1 OTP boot smoke pass |
@@ -75,9 +75,9 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Expose `debug_jtag` pins at the wasp1 SoC boundary and connect it to the tile core-debug channel
-2. Build OpenOCD/GDB-oriented end-to-end debug smoke tests after SoC-level JTAG exists
-3. Add OTP programming-register firmware flow and longer software boot regressions
+1. Build OpenOCD/GDB-oriented end-to-end debug smoke tests on the SoC-level JTAG path
+2. Add OTP programming-register firmware flow and longer software boot regressions
+3. Add interrupt-driven firmware and DMA real-memory-copy software tests
 ```
 
 ## Commit Policy Going Forward

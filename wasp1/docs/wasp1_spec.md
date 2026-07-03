@@ -55,17 +55,30 @@ interrupt input.
 ## 5. IO Requirements
 
 `wasp1` must expose UART RX/TX, I2C open-drain drive signals, GPIO input/output
-signals, watchdog reset request, trap observation, bus grant observation, and a
-temporary discrete debug channel for the existing core `debug_if` signals.
+signals, watchdog reset request, trap observation, bus grant observation, and
+the JTAG pins for the integrated Debug Module.
 
 ## 6. Debug Boundary
 
-The current top exposes the core debug handshake as discrete ports. Full JTAG
-DTM plus Debug Module integration remains a follow-on `debug`/`wasp1`
-integration item for OpenOCD/GDB compatibility.
+The current top instantiates `debug_jtag`, which connects JTAG TAP/DTM scans to
+the RISC-V Debug Module and then to the tile `debug_if` channel.
+
+| Signal | Requirement |
+| --- | --- |
+| `jtag_tck_i` | External JTAG test clock for TAP/scan state. |
+| `jtag_trst_ni` | Active-low JTAG TAP reset. |
+| `jtag_tms_i` | JTAG test mode select. |
+| `jtag_tdi_i` | JTAG serial data input. |
+| `jtag_tdo_o` | JTAG serial data output. |
+| `dbg_halted_o`, `dbg_running_o` | Observable core debug status. |
+| `dbg_dmactive_o` | Observable Debug Module active state. |
+| `dbg_ndmreset_o` | Debug Module non-debug reset request. |
+| `dbg_dtm_hardreset_o` | DTMCS hard-reset pulse observation. |
+
+OpenOCD/GDB process-level validation remains a follow-on verification item.
 
 ## 7. Verification Requirements
 
 Verification must cover SoC elaboration, reset defaults, core-side fetch
-activity through the OTP/fabric path, benign idle IO behavior, and target macro
-lint for IC and Xilinx Virtex-7 FPGA builds.
+activity through the OTP/fabric path, JTAG Debug Module smoke access, benign
+idle IO behavior, and target macro lint for IC and Xilinx Virtex-7 FPGA builds.

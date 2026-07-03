@@ -31,20 +31,16 @@ module wasp1 #(
   output logic                  trap_valid_o,    // Observable core trap event.
   output logic [4:0]            trap_cause_o,    // Observable core trap cause.
   output logic                  bus_grant_idx_o, // Current AHB fabric grant: 0 core, 1 DMA.
-  input  logic                  dbg_halt_req_i,  // Debug halt request into the core.
-  input  logic                  dbg_resume_req_i,// Debug resume request into the core.
-  input  logic                  dbg_step_req_i,  // Debug single-step request into the core.
+  input  logic                  jtag_tck_i,      // JTAG test clock for the integrated Debug Module.
+  input  logic                  jtag_trst_ni,    // Active-low JTAG TAP reset.
+  input  logic                  jtag_tms_i,      // JTAG test mode select.
+  input  logic                  jtag_tdi_i,      // JTAG serial data input.
+  output logic                  jtag_tdo_o,      // JTAG serial data output.
   output logic                  dbg_halted_o,    // Core halted status to external debug logic.
   output logic                  dbg_running_o,   // Core running status to external debug logic.
-  input  logic                  dbg_gpr_req_valid_i, // Debug GPR request valid.
-  output logic                  dbg_gpr_req_ready_o, // Core can accept a debug GPR request.
-  input  logic                  dbg_gpr_req_write_i, // Debug GPR write/read direction.
-  input  logic [4:0]            dbg_gpr_req_addr_i,  // Debug GPR register index.
-  input  logic [31:0]           dbg_gpr_req_wdata_i, // Debug GPR write data.
-  output logic                  dbg_gpr_rsp_valid_o, // Debug GPR response valid.
-  input  logic                  dbg_gpr_rsp_ready_i, // External debug logic accepts GPR response.
-  output logic [31:0]           dbg_gpr_rsp_rdata_o, // Debug GPR read data.
-  output logic                  dbg_gpr_rsp_err_o    // Debug GPR response error.
+  output logic                  dbg_dmactive_o,  // Debug Module active state.
+  output logic                  dbg_ndmreset_o,  // Debug Module non-debug reset request.
+  output logic                  dbg_dtm_hardreset_o // DTMCS.dmihardreset pulse.
 );
   import wasp1_pkg::*;
 
@@ -144,22 +140,11 @@ module wasp1 #(
   logic        grant_valid;
   logic        default_sel;
   logic        slave_select_err;
+  logic        hresetn_seen_q;
+  logic        hart_reset_event;
 
-  assign core_debug.halt_req = dbg_halt_req_i;
-  assign core_debug.resume_req = dbg_resume_req_i;
-  assign core_debug.step_req = dbg_step_req_i;
   assign dbg_halted_o = core_debug.halted;
   assign dbg_running_o = core_debug.running;
-
-  assign core_debug.gpr_req_valid = dbg_gpr_req_valid_i;
-  assign core_debug.gpr_req_write = dbg_gpr_req_write_i;
-  assign core_debug.gpr_req_addr = dbg_gpr_req_addr_i;
-  assign core_debug.gpr_req_wdata = dbg_gpr_req_wdata_i;
-  assign core_debug.gpr_rsp_ready = dbg_gpr_rsp_ready_i;
-  assign dbg_gpr_req_ready_o = core_debug.gpr_req_ready;
-  assign dbg_gpr_rsp_valid_o = core_debug.gpr_rsp_valid;
-  assign dbg_gpr_rsp_rdata_o = core_debug.gpr_rsp_rdata;
-  assign dbg_gpr_rsp_err_o = core_debug.gpr_rsp_err;
 
   assign irq_src = {
     dma_irq,
@@ -169,6 +154,18 @@ module wasp1 #(
     wdg_irq,
     1'b0
   };
+
+  // The Debug Module records that the hart has experienced reset after the SoC
+  // reset releases. The pulse is synchronous to hclk_i and feeds dmstatus.
+  always_ff @(posedge hclk_i or negedge hresetn_i) begin
+    if (!hresetn_i) begin
+      hresetn_seen_q <= 1'b0;
+      hart_reset_event <= 1'b0;
+    end else begin
+      hart_reset_event <= !hresetn_seen_q;
+      hresetn_seen_q <= 1'b1;
+    end
+  end
 
   wasp1_core_ahb_bridge u_core_ahb_bridge (
     .hclk_i(hclk_i),
@@ -224,6 +221,21 @@ module wasp1 #(
     .core_debug(core_debug),
     .imem_if(imem_if),
     .dmem_if(dmem_if)
+  );
+
+  debug_jtag u_debug_jtag (
+    .clk_i              (hclk_i),
+    .rst_ni             (hresetn_i),
+    .tck_i              (jtag_tck_i),
+    .trst_ni            (jtag_trst_ni),
+    .tms_i              (jtag_tms_i),
+    .tdi_i              (jtag_tdi_i),
+    .tdo_o              (jtag_tdo_o),
+    .core_debug         (core_debug),
+    .hart_reset_event_i (hart_reset_event),
+    .dmactive_o         (dbg_dmactive_o),
+    .ndmreset_o         (dbg_ndmreset_o),
+    .dtm_hardreset_o    (dbg_dtm_hardreset_o)
   );
 
   ahb_fabric_2m u_ahb_fabric_2m (

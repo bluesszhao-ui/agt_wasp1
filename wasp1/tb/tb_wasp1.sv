@@ -7,9 +7,14 @@
 // core-side instruction path to make progress through the OTP/fabric path.
 module tb_wasp1;
   import wasp1_pkg::*;
+  import debug_dmi_pkg::*;
 
   localparam time CLK_PERIOD = 10ns;
   localparam int GPIO_WIDTH = 32;
+  localparam int DMI_DR_WIDTH = DMI_ADDR_WIDTH + 34;
+  localparam logic [31:0] JTAG_IDCODE_VALUE = 32'h1000_01CF;
+  localparam logic [4:0] JTAG_IR_DTMCS = 5'b10000;
+  localparam logic [4:0] JTAG_IR_DMI = 5'b10001;
 
   logic                  hclk;              // 100 MHz verification clock.
   logic                  hresetn;           // Active-low reset driven by TB.
@@ -28,20 +33,16 @@ module tb_wasp1;
   logic                  trap_valid;        // Core trap observation.
   logic [4:0]            trap_cause;        // Core trap cause.
   logic                  bus_grant_idx;     // Fabric grant observation.
-  logic                  dbg_halt_req;      // Debug halt stimulus.
-  logic                  dbg_resume_req;    // Debug resume stimulus.
-  logic                  dbg_step_req;      // Debug step stimulus.
+  logic                  jtag_tck;          // JTAG test clock stimulus.
+  logic                  jtag_trst_n;       // Active-low JTAG reset stimulus.
+  logic                  jtag_tms;          // JTAG mode-select stimulus.
+  logic                  jtag_tdi;          // JTAG serial input stimulus.
+  logic                  jtag_tdo;          // JTAG serial output observation.
   logic                  dbg_halted;        // Debug halted status.
   logic                  dbg_running;       // Debug running status.
-  logic                  dbg_gpr_req_valid; // Debug GPR request valid.
-  logic                  dbg_gpr_req_ready; // Debug GPR request ready.
-  logic                  dbg_gpr_req_write; // Debug GPR request direction.
-  logic [4:0]            dbg_gpr_req_addr;  // Debug GPR index.
-  logic [31:0]           dbg_gpr_req_wdata; // Debug GPR write data.
-  logic                  dbg_gpr_rsp_valid; // Debug GPR response valid.
-  logic                  dbg_gpr_rsp_ready; // Debug GPR response ready.
-  logic [31:0]           dbg_gpr_rsp_rdata; // Debug GPR read data.
-  logic                  dbg_gpr_rsp_err;   // Debug GPR response error.
+  logic                  dbg_dmactive;      // Debug Module active observation.
+  logic                  dbg_ndmreset;      // Debug Module ndmreset observation.
+  logic                  dbg_dtm_hardreset; // Debug DTM hard reset pulse.
 
   int unsigned pass_count;
   bit          otp_image_loaded;            // Set when +WASP1_OTP_HEX loaded a firmware image.
@@ -73,20 +74,16 @@ module tb_wasp1;
     .trap_valid_o(trap_valid),
     .trap_cause_o(trap_cause),
     .bus_grant_idx_o(bus_grant_idx),
-    .dbg_halt_req_i(dbg_halt_req),
-    .dbg_resume_req_i(dbg_resume_req),
-    .dbg_step_req_i(dbg_step_req),
+    .jtag_tck_i(jtag_tck),
+    .jtag_trst_ni(jtag_trst_n),
+    .jtag_tms_i(jtag_tms),
+    .jtag_tdi_i(jtag_tdi),
+    .jtag_tdo_o(jtag_tdo),
     .dbg_halted_o(dbg_halted),
     .dbg_running_o(dbg_running),
-    .dbg_gpr_req_valid_i(dbg_gpr_req_valid),
-    .dbg_gpr_req_ready_o(dbg_gpr_req_ready),
-    .dbg_gpr_req_write_i(dbg_gpr_req_write),
-    .dbg_gpr_req_addr_i(dbg_gpr_req_addr),
-    .dbg_gpr_req_wdata_i(dbg_gpr_req_wdata),
-    .dbg_gpr_rsp_valid_o(dbg_gpr_rsp_valid),
-    .dbg_gpr_rsp_ready_i(dbg_gpr_rsp_ready),
-    .dbg_gpr_rsp_rdata_o(dbg_gpr_rsp_rdata),
-    .dbg_gpr_rsp_err_o(dbg_gpr_rsp_err)
+    .dbg_dmactive_o(dbg_dmactive),
+    .dbg_ndmreset_o(dbg_ndmreset),
+    .dbg_dtm_hardreset_o(dbg_dtm_hardreset)
   );
 
   initial begin
@@ -158,14 +155,173 @@ module tb_wasp1;
       i2c_scl_in = 1'b1;
       i2c_sda_in = 1'b1;
       gpio_in = 32'ha5a5_5a5a;
-      dbg_halt_req = 1'b0;
-      dbg_resume_req = 1'b0;
-      dbg_step_req = 1'b0;
-      dbg_gpr_req_valid = 1'b0;
-      dbg_gpr_req_write = 1'b0;
-      dbg_gpr_req_addr = '0;
-      dbg_gpr_req_wdata = '0;
-      dbg_gpr_rsp_ready = 1'b1;
+      jtag_tck = 1'b0;
+      jtag_trst_n = 1'b0;
+      jtag_tms = 1'b1;
+      jtag_tdi = 1'b0;
+    end
+  endtask
+
+  function automatic logic [63:0] jtag_dmi_packet(
+    input logic [1:0]                op,
+    input logic [DMI_ADDR_WIDTH-1:0] addr,
+    input logic [31:0]               data
+  );
+    begin
+      jtag_dmi_packet = 64'h0;
+      jtag_dmi_packet[1:0] = op;
+      jtag_dmi_packet[33:2] = data;
+      jtag_dmi_packet[DMI_DR_WIDTH-1:34] = addr;
+    end
+  endfunction
+
+  task automatic jtag_cycle(
+    input  logic tms_value,
+    input  logic tdi_value,
+    output logic tdo_sample
+  );
+    begin
+      jtag_tms = tms_value;
+      jtag_tdi = tdi_value;
+      #3ns;
+      jtag_tck = 1'b1;
+      #1ns;
+      tdo_sample = jtag_tdo;
+      #4ns;
+      jtag_tck = 1'b0;
+      #2ns;
+    end
+  endtask
+
+  task automatic jtag_cycle_ignore(input logic tms_value, input logic tdi_value);
+    logic unused_tdo;
+    begin
+      jtag_cycle(tms_value, tdi_value, unused_tdo);
+    end
+  endtask
+
+  task automatic jtag_reset_to_idle;
+    int i;
+    begin
+      for (i = 0; i < 6; i++) begin
+        jtag_cycle_ignore(1'b1, 1'b0);
+      end
+      jtag_cycle_ignore(1'b0, 1'b0);
+    end
+  endtask
+
+  task automatic jtag_set_ir(input logic [4:0] ir_value);
+    int i;
+    logic unused_tdo;
+    begin
+      jtag_cycle_ignore(1'b1, 1'b0);
+      jtag_cycle_ignore(1'b1, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+      for (i = 0; i < 5; i++) begin
+        jtag_cycle(i == 4, ir_value[i], unused_tdo);
+      end
+      jtag_cycle_ignore(1'b1, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+    end
+  endtask
+
+  task automatic jtag_scan_dr(
+    input  int          width,
+    input  logic [63:0] data_in,
+    output logic [63:0] data_out
+  );
+    int i;
+    logic tdo_bit;
+    begin
+      data_out = 64'h0;
+      jtag_cycle_ignore(1'b1, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+      for (i = 0; i < width; i++) begin
+        jtag_cycle(i == (width - 1), data_in[i], tdo_bit);
+        data_out[i] = tdo_bit;
+      end
+      jtag_cycle_ignore(1'b1, 1'b0);
+      jtag_cycle_ignore(1'b0, 1'b0);
+    end
+  endtask
+
+  task automatic jtag_idle_cycles(input int cycles);
+    int i;
+    begin
+      for (i = 0; i < cycles; i++) begin
+        jtag_cycle_ignore(1'b0, 1'b0);
+      end
+    end
+  endtask
+
+  task automatic jtag_dmi_transfer(
+    input  logic [1:0]                op,
+    input  logic [DMI_ADDR_WIDTH-1:0] addr,
+    input  logic [31:0]               data,
+    output logic [1:0]                rsp,
+    output logic [31:0]               rsp_data,
+    output logic [DMI_ADDR_WIDTH-1:0] rsp_addr
+  );
+    logic [63:0] scan_out;
+    begin
+      jtag_set_ir(JTAG_IR_DMI);
+      jtag_scan_dr(DMI_DR_WIDTH, jtag_dmi_packet(op, addr, data), scan_out);
+      repeat (8) @(posedge hclk);
+      jtag_idle_cycles(4);
+      jtag_scan_dr(DMI_DR_WIDTH, jtag_dmi_packet(DMI_OP_NOP, '0, 32'h0), scan_out);
+      rsp = scan_out[1:0];
+      rsp_data = scan_out[33:2];
+      rsp_addr = scan_out[DMI_DR_WIDTH-1:34];
+    end
+  endtask
+
+  task automatic check_jtag_dmstatus_smoke;
+    logic [63:0] scan_out;
+    logic [31:0] dtmcs;
+    logic [1:0] rsp;
+    logic [31:0] rsp_data;
+    logic [DMI_ADDR_WIDTH-1:0] rsp_addr;
+    begin
+      jtag_reset_to_idle();
+
+      jtag_scan_dr(32, 64'h0, scan_out);
+      if (scan_out[31:0] !== JTAG_IDCODE_VALUE) begin
+        $error("JTAG IDCODE mismatch: got=0x%08h expected=0x%08h",
+               scan_out[31:0], JTAG_IDCODE_VALUE);
+        $fatal(1);
+      end
+      pass_count++;
+
+      jtag_set_ir(JTAG_IR_DTMCS);
+      jtag_scan_dr(32, 64'h0, scan_out);
+      dtmcs = scan_out[31:0];
+      if ((dtmcs[3:0] !== 4'd1) || (dtmcs[9:4] !== 6'(DMI_ADDR_WIDTH)) ||
+          (dtmcs[11:10] !== DMI_RESP_SUCCESS)) begin
+        $error("JTAG DTMCS mismatch: dtmcs=0x%08h", dtmcs);
+        $fatal(1);
+      end
+      pass_count++;
+
+      jtag_dmi_transfer(DMI_OP_WRITE, DMI_ADDR_DMCONTROL, 32'h0000_0001,
+                        rsp, rsp_data, rsp_addr);
+      if ((rsp !== DMI_RESP_SUCCESS) || (rsp_addr !== DMI_ADDR_DMCONTROL) ||
+          !dbg_dmactive || dbg_ndmreset) begin
+        $error("JTAG dmcontrol activate failed: rsp=%0b addr=0x%02h dmactive=%0b ndmreset=%0b",
+               rsp, rsp_addr, dbg_dmactive, dbg_ndmreset);
+        $fatal(1);
+      end
+      pass_count++;
+
+      jtag_dmi_transfer(DMI_OP_READ, DMI_ADDR_DMSTATUS, 32'h0, rsp, rsp_data, rsp_addr);
+      if ((rsp !== DMI_RESP_SUCCESS) || (rsp_addr !== DMI_ADDR_DMSTATUS) ||
+          ((rsp_data & 32'h0000_0C82) !== 32'h0000_0C82)) begin
+        $error("JTAG dmstatus read failed: rsp=%0b addr=0x%02h data=0x%08h",
+               rsp, rsp_addr, rsp_data);
+        $fatal(1);
+      end
+      pass_count++;
     end
   endtask
 
@@ -310,6 +466,7 @@ module tb_wasp1;
     hresetn = 1'b0;
     repeat (4) @(posedge hclk);
     expect_reset_outputs();
+    jtag_trst_n = 1'b1;
     hresetn = 1'b1;
     @(posedge hclk);
     #1ns;
@@ -317,6 +474,7 @@ module tb_wasp1;
 
     wait_for_core_fetch_activity();
     wait_for_debug_running_known();
+    check_jtag_dmstatus_smoke();
     if (otp_image_loaded) begin
       wait_for_uart_tx_activity();
     end
@@ -329,8 +487,9 @@ module tb_wasp1;
     end
     pass_count++;
 
-    $display("tb_wasp1 PASS pass_count=%0d trap_valid=%0b trap_cause=0x%02h bus_grant_idx=%0b dbg_running=%0b dbg_halted=%0b",
-             pass_count, trap_valid, trap_cause, bus_grant_idx, dbg_running, dbg_halted);
+    $display("tb_wasp1 PASS pass_count=%0d trap_valid=%0b trap_cause=0x%02h bus_grant_idx=%0b dbg_running=%0b dbg_halted=%0b dbg_dmactive=%0b",
+             pass_count, trap_valid, trap_cause, bus_grant_idx, dbg_running, dbg_halted,
+             dbg_dmactive);
     $finish;
   end
 endmodule

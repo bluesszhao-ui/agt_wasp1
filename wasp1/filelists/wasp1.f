@@ -51,5 +51,14 @@
 ../uart/rtl/ahb_uart.sv
 ../i2c/rtl/ahb_i2c.sv
 ../gpio/rtl/ahb_gpio.sv
+../debug/rtl/debug_dmi_pkg.sv
+../debug/rtl/debug_dmi_if.sv
+../debug/rtl/debug_dmi_regs.sv
+../debug/rtl/debug_halt_ctrl.sv
+../debug/rtl/debug_abstract_cmd.sv
+../debug/rtl/debug_reg_access.sv
+../debug/rtl/debug.sv
+../debug/rtl/debug_jtag_dtm.sv
+../debug/rtl/debug_jtag.sv
 rtl/wasp1_core_ahb_bridge.sv
 rtl/wasp1.sv

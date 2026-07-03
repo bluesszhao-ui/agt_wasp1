@@ -23,8 +23,9 @@ fabric decode/muxing, and peripheral sequential blocks.
 
 | Block | Timing class | Function |
 | --- | --- | --- |
-| External IO/debug pins | `IF` | UART, I2C, GPIO, watchdog reset, trap/bus/debug observations. |
+| External IO/debug pins | `IF` | UART, I2C, GPIO, JTAG, watchdog reset, trap/bus/debug observations. |
 | Tile | `SEQ hclk_i/hresetn_i` | Frontend, core, I-cache, and D-cache integration. |
+| Debug JTAG wrapper | `SEQ hclk_i/hresetn_i` + `SEQ jtag_tck_i/jtag_trst_ni` | JTAG TAP/DTM, DMI transport, Debug Module registers, and tile debug control. |
 | Core I/D arbitration | `COMB` | Selects D-cache request over I-cache request while bridge is idle. |
 | Core AHB bridge state | `SEQ hclk_i/hresetn_i` | Holds selected request, AHB phase state, and cache response. |
 | AHB fabric arbiter/default | `SEQ hclk_i/hresetn_i` | Arbitrates core/DMA, holds response-route master, and registers default-slave response. |
@@ -61,10 +62,21 @@ DMA feed INTC as external interrupt sources, with source zero reserved.
 
 ## 6. Debug Integration Boundary
 
-`wasp1` internally instantiates `debug_if` and maps it to discrete top ports.
-This keeps the SoC top concrete for lint/synthesis while preserving the core
-debug handshake. A later Debug Module/JTAG top can drive these ports or replace
-the temporary boundary with an integrated DMI/DTM wrapper.
+`wasp1` internally instantiates `debug_if` between the tile and `debug_jtag`.
+The external debug boundary is now JTAG:
+
+```text
+JTAG pins -> debug_jtag -> debug_jtag_dtm -> debug_dmi_if -> debug -> debug_if -> tile
+```
+
+The wrapper uses two clock domains. TAP/scan state is clocked by `jtag_tck_i`
+and reset by `jtag_trst_ni`/`hresetn_i`. DMI ready/valid, Debug Module
+registers, halt/resume control, and core GPR debug access use
+`hclk_i/hresetn_i`.
+
+The SoC generates a one-cycle `hart_reset_event` after `hresetn_i` releases so
+`dmstatus.havereset` can report that hart reset occurred after Debug Module
+reset.
 
 ## 7. Target Support
 
