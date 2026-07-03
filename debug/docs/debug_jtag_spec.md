@@ -40,13 +40,14 @@ RV32 GPR Access Register abstract commands
 The following remain outside this wrapper:
 
 ```text
-SoC top-level JTAG package pin muxing
-OpenOCD/GDB external process test
 single-step
 program buffer
 abstract memory access
 debug ROM
 ```
+
+SoC top-level JTAG pin exposure and OpenOCD/GDB external process smoke are
+covered by the `wasp1` top-level integration.
 
 ## 5. Target Support
 

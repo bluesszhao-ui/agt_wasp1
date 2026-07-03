@@ -52,6 +52,6 @@ tb_debug_jtag PASS
 
 ## 4. Residual Risk
 
-The integrated debug subsystem is verified through a bit-banged JTAG model, but
-not yet through an external OpenOCD/GDB process. SoC-level JTAG pin exposure and
-external debugger smoke tests remain future work.
+The integrated debug subsystem is verified through a bit-banged JTAG model.
+SoC-level JTAG pin exposure and external OpenOCD/GDB process smoke are covered
+by the wasp1 top-level verification report.

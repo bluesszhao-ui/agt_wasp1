@@ -2,9 +2,10 @@
 
 ## 1. Scope
 
-The block decodes and executes the RV32 GPR subset of Access Register commands.
-CSR access, FPR access, postincrement, program-buffer execution, memory access,
-and other command types remain explicitly unsupported.
+The block decodes and executes the RV32 GPR subset of Access Register commands
+and local read-only CSR probes for `misa`, `dcsr`, and `dpc`. CSR writes, all
+other CSR addresses, FPR access, postincrement, program-buffer execution,
+memory access, and other command types remain explicitly unsupported.
 
 ## 2. Editable FSM/Block Diagram
 
@@ -30,11 +31,12 @@ interface, and DMI-register completion pulses into explicit `IF`, `COMB`, and
 
 ```text
 IDLE -> ISSUE:
-  command_valid && dmactive && encoding_supported && hart_halted && transfer
+  command_valid && dmactive && encoding_supported && hart_halted &&
+  transfer && GPR_transfer
 
 IDLE -> COMPLETE:
   command_valid && dmactive &&
-  (unsupported || !hart_halted || !transfer)
+  (unsupported || !hart_halted || !transfer || supported_CSR_read)
 
 ISSUE -> WAIT:
   reg_cmd_valid && reg_cmd_ready
@@ -55,10 +57,11 @@ COMPLETE -> IDLE:
 ## 4. Decoder
 
 The raw `command_i` field extraction and support predicate are combinational.
-Only a transfer command requires `aarsize=2` and GPR register range. This keeps
-the architecturally valid transfer-disabled no-op independent of unused fields.
-Hart halted policy is checked separately and therefore still applies to no-op
-Access Register commands.
+Only a transfer command requires `aarsize=2` and either a GPR register range or
+one of the supported read-only CSR addresses. This keeps the architecturally valid
+transfer-disabled no-op independent of unused fields. Hart halted policy is
+checked separately and therefore still applies to no-op Access Register
+commands.
 
 ## 5. Request Registers
 
@@ -75,12 +78,14 @@ under request backpressure.
 
 ## 6. Completion Registers
 
-`completion_error_q` stores the mapped `cmderr`. A successful read captures
-`read_result_q` and sets `read_result_valid_q`. The `COMPLETE` state converts
-these registers into one-cycle pulses for `debug_dmi_regs`.
+`completion_error_q` stores the mapped `cmderr`. A successful GPR read captures
+`read_result_q` from `debug_reg_access` and sets `read_result_valid_q`. A
+successful supported CSR read sets the same completion registers locally during
+command capture. The `COMPLETE` state converts these registers into one-cycle
+pulses for `debug_dmi_regs`.
 
-Successful writes and transfer-disabled commands report no pulse because no
-error or data0 update is required.
+Successful writes, transfer-disabled commands, and unsupported CSR writes
+report no data0 pulse because no read value is produced.
 
 ## 7. Target Behavior
 

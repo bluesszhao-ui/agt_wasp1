@@ -52,6 +52,5 @@ tb_debug_jtag_dtm PASS
 ## 4. Residual Risk
 
 This stage verifies protocol behavior against the internal DMI ready/valid
-model. Full OpenOCD/GDB end-to-end compatibility still requires connecting
-`debug_jtag_dtm` to `debug`, exposing package pins at SoC level, and running an
-external debugger transaction test.
+model. Integrated `debug_jtag`, SoC top-level JTAG pin exposure, and external
+OpenOCD/GDB smoke are covered by later debug and wasp1 verification reports.

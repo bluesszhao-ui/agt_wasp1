@@ -61,6 +61,7 @@ debug_jtag_verification_report.md
 
 ## 5. Residual Scope
 
-SoC-level JTAG integration through the wasp1 top, OpenOCD/GDB end-to-end flow,
-single-step, program buffer, abstract memory access, debug ROM, and multi-hart
-behavior beyond nonexistent-hart reporting remain future work.
+OpenOCD/GDB end-to-end smoke is covered by the wasp1 top-level verification
+report. Single-step, program buffer, abstract memory access, debug ROM, general
+CSR access beyond the debugger probe set, and multi-hart behavior beyond
+nonexistent-hart reporting remain future work.

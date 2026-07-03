@@ -36,6 +36,7 @@ module tb_debug_abstract_cmd;
   int unsigned pass_count;
   int unsigned read_count;
   int unsigned write_count;
+  int unsigned csr_read_count;
   int unsigned noop_count;
   int unsigned unsupported_count;
   int unsigned halt_error_count;
@@ -345,6 +346,8 @@ module tb_debug_abstract_cmd;
       expect_immediate_error(command_value, CMDERR_NOTSUP, "postexec unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h0300);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "CSR unsupported");
+      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_MISA);
+      expect_immediate_error(command_value, CMDERR_NOTSUP, "CSR write unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1020);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "non-GPR unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1004);
@@ -355,6 +358,32 @@ module tb_debug_abstract_cmd;
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1005);
       expect_immediate_error(command_value, CMDERR_HALT_RESUME, "running hart rejected");
       hart_halted = 1'b1;
+    end
+  endtask
+
+  // Minimal OpenOCD/GDB probe support: selected read-only CSRs complete locally.
+  task automatic check_csr_read(
+    input logic [15:0] csr_regno,
+    input logic [31:0] expected_rdata,
+    input string label
+  );
+    logic [31:0] command_value;
+    begin
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, csr_regno);
+      pulse_command(command_value, 32'h0000_0000);
+      if (!busy || command_error_valid || !data0_we ||
+          (data0_wdata !== expected_rdata) ||
+          reg_cmd_valid || reg_rsp_ready) begin
+        $error("%s: CSR read mismatch regno=0x%04x busy=%0b err=%0b data0_we=%0b data=0x%08x reg_cmd=%0b rsp_ready=%0b",
+               label, csr_regno, busy, command_error_valid, data0_we, data0_wdata,
+               reg_cmd_valid, reg_rsp_ready);
+        $fatal(1);
+      end
+      csr_read_count++;
+      pass_count++;
+      step_clock();
+      expect_idle({label, " idle"});
     end
   endtask
 
@@ -522,6 +551,7 @@ module tb_debug_abstract_cmd;
     pass_count = 0;
     read_count = 0;
     write_count = 0;
+    csr_read_count = 0;
     noop_count = 0;
     unsupported_count = 0;
     halt_error_count = 0;
@@ -538,6 +568,10 @@ module tb_debug_abstract_cmd;
     apply_reset();
     $display("phase normal start=%0t", $time);
     check_normal_paths();
+    $display("phase csr start=%0t", $time);
+    check_csr_read(ABSTRACT_CSR_MISA, ABSTRACT_CSR_MISA_RV32I, "misa CSR read");
+    check_csr_read(ABSTRACT_CSR_DCSR, ABSTRACT_CSR_DCSR_HALTED_M, "dcsr CSR read");
+    check_csr_read(ABSTRACT_CSR_DPC, ABSTRACT_CSR_DPC_RESET, "dpc CSR read");
     $display("phase decode start=%0t", $time);
     check_decode_errors_and_noop();
     $display("phase abort start=%0t", $time);
@@ -549,8 +583,8 @@ module tb_debug_abstract_cmd;
     check_random_commands(20);
     $display("phase complete=%0t", $time);
 
-    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
-             pass_count, read_count, write_count, noop_count, unsupported_count,
+    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
+             pass_count, read_count, write_count, csr_read_count, noop_count, unsupported_count,
              halt_error_count, downstream_error_count, issue_hold_count,
              wait_count, flush_count, busy_ignore_count, reset_abort_count,
              random_count);

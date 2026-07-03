@@ -4,8 +4,11 @@ RTL_FILELIST := filelists/wasp1.f
 TB_WASP1_FILELIST := filelists/tb_wasp1.f
 WASP1_TOP := tb_wasp1
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
+RBB_TOP := wasp1
+RBB_OBJ_DIR := build/obj_wasp1_rbb
+RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw clean
+.PHONY: all lint sim sim-sw sim-rbb-build sim-rbb-smoke clean
 
 all: lint
 
@@ -19,6 +22,20 @@ lint:
 sim: sim-wasp1
 
 sim-sw: sim-wasp1-sw
+
+sim-rbb-build:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --cc --exe --build --timing --top-module $(RBB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir $(RBB_OBJ_DIR) -f $(RTL_FILELIST) \
+		dv/wasp1_remote_bitbang_main.cpp > logs/sim_rbb_build.log 2>&1
+	@cat logs/sim_rbb_build.log
+
+sim-rbb-smoke: sim-rbb-build
+	@mkdir -p logs
+	python3 dv/wasp1_rbb_smoke.py --sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
+		--port $(RBB_PORT) > logs/sim_rbb_smoke.log 2>&1
+	@cat logs/sim_rbb_smoke.log
 
 lint-ic:
 	@mkdir -p build logs

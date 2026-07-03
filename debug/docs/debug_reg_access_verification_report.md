@@ -62,5 +62,6 @@ code/toggle coverage.
 ## 6. Residual Scope
 
 The low-level GPR transport is verified against a mock core. Abstract-command
-field decoding, halted-state policy, core register-file implementation, and
-OpenOCD/GDB end-to-end access remain later milestones.
+field decoding, halted-state policy, and top-level OpenOCD/GDB smoke are
+covered by downstream debug and wasp1 verification. Richer core register-file
+debug behavior remains later integration scope.

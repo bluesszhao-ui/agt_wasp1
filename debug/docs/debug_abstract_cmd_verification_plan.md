@@ -3,12 +3,14 @@
 ## 1. Goals
 
 Verify exact Access Register field decoding, downstream sequencing, data0
-behavior, cmderr mapping, and transaction aborts independently of DMI and core.
+behavior, minimal OpenOCD/GDB CSR probe behavior, cmderr mapping, and transaction
+aborts independently of DMI and core.
 
 ## 2. Directed Cases
 
 ```text
 successful GPR read and write
+successful read-only `misa`, `dcsr`, and `dpc` CSR probes
 request and response delay
 downstream error -> CMDERR_EXCEPTION
 hart running at command -> CMDERR_HALT_RESUME
@@ -20,7 +22,7 @@ reserved bit 23
 unsupported aarsize
 aarpostincrement
 postexec
-CSR and out-of-range register numbers
+unsupported CSR write, other CSR addresses, and out-of-range register numbers
 command pulse while busy ignored defensively
 reset during active command
 ```

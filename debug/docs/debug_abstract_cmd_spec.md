@@ -2,9 +2,11 @@
 
 ## 1. Purpose
 
-`debug_abstract_cmd` decodes RISC-V Debug Spec 0.13.x abstract commands and
-controls the verified `debug_reg_access` transport. The first implementation
-supports RV32 integer Access Register commands only.
+`debug_abstract_cmd` decodes RISC-V Debug Spec 0.13.x abstract commands,
+controls the verified `debug_reg_access` transport, and provides the minimal
+read-only CSR probes needed by OpenOCD/GDB. The first implementation supports
+RV32 integer GPR Access Register commands plus hardwired reads of `misa`,
+`dcsr`, and `dpc`.
 
 ## 2. Supported Command
 
@@ -15,19 +17,29 @@ supports RV32 integer Access Register commands only.
 | `aarsize[22:20]` | `2`: 32-bit, when transfer is set |
 | `aarpostincrement[19]` | zero |
 | `postexec[18]` | zero; no program buffer yet |
-| `transfer[17]` | zero for no-op or one for GPR transfer |
-| `write[16]` | zero reads GPR; one writes GPR |
-| `regno[15:0]` | `0x1000..0x101F` for x0-x31 |
+| `transfer[17]` | zero for no-op or one for GPR/CSR transfer |
+| `write[16]` | zero reads; one writes GPR |
+| `regno[15:0]` | `0x1000..0x101F` for x0-x31, or read-only `0x0301` `misa`, `0x07B0` `dcsr`, `0x07B1` `dpc` |
 
 A command with `transfer=0`, supported command type, and no unsupported option
 is a successful no-op; size, register number, and write direction are ignored.
 The selected hart must still be halted for every accepted Access Register
 command, including this transfer-disabled no-op.
 
+CSR reads complete locally for the supported probe set:
+
+```text
+misa -> 0x40000100, RV32 + I extension
+dcsr -> 0x400000C3, Debug Spec 0.13-style Debug Mode, haltreq cause, M-mode
+dpc  -> 0x00000000, stage-1 PC placeholder until true Debug Mode DPC is wired
+```
+
+CSR writes and all other CSR addresses remain unsupported.
+
 ## 3. Error Mapping
 
 ```text
-unsupported command type/field/register/size -> CMDERR_NOTSUP
+unsupported command type/field/register/size/CSR write -> CMDERR_NOTSUP
 hart not halted before or during transfer    -> CMDERR_HALT_RESUME
 downstream register-access error             -> CMDERR_EXCEPTION
 ```
@@ -40,8 +52,10 @@ when `dmactive` clears.
 For writes, `data0_i` is captured with the command and forwarded as GPR write
 data. Successful writes do not change data0.
 
-For reads, successful downstream data generates one `data0_we_o` pulse. Failed,
-unsupported, aborted, write, and no-op commands must not update data0.
+For GPR reads, successful downstream data generates one `data0_we_o` pulse.
+For hardwired CSR reads, the controller generates the same data0 write pulse
+without issuing a downstream register command. Failed, unsupported, aborted,
+write, and no-op commands must not update data0.
 
 ## 5. Busy and Handshake Requirements
 

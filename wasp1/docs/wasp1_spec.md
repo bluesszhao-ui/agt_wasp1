@@ -75,10 +75,12 @@ the RISC-V Debug Module and then to the tile `debug_if` channel.
 | `dbg_ndmreset_o` | Debug Module non-debug reset request. |
 | `dbg_dtm_hardreset_o` | DTMCS hard-reset pulse observation. |
 
-OpenOCD/GDB process-level validation remains a follow-on verification item.
+OpenOCD/GDB process-level validation is part of the top-level smoke
+verification and uses the remote-bitbang JTAG path.
 
 ## 7. Verification Requirements
 
 Verification must cover SoC elaboration, reset defaults, core-side fetch
-activity through the OTP/fabric path, JTAG Debug Module smoke access, benign
-idle IO behavior, and target macro lint for IC and Xilinx Virtex-7 FPGA builds.
+activity through the OTP/fabric path, JTAG Debug Module smoke access,
+OpenOCD/GDB connect/register smoke, benign idle IO behavior, and target macro
+lint for IC and Xilinx Virtex-7 FPGA builds.

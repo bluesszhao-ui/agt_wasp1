@@ -67,5 +67,6 @@ claimed by this milestone.
 ## 6. Residual Scope
 
 The DM-side halt/resume transaction controller is verified against a mock core.
-Core pipeline Debug Mode entry/exit, DPC/DCSR behavior, abstract GPR access, and
-OpenOCD/GDB end-to-end operation remain later integration milestones.
+Core pipeline Debug Mode entry/exit and full DPC/DCSR capture remain later
+integration milestones. Abstract GPR access and top-level OpenOCD/GDB smoke are
+covered by downstream debug and wasp1 verification.

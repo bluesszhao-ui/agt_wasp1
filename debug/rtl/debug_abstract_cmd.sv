@@ -1,7 +1,8 @@
 `timescale 1ns/1ps
 `include "wasp1_target_defs.svh"
 
-// Decoder and controller for the RV32 GPR subset of Access Register commands.
+// Decoder and controller for the RV32 GPR plus minimal CSR subset of Access
+// Register commands.
 module debug_abstract_cmd (
   input  logic        clk_i,                 // Debug command clock.
   input  logic        rst_ni,                // Asynchronous active-low command reset.
@@ -49,7 +50,10 @@ module debug_abstract_cmd (
   logic        command_write;
   logic [15:0] command_regno;
   logic        command_gpr_supported;
+  logic        command_csr_read_supported;
+  logic        command_transfer_supported;
   logic        command_encoding_supported;
+  logic [31:0] command_csr_rdata;
 
   // Captured downstream command fields and completion result.
   logic        reg_write_q;
@@ -71,15 +75,32 @@ module debug_abstract_cmd (
   assign command_write = command_i[16];
   assign command_regno = command_i[15:0];
 
-  // The first implementation accepts only RV32 integer registers. When
-  // transfer=0, size/regno/write are ignored and the command is a successful no-op.
+  // The first implementation accepts RV32 integer registers plus a read-only
+  // hardwired misa CSR. When transfer=0, size/regno/write are ignored and the
+  // command is a successful no-op.
   assign command_gpr_supported = (command_regno >= ABSTRACT_GPR_BASE) &&
                                  (command_regno <= ABSTRACT_GPR_LAST);
+  assign command_csr_read_supported =
+      ((command_regno == ABSTRACT_CSR_MISA) ||
+       (command_regno == ABSTRACT_CSR_DCSR) ||
+       (command_regno == ABSTRACT_CSR_DPC)) && !command_write;
+  assign command_transfer_supported = command_gpr_supported ||
+                                      command_csr_read_supported;
   assign command_encoding_supported =
       (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
       !command_reserved_bit && !command_postincrement && !command_postexec &&
       (!command_transfer ||
-       ((command_aarsize == ABSTRACT_AARSIZE_32) && command_gpr_supported));
+       ((command_aarsize == ABSTRACT_AARSIZE_32) && command_transfer_supported));
+
+  // Hardwired CSR values cover debugger discovery and the GDB PC register.
+  always_comb begin
+    unique case (command_regno)
+      ABSTRACT_CSR_MISA: command_csr_rdata = ABSTRACT_CSR_MISA_RV32I;
+      ABSTRACT_CSR_DCSR: command_csr_rdata = ABSTRACT_CSR_DCSR_HALTED_M;
+      ABSTRACT_CSR_DPC:  command_csr_rdata = ABSTRACT_CSR_DPC_RESET;
+      default:           command_csr_rdata = '0;
+    endcase
+  end
 
   assign reg_cmd_fire = reg_cmd_valid_o && reg_cmd_ready_i;
   assign reg_rsp_fire = reg_rsp_valid_i && reg_rsp_ready_o;
@@ -113,7 +134,8 @@ module debug_abstract_cmd (
     unique case (state_q)
       ABSTRACT_IDLE: begin
         if (command_valid_i && dmactive_i) begin
-          if (!command_encoding_supported || !hart_halted_i || !command_transfer) begin
+          if (!command_encoding_supported || !hart_halted_i || !command_transfer ||
+              command_csr_read_supported) begin
             state_d = ABSTRACT_COMPLETE;
           end else begin
             state_d = ABSTRACT_ISSUE;
@@ -169,11 +191,16 @@ module debug_abstract_cmd (
         reg_addr_q <= command_regno[4:0];
         reg_wdata_q <= data0_i;
         read_result_valid_q <= 1'b0;
+        read_result_q <= '0;
 
         if (!command_encoding_supported) begin
           completion_error_q <= CMDERR_NOTSUP;
         end else if (!hart_halted_i) begin
           completion_error_q <= CMDERR_HALT_RESUME;
+        end else if (command_transfer && command_csr_read_supported) begin
+          completion_error_q <= CMDERR_NONE;
+          read_result_valid_q <= 1'b1;
+          read_result_q <= command_csr_rdata;
         end else begin
           completion_error_q <= CMDERR_NONE;
         end
