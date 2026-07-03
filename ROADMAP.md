@@ -61,7 +61,7 @@ PASS       Current verification target passes
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, cmderr mapping, aborts, and random commands pass |
-| `debug` | SPEC | Verified leaf blocks exist; Debug Module top, JTAG DTM/TAP, and OpenOCD/GDB remain |
+| `debug` | PASS | Debug Module top integrates DMI regs, halt/resume, abstract command, and GPR access; JTAG DTM/TAP and OpenOCD/GDB remain |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, generated OTP firmware boot-to-UART smoke, debug status, and idle IO stability pass |

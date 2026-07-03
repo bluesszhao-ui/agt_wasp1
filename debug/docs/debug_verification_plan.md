@@ -1,44 +1,36 @@
-# debug DMI Register Verification Plan
+# debug Verification Plan
 
-## 1. Goals
+## 1. Scope
 
-Verify the stage-1 DMI transport and register file before adding the JTAG DTM,
-hart-control executor, or abstract GPR engine.
+This plan covers the `debug` top-level integration of the verified stage-1
+Debug Module leaves. Leaf-module exhaustive behavior remains covered by their
+own verification plans and reports.
 
-## 2. Directed Cases
+## 2. Directed Integration Cases
 
 | Phase | Action | Expected result |
 | --- | --- | --- |
-| Reset | Assert `rst_ni=0` for three clocks | DM state and response valid clear |
-| Identity | Read inactive `dmstatus` | version 2 and authenticated are visible |
-| Activation | Set `dmactive` with other fields set | only `dmactive` changes |
-| Control | Set halt, resume, and ndmreset | level requests follow documented semantics |
-| Resume | Assert hart resume acknowledgement | held resume request clears |
-| Pulse | Write ackhavereset | exactly one pulse occurs |
-| Status | Drive running/halted/reset/resume states | matching any/all fields are returned |
-| Enumeration | Select hart 1 | nonexistent fields assert and requests suppress |
-| Abstract data | DMI and executor write `data0` | reads return the latest accepted value |
-| Busy | Write command while executor busy | command ignored and `cmderr=BUSY` |
-| W1C | Clear `cmderr` through abstractcs | selected error bits clear |
-| Command | Write command while idle | command captured and one pulse occurs |
-| Executor error | Inject unsupported-command error | first error becomes sticky |
-| Read-only | Write dmstatus | operation succeeds with no state change |
-| Error | Use unknown address and reserved operation | DMI response is `FAILED` |
-| Backpressure | Hold `rsp_ready=0` | response stable and new requests blocked |
-| Random | Write/read 16 deterministic random data0 values | every value compares exactly |
-| Deactivation | Clear dmactive | all DM-owned state returns to reset values |
+| Reset | Assert `rst_ni=0` for three clocks | DMI response, DM outputs, core requests, and GPR request outputs are idle |
+| Identity | Read inactive `dmstatus` | version/authenticated fields are visible |
+| Activation | Write `dmcontrol.dmactive` | `dmactive_o=1`; no unintended halt/resume/step |
+| Halt | Write halt request, then assert core halted | `core_debug.halt_req` asserts then retires; halted status reads back |
+| Resume | Write resume request, then assert core running | `core_debug.resume_req` asserts then retires; resumeack reads back |
+| GPR write | Write `data0`, issue Access Register write x5 | GPR request writes x5 with the data0 payload |
+| GPR read | Issue Access Register read x6 and return core data | data0 reads back the core response |
+| Abstract error | Issue unsupported Access Register size | `abstractcs.cmderr=NOTSUP`, then W1C clear works |
+| Reset sticky | Pulse `hart_reset_event_i` and acknowledge it | `dmstatus.havereset` sets and clears through `dmcontrol.ackhavereset` |
 
 ## 3. Coverage Intent
 
-Coverage counters must report reads, writes, status classes, one-cycle pulses,
-busy handling, failed accesses, backpressure observations, and random data
-iterations. Every test is self-checking and terminates immediately on mismatch.
+The top-level test must cover at least one halt, one resume, one GPR write, one
+GPR read, one abstract command error, one sticky reset event, DMI read/write
+transactions, and clean reset behavior.
 
 ## 4. Target Matrix
 
 | Target | Command | Expected result |
 | --- | --- | --- |
-| Generic simulation | `make -C debug lint` | PASS |
-| IC | `make -C debug lint-ic` | PASS |
-| Xilinx Virtex-7 | `make -C debug lint-fpga-v7` | PASS |
+| Generic lint | `make -C debug lint` | PASS |
+| IC lint | `make -C debug lint-ic` | PASS |
+| Xilinx Virtex-7 lint | `make -C debug lint-fpga-v7` | PASS |
 | Functional simulation | `make -C debug sim` | PASS |

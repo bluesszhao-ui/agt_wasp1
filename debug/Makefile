@@ -1,5 +1,8 @@
 MODULE := debug
 VERILATOR ?= verilator
+DEBUG_RTL_FILELIST := filelists/debug.f
+DEBUG_TB_FILELIST := filelists/tb_debug.f
+DEBUG_TB_TOP := tb_debug
 DMI_RTL_FILELIST := filelists/debug_dmi_regs.f
 DMI_TB_FILELIST := filelists/tb_debug_dmi_regs.f
 DMI_TB_TOP := tb_debug_dmi_regs
@@ -13,15 +16,22 @@ ABSTRACT_CMD_RTL_FILELIST := filelists/debug_abstract_cmd.f
 ABSTRACT_CMD_TB_FILELIST := filelists/tb_debug_abstract_cmd.f
 ABSTRACT_CMD_TB_TOP := tb_debug_abstract_cmd
 
-.PHONY: all lint lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd \
-	lint-ic lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
+.PHONY: all lint lint-top lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd \
+	lint-ic lint-top-ic lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
 	lint-fpga-v7 lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7 \
-	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 \
-	sim sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd clean
+	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 \
+	sim sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd clean
 
 all: lint sim
 
-lint: lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd
+lint: lint-top lint-dmi-regs lint-halt-ctrl lint-reg-access lint-abstract-cmd
+
+lint-top:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(DEBUG_RTL_FILELIST) > logs/lint_top.log 2>&1
+	@cat logs/lint_top.log
 
 lint-dmi-regs:
 	@mkdir -p build logs
@@ -51,7 +61,15 @@ lint-abstract-cmd:
 		-f $(ABSTRACT_CMD_RTL_FILELIST) > logs/lint_abstract_cmd.log 2>&1
 	@cat logs/lint_abstract_cmd.log
 
-lint-ic: lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic
+lint-ic: lint-top-ic lint-dmi-regs-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic
+
+lint-top-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(DEBUG_RTL_FILELIST) > logs/lint_top_ic.log 2>&1
+	@cat logs/lint_top_ic.log
 
 lint-dmi-regs-ic:
 	@mkdir -p build logs
@@ -86,7 +104,15 @@ lint-abstract-cmd-ic:
 	@cat logs/lint_abstract_cmd_ic.log
 
 lint-fpga-v7: lint-dmi-regs-fpga-v7 lint-halt-ctrl-fpga-v7 \
-	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7
+	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7
+
+lint-top-fpga-v7:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(DEBUG_RTL_FILELIST) > logs/lint_top_fpga_v7.log 2>&1
+	@cat logs/lint_top_fpga_v7.log
 
 lint-dmi-regs-fpga-v7:
 	@mkdir -p build logs
@@ -120,7 +146,16 @@ lint-abstract-cmd-fpga-v7:
 		-f $(ABSTRACT_CMD_RTL_FILELIST) > logs/lint_abstract_cmd_fpga_v7.log 2>&1
 	@cat logs/lint_abstract_cmd_fpga_v7.log
 
-sim: sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd
+sim: sim-top sim-dmi-regs sim-halt-ctrl sim-reg-access sim-abstract-cmd
+
+sim-top:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(DEBUG_TB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(DEBUG_TB_TOP) -f $(DEBUG_TB_FILELIST) \
+		> logs/tb_debug_build.log 2>&1
+	@./build/obj_$(DEBUG_TB_TOP)/V$(DEBUG_TB_TOP) > logs/tb_debug.log 2>&1
+	@cat logs/tb_debug.log
 
 sim-dmi-regs:
 	@mkdir -p build logs

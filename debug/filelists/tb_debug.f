@@ -1,0 +1,11 @@
++incdir+../common/rtl
++incdir+rtl
+rtl/debug_dmi_pkg.sv
+rtl/debug_dmi_if.sv
+../common/rtl/debug_if.sv
+rtl/debug_dmi_regs.sv
+rtl/debug_halt_ctrl.sv
+rtl/debug_abstract_cmd.sv
+rtl/debug_reg_access.sv
+rtl/debug.sv
+tb/tb_debug.sv
