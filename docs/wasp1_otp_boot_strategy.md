@@ -35,6 +35,12 @@ OTP programming routines must execute from I-SRAM.
 This avoids programming the same OTP array that is simultaneously used for
 instruction fetch.
 
+The current directed firmware regression enforces this rule with
+`llvm_s1/bsp/examples/otp_program.c`: startup copies the `.fasttext` routine to
+I-SRAM, the routine writes the OTP programming registers, and the top-level
+testbench checks OTP word address `0x00003fa0` for data `0x13572468` with
+`done=1` and `error=0`.
+
 ## 5. Boot Flow
 
 ```text

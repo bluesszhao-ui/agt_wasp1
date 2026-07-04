@@ -15,6 +15,8 @@ module tb_wasp1;
   localparam logic [31:0] JTAG_IDCODE_VALUE = 32'h1000_01CF;
   localparam logic [4:0] JTAG_IR_DTMCS = 5'b10000;
   localparam logic [4:0] JTAG_IR_DMI = 5'b10001;
+  localparam int unsigned OTP_PROGRAM_WORD_IDX = 32'h0000_3FA0;
+  localparam logic [31:0] OTP_PROGRAM_EXPECTED_DATA = 32'h1357_2468;
 
   logic                  hclk;              // 100 MHz verification clock.
   logic                  hresetn;           // Active-low reset driven by TB.
@@ -46,6 +48,7 @@ module tb_wasp1;
 
   int unsigned pass_count;
   bit          otp_image_loaded;            // Set when +WASP1_OTP_HEX loaded a firmware image.
+  bit          otp_program_check;           // Selects OTP programming firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
@@ -53,6 +56,7 @@ module tb_wasp1;
   logic [31:0] last_ex_pc;                  // Most recent execute-stage PC for timeout diagnostics.
   logic [31:0] last_ex_instr;               // Most recent execute-stage instruction for diagnostics.
   int unsigned core_rsp_count;              // Number of core bridge responses observed.
+  bit          otp_fasttext_seen;           // Set after execute PC enters I-SRAM for OTP programming.
 
   wasp1 #(
     .GPIO_WIDTH(GPIO_WIDTH)
@@ -101,10 +105,16 @@ module tb_wasp1;
       last_ex_pc <= '0;
       last_ex_instr <= '0;
       core_rsp_count <= 0;
+      otp_fasttext_seen <= 1'b0;
     end else begin
       if (u_wasp1.ex_valid) begin
         last_ex_pc <= u_wasp1.ex_pc;
         last_ex_instr <= u_wasp1.ex_instr;
+        if (otp_program_check &&
+            (u_wasp1.ex_pc >= ISRAM_BASE) &&
+            (u_wasp1.ex_pc < (ISRAM_BASE + ISRAM_SIZE))) begin
+          otp_fasttext_seen <= 1'b1;
+        end
       end
       if (u_wasp1.slave_hsel[AHB_SLAVE_UART] && u_wasp1.slave_htrans[1]) begin
         uart_addr_count <= uart_addr_count + 1;
@@ -133,6 +143,7 @@ module tb_wasp1;
   // from llvm_s1/scripts/wasp1_make_otp_image.py.
   initial begin
     otp_image_loaded = 1'b0;
+    otp_program_check = $test$plusargs("WASP1_OTP_PROGRAM_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     otp_hex_path = "";
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
@@ -461,6 +472,41 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_otp_program_activity;
+    int unsigned timeout;
+    begin
+      timeout = 0;
+      while ((u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
+              OTP_PROGRAM_EXPECTED_DATA) &&
+             timeout < 30000) begin
+        @(posedge hclk);
+        #1ns;
+        timeout++;
+      end
+
+      if (u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
+          OTP_PROGRAM_EXPECTED_DATA) begin
+        dump_sw_timeout_diagnostics();
+        $error("OTP programming firmware did not program word[%0d]: got=0x%08h expected=0x%08h",
+               OTP_PROGRAM_WORD_IDX,
+               u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX],
+               OTP_PROGRAM_EXPECTED_DATA);
+        $fatal(1);
+      end
+      if (!otp_fasttext_seen) begin
+        $error("OTP programming firmware did not execute from I-SRAM fasttext");
+        $fatal(1);
+      end
+      if (u_wasp1.u_ahb_otp.done_q !== 1'b1 ||
+          u_wasp1.u_ahb_otp.error_q !== 1'b0) begin
+        $error("OTP programming status mismatch: done=%0b error=%0b",
+               u_wasp1.u_ahb_otp.done_q, u_wasp1.u_ahb_otp.error_q);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   initial begin
     drive_defaults();
     hresetn = 1'b0;
@@ -476,7 +522,11 @@ module tb_wasp1;
     wait_for_debug_running_known();
     check_jtag_dmstatus_smoke();
     if (otp_image_loaded) begin
-      wait_for_uart_tx_activity();
+      if (otp_program_check) begin
+        wait_for_otp_program_activity();
+      end else begin
+        wait_for_uart_tx_activity();
+      end
     end
 
     repeat (20) @(posedge hclk);

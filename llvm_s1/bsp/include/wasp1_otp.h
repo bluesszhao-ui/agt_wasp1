@@ -21,6 +21,11 @@
 #define WASP1_OTP_CTRL_START   (UINT32_C(1) << 1)
 #define WASP1_OTP_CTRL_CLEAR   (UINT32_C(1) << 2)
 
+#define WASP1_OTP_STATUS_BUSY  (UINT32_C(1) << 0)
+#define WASP1_OTP_STATUS_DONE  (UINT32_C(1) << 1)
+#define WASP1_OTP_STATUS_ERROR (UINT32_C(1) << 2)
+#define WASP1_OTP_STATUS_LOCK  (UINT32_C(1) << 3)
+
 static inline uintptr_t wasp1_otp_reg(uint32_t offset)
 {
   /* Return an absolute MMIO address inside the final 256-byte OTP register window. */

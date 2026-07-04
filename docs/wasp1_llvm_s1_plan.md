@@ -115,18 +115,20 @@ implemented:
   crt0 reset entry
   minimal trap stub
   memcpy/memset/syscall stubs
-  UART and GPIO examples
+  UART, GPIO, and OTP programming examples
   structural BSP self-check
   toolchain discovery and syntax/codegen/link smoke-test harness
   project-local LLVM build wrapper
   OTP image generation utility and format self-check
   Homebrew LLVM/lld strict RV32I compile/link smoke pass
   local sparse LLVM source checkout for llvm/clang/lld
+  SoC boot regression that consumes generated hello_uart OTP image
+  SoC OTP programming regression that consumes generated otp_program OTP image
 
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  SoC boot regression that consumes generated OTP images
+  timer interrupt and DMA real-memory-copy firmware regressions
 ```
 
 ## 5. Linker Layout
@@ -165,7 +167,9 @@ REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
 The default test target checks file completeness, critical linker/startup
 symbols, aggregate-header syntax, tool discovery, and BSP source syntax. It also
 attempts RV32I object generation, startup assembly, ELF linking, and optional
-binary image generation when a full RISC-V LLVM toolchain is installed.
+binary/OTP image generation when a full RISC-V LLVM toolchain is installed.
+The current smoke flow builds `hello_uart_otp.hex` and `otp_program_otp.hex`;
+the `wasp1` top-level regression consumes both images.
 
 On a workstation without RISC-V LLVM code generation support, unavailable
 compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode

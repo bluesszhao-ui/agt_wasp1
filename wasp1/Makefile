@@ -4,11 +4,12 @@ RTL_FILELIST := filelists/wasp1.f
 TB_WASP1_FILELIST := filelists/tb_wasp1.f
 WASP1_TOP := tb_wasp1
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
+OTP_PROGRAM_HEX ?= ../llvm_s1/build/smoke/otp_program_otp.hex
 RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-rbb-build sim-rbb-smoke clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-rbb-build sim-rbb-smoke clean
 
 all: lint
 
@@ -22,6 +23,17 @@ lint:
 sim: sim-wasp1
 
 sim-sw: sim-wasp1-sw
+
+sim-otp-program:
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_otp_program_build.log 2>&1
+	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(OTP_PROGRAM_HEX) \
+		+WASP1_OTP_PROGRAM_CHECK > logs/tb_wasp1_otp_program.log 2>&1
+	@cat logs/tb_wasp1_otp_program.log
 
 sim-rbb-build:
 	@mkdir -p build logs

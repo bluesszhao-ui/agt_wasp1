@@ -119,6 +119,7 @@ fi
 syntax_sources="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/otp_program.c
   bsp/runtime/memcpy.c
   bsp/runtime/memset.c
   bsp/runtime/syscalls.c
@@ -185,6 +186,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "link skipped because required objects were not produced"
+  fi
+
+  otp_obj="build/smoke/otp_program.o"
+  if [ -f "$otp_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link otp_program ELF" "$clang_bin" $ldflags $asm_objects "$otp_obj" $runtime_objects -o build/smoke/otp_program.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy otp_program binary" "$objcopy_bin" -O binary build/smoke/otp_program.elf build/smoke/otp_program.bin; then
+          run_capture "make otp_program OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/otp_program.bin \
+            --output-hex build/smoke/otp_program_otp.hex \
+            --output-bin build/smoke/otp_program_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for otp_program riscv32"
+    fi
+  else
+    require_or_skip "otp_program link skipped because required objects were not produced"
   fi
 fi
 

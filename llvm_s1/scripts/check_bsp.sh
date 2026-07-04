@@ -65,6 +65,7 @@ bsp_files="
   bsp/runtime/memset.c
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/otp_program.c
   docs/wasp1_bsp_stage1.md
   scripts/check_otp_image.sh
   scripts/wasp1_make_otp_image.py
@@ -81,6 +82,7 @@ require_grep 'OTP[[:space:]]+\(rx\)[[:space:]]+:[[:space:]]+ORIGIN = 0x00000000,
 require_grep 'ENTRY\(_start\)' bsp/linker/wasp1.ld 'entry point'
 require_grep 'csrw[[:space:]]+mtvec' bsp/startup/crt0.S 'mtvec setup'
 require_grep '__trap_entry' bsp/startup/trap.S 'trap entry'
+require_grep '\.fasttext' bsp/examples/otp_program.c 'OTP programming routine in I-SRAM section'
 
 if command -v cc >/dev/null 2>&1; then
   tmp_c=$(mktemp "${TMPDIR:-/tmp}/wasp1_bsp_headers.XXXXXX.c")
