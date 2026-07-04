@@ -50,6 +50,10 @@ HREADY
 HRESP
 ```
 
+The first wasp1 fabric is non-pipelined. It emits one address phase, waits for
+the selected slave response to become stable, routes one response phase to the
+transaction owner, and only then arbitrates the next transfer.
+
 Unmapped selected transfers must route to the default error slave.
 
 ## 5. Arbitration Requirements
@@ -84,6 +88,7 @@ single-master grants
 both-master arbitration
 slave response muxing
 ready-low stalls
+write-data hold through the wait phase
 error response forwarding
 fabric integration
 ```

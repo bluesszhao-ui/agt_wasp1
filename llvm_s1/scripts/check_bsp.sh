@@ -46,6 +46,7 @@ require_grep()
 
 bsp_files="
   bsp/include/wasp1.h
+  bsp/include/wasp1_csr.h
   bsp/include/wasp1_dma.h
   bsp/include/wasp1_gpio.h
   bsp/include/wasp1_i2c.h
@@ -53,6 +54,7 @@ bsp_files="
   bsp/include/wasp1_memory_map.h
   bsp/include/wasp1_mmio.h
   bsp/include/wasp1_otp.h
+  bsp/include/wasp1_runtime.h
   bsp/include/wasp1_timer.h
   bsp/include/wasp1_uart.h
   bsp/include/wasp1_wdg.h
@@ -66,6 +68,7 @@ bsp_files="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
   bsp/examples/dma_copy.c
+  bsp/examples/timer_irq.c
   bsp/examples/otp_program.c
   docs/wasp1_bsp_stage1.md
   scripts/check_otp_image.sh
@@ -83,6 +86,7 @@ require_grep 'OTP[[:space:]]+\(rx\)[[:space:]]+:[[:space:]]+ORIGIN = 0x00000000,
 require_grep 'ENTRY\(_start\)' bsp/linker/wasp1.ld 'entry point'
 require_grep 'csrw[[:space:]]+mtvec' bsp/startup/crt0.S 'mtvec setup'
 require_grep '__trap_entry' bsp/startup/trap.S 'trap entry'
+require_grep 'sw[[:space:]]+x31' bsp/startup/trap.S 'trap context save'
 require_grep '\.fasttext' bsp/examples/otp_program.c 'OTP programming routine in I-SRAM section'
 
 if command -v cc >/dev/null 2>&1; then

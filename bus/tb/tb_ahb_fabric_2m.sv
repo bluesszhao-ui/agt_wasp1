@@ -55,7 +55,8 @@ module tb_ahb_fabric_2m;
   int unsigned m1_route_count;
   int unsigned default_error_count;
   int unsigned stall_count;
-  int unsigned rr_count;
+  int unsigned both_req_count;
+  int unsigned write_data_hold_count;
 
   ahb_fabric_2m u_ahb_fabric_2m (
     .hclk_i(hclk),
@@ -179,14 +180,27 @@ module tb_ahb_fabric_2m;
       @(posedge hclk);
       #1ns;
       if (grant_valid !== 1'b0 || slave_hsel !== '0 || default_sel !== 1'b0) begin
-        $error("reset: expected no grant and no slave select");
+        $error("reset: expected idle fabric outputs");
         $fatal(1);
       end
       pass_count++;
     end
   endtask
 
-  task automatic check_grant_route(
+  task automatic expect_non_owner_stalled(input int owner_idx);
+    begin
+      if ((owner_idx == 0) && m1_htrans[1] && (m1_hready !== 1'b0)) begin
+        $error("non-owner m1 should be stalled");
+        $fatal(1);
+      end
+      if ((owner_idx == 1) && m0_htrans[1] && (m0_hready !== 1'b0)) begin
+        $error("non-owner m0 should be stalled");
+        $fatal(1);
+      end
+    end
+  endtask
+
+  task automatic check_addr_phase(
     input int master_idx,
     input int slave_idx,
     input logic [ADDR_WIDTH-1:0] expected_addr,
@@ -208,13 +222,14 @@ module tb_ahb_fabric_2m;
         $fatal(1);
       end
       if (slave_haddr !== expected_addr || slave_hwrite !== expected_write ||
-          slave_hwdata !== expected_wdata || slave_htrans !== AHB_HTRANS_NONSEQ) begin
+          slave_htrans !== AHB_HTRANS_NONSEQ || slave_hsize !== AHB_HSIZE_WORD ||
+          slave_hburst !== AHB_HBURST_SINGLE) begin
         $error("%s: shared bus control mismatch", label);
         $fatal(1);
       end
       if (slave_idx == AHB_SLAVE_DEFAULT) begin
         if (default_sel !== 1'b1 || slave_hsel !== '0) begin
-          $error("%s: default select mismatch", label);
+          $error("%s: default select mismatch default=%0b hsel=0x%0h", label, default_sel, slave_hsel);
           $fatal(1);
         end
       end else if (slave_hsel !== expected_hsel || default_sel !== 1'b0) begin
@@ -222,109 +237,155 @@ module tb_ahb_fabric_2m;
                label, expected_hsel, slave_hsel, default_sel);
         $fatal(1);
       end
+      if ((master_idx == 0 && m0_hready !== 1'b1) ||
+          (master_idx == 1 && m1_hready !== 1'b1)) begin
+        $error("%s: owner did not see address-ready pulse", label);
+        $fatal(1);
+      end
+      if (expected_write && (slave_hwdata !== expected_wdata)) begin
+        $error("%s: write data mismatch in address phase", label);
+        $fatal(1);
+      end
+      expect_non_owner_stalled(master_idx);
+      if (slave_select_err !== 1'b0) begin
+        $error("%s: unexpected mux select error", label);
+        $fatal(1);
+      end
 
       if (master_idx == 0) begin
-        if (m0_hready !== 1'b1) begin
-          $error("%s: m0 expected ready", label);
-          $fatal(1);
-        end
-        if (slave_idx == AHB_SLAVE_DEFAULT) begin
-          if (m0_hresp !== AHB_HRESP_ERROR) begin
-            $error("%s: m0 expected default ERROR", label);
-            $fatal(1);
-          end
-          default_error_count++;
-        end else if (m0_hrdata !== slave_hrdata[slave_idx] ||
-                     m0_hresp !== slave_hresp[slave_idx]) begin
-          $error("%s: m0 response mismatch", label);
-          $fatal(1);
-        end
         m0_route_count++;
       end else begin
-        if (m1_hready !== 1'b1) begin
-          $error("%s: m1 expected ready", label);
-          $fatal(1);
-        end
-        if (slave_idx == AHB_SLAVE_DEFAULT) begin
-          if (m1_hresp !== AHB_HRESP_ERROR) begin
-            $error("%s: m1 expected default ERROR", label);
-            $fatal(1);
-          end
-          default_error_count++;
-        end else if (m1_hrdata !== slave_hrdata[slave_idx] ||
-                     m1_hresp !== slave_hresp[slave_idx]) begin
-          $error("%s: m1 response mismatch", label);
-          $fatal(1);
-        end
         m1_route_count++;
       end
+      pass_count++;
+    end
+  endtask
 
-      if (slave_select_err !== 1'b0) begin
-        $error("%s: unexpected slave select error", label);
+  task automatic check_wait_phase(
+    input int master_idx,
+    input logic expected_write,
+    input logic [DATA_WIDTH-1:0] expected_wdata,
+    input string label
+  );
+    begin
+      @(posedge hclk);
+      #1ns;
+      if (grant_valid !== 1'b0 || slave_htrans !== AHB_HTRANS_IDLE ||
+          slave_hsel !== '0 || default_sel !== 1'b0) begin
+        $error("%s: expected idle address bus during wait", label);
         $fatal(1);
+      end
+      if ((master_idx == 0 && m0_hready !== 1'b0) ||
+          (master_idx == 1 && m1_hready !== 1'b0)) begin
+        $error("%s: owner should be stalled in wait phase", label);
+        $fatal(1);
+      end
+      if (expected_write && (slave_hwdata !== expected_wdata)) begin
+        $error("%s: write data was not held in wait phase", label);
+        $fatal(1);
+      end
+      expect_non_owner_stalled(master_idx);
+      if (expected_write) begin
+        write_data_hold_count++;
       end
       pass_count++;
     end
   endtask
 
-  task automatic check_stall;
+  task automatic check_resp_phase(
+    input int master_idx,
+    input logic [DATA_WIDTH-1:0] expected_rdata,
+    input logic expected_resp,
+    input string label
+  );
     begin
-      init_slaves();
-      slave_hready[AHB_SLAVE_DSRAM] = 1'b0;
-      drive_req(0, DSRAM_BASE + 32'h20, 1'b0, 32'h0000_0000);
-      drive_idle(1);
       @(posedge hclk);
       #1ns;
-      if (grant_idx !== 1'b0 || slave_hsel[AHB_SLAVE_DSRAM] !== 1'b1 || m0_hready !== 1'b0) begin
-        $error("stall: expected m0 stalled by D-SRAM");
+      if (grant_valid !== 1'b0 || slave_htrans !== AHB_HTRANS_IDLE ||
+          slave_hsel !== '0 || default_sel !== 1'b0) begin
+        $error("%s: response phase emitted an address", label);
         $fatal(1);
       end
-      stall_count++;
-      pass_count++;
-
-      slave_hready[AHB_SLAVE_DSRAM] = 1'b1;
-      @(posedge hclk);
-      #1ns;
-      if (m0_hready !== 1'b1 || m0_hrdata !== slave_hrdata[AHB_SLAVE_DSRAM]) begin
-        $error("stall release: expected m0 response");
-        $fatal(1);
-      end
-      pass_count++;
-    end
-  endtask
-
-  task automatic check_round_robin_integration;
-    begin
-      apply_reset();
-      init_slaves();
-      drive_req(0, OTP_BASE + 32'h40, 1'b0, 32'h0000_0000);
-      drive_req(1, DMA_BASE + 32'h04, 1'b1, 32'hCAFE_0001);
-
-      for (int idx = 0; idx < 8; idx++) begin
-        if ((idx % 2) == 0) begin
-          check_grant_route(0, AHB_SLAVE_OTP, OTP_BASE + 32'h40, 1'b0, 32'h0000_0000, "rr m0 otp");
-        end else begin
-          check_grant_route(1, AHB_SLAVE_DMA, DMA_BASE + 32'h04, 1'b1, 32'hCAFE_0001, "rr m1 dma");
+      if (master_idx == 0) begin
+        if (m0_hready !== 1'b1 || m0_hrdata !== expected_rdata || m0_hresp !== expected_resp) begin
+          $error("%s: m0 response mismatch ready=%0b rdata=0x%08h resp=%0b",
+                 label, m0_hready, m0_hrdata, m0_hresp);
+          $fatal(1);
         end
-        rr_count++;
+      end else begin
+        if (m1_hready !== 1'b1 || m1_hrdata !== expected_rdata || m1_hresp !== expected_resp) begin
+          $error("%s: m1 response mismatch ready=%0b rdata=0x%08h resp=%0b",
+                 label, m1_hready, m1_hrdata, m1_hresp);
+          $fatal(1);
+        end
       end
+      expect_non_owner_stalled(master_idx);
+      if (expected_resp == AHB_HRESP_ERROR) begin
+        if (expected_rdata == '0) begin
+          default_error_count++;
+        end
+      end
+      pass_count++;
+    end
+  endtask
+
+  task automatic run_transfer(
+    input int master_idx,
+    input int slave_idx,
+    input logic [ADDR_WIDTH-1:0] addr,
+    input logic write,
+    input logic [DATA_WIDTH-1:0] wdata,
+    input logic [DATA_WIDTH-1:0] rdata,
+    input logic resp,
+    input int unsigned stall_cycles,
+    input string label
+  );
+    logic [DATA_WIDTH-1:0] expected_rdata;
+    logic expected_resp;
+    begin
+      init_slaves();
+      expected_rdata = (slave_idx == AHB_SLAVE_DEFAULT) ? '0 : rdata;
+      expected_resp = (slave_idx == AHB_SLAVE_DEFAULT) ? AHB_HRESP_ERROR : resp;
+      if (slave_idx >= 0 && slave_idx < EXT_SLAVE_COUNT) begin
+        slave_hrdata[slave_idx] = rdata;
+        slave_hresp[slave_idx] = resp;
+      end
+
+      check_addr_phase(master_idx, slave_idx, addr, write, wdata, {label, " addr"});
+      drive_idle(master_idx);
+
+      if (slave_idx >= 0 && slave_idx < EXT_SLAVE_COUNT && stall_cycles != 0) begin
+        slave_hready[slave_idx] = 1'b0;
+      end
+      check_wait_phase(master_idx, write, wdata, {label, " wait-entry"});
+
+      repeat (stall_cycles) begin
+        stall_count++;
+        check_wait_phase(master_idx, write, wdata, {label, " wait-stall"});
+      end
+
+      if (slave_idx >= 0 && slave_idx < EXT_SLAVE_COUNT) begin
+        slave_hready[slave_idx] = 1'b1;
+      end
+      check_resp_phase(master_idx, expected_rdata, expected_resp, {label, " resp"});
+      @(posedge hclk);
+      #1ns;
+      pass_count++;
     end
   endtask
 
   task automatic check_coverage_summary;
     begin
-      if (m0_route_count < 4 || m1_route_count < 4) begin
-        $error("coverage miss: routes m0=%0d m1=%0d", m0_route_count, m1_route_count);
+      if (m0_route_count < 4 || m1_route_count < 4 || both_req_count < 4 ||
+          default_error_count == 0 || stall_count == 0 || write_data_hold_count == 0) begin
+        $error("coverage miss: m0=%0d m1=%0d both=%0d default=%0d stall=%0d wdata=%0d",
+               m0_route_count, m1_route_count, both_req_count, default_error_count,
+               stall_count, write_data_hold_count);
         $fatal(1);
       end
-      if (default_error_count == 0 || stall_count == 0 || rr_count < 8) begin
-        $error("coverage miss: default=%0d stall=%0d rr=%0d",
-               default_error_count, stall_count, rr_count);
-        $fatal(1);
-      end
-      $display("tb_ahb_fabric_2m coverage: pass_count=%0d m0_route_count=%0d m1_route_count=%0d default_error_count=%0d stall_count=%0d rr_count=%0d",
-               pass_count, m0_route_count, m1_route_count, default_error_count,
-               stall_count, rr_count);
+      $display("tb_ahb_fabric_2m coverage: pass_count=%0d m0_route_count=%0d m1_route_count=%0d both_req_count=%0d default_error_count=%0d stall_count=%0d write_data_hold_count=%0d",
+               pass_count, m0_route_count, m1_route_count, both_req_count,
+               default_error_count, stall_count, write_data_hold_count);
     end
   endtask
 
@@ -334,37 +395,42 @@ module tb_ahb_fabric_2m;
     m1_route_count = 0;
     default_error_count = 0;
     stall_count = 0;
-    rr_count = 0;
+    both_req_count = 0;
+    write_data_hold_count = 0;
 
     apply_reset();
 
     drive_req(0, OTP_BASE + 32'h10, 1'b0, 32'h0000_0000);
     drive_idle(1);
-    check_grant_route(0, AHB_SLAVE_OTP, OTP_BASE + 32'h10, 1'b0, 32'h0000_0000, "m0 otp");
+    run_transfer(0, AHB_SLAVE_OTP, OTP_BASE + 32'h10, 1'b0, 32'h0000_0000,
+                 32'h1111_0000, AHB_HRESP_OKAY, 0, "m0 otp");
 
     drive_idle(0);
     drive_req(1, DSRAM_BASE + 32'h10, 1'b1, 32'h1234_5678);
-    check_grant_route(1, AHB_SLAVE_DSRAM, DSRAM_BASE + 32'h10, 1'b1, 32'h1234_5678, "m1 dsram");
+    run_transfer(1, AHB_SLAVE_DSRAM, DSRAM_BASE + 32'h10, 1'b1, 32'h1234_5678,
+                 32'h2222_0000, AHB_HRESP_OKAY, 2, "m1 dsram stall");
 
     drive_req(0, 32'h8000_0000, 1'b0, 32'h0000_0000);
     drive_idle(1);
-    check_grant_route(0, AHB_SLAVE_DEFAULT, 32'h8000_0000, 1'b0, 32'h0000_0000, "m0 default");
+    run_transfer(0, AHB_SLAVE_DEFAULT, 32'h8000_0000, 1'b0, 32'h0000_0000,
+                 32'h0000_0000, AHB_HRESP_ERROR, 0, "m0 default");
 
-    check_stall();
-    check_round_robin_integration();
-
-    drive_idle(0);
-    drive_idle(1);
-    @(posedge hclk);
-    #1ns;
-    if (slave_hsel !== '0 || default_sel !== 1'b0) begin
-      $error("idle: expected no slave select");
-      $fatal(1);
+    for (int idx = 0; idx < 8; idx++) begin
+      drive_req(0, ISRAM_BASE + 32'(idx * 4), 1'b0, 32'h0000_0000);
+      drive_req(1, DMA_BASE + 32'(idx * 4), 1'b1, 32'hCAFE_0000 + 32'(idx));
+      both_req_count++;
+      if ((idx % 2) == 0) begin
+        run_transfer(1, AHB_SLAVE_DMA, DMA_BASE + 32'(idx * 4), 1'b1,
+                     32'hCAFE_0000 + 32'(idx), 32'h4400_0000 + 32'(idx),
+                     AHB_HRESP_OKAY, 0, "rr m1 dma");
+      end else begin
+        run_transfer(0, AHB_SLAVE_ISRAM, ISRAM_BASE + 32'(idx * 4), 1'b0,
+                     32'h0000_0000, 32'h3300_0000 + 32'(idx), AHB_HRESP_OKAY,
+                     0, "rr m0 isram");
+      end
     end
-    pass_count++;
 
     check_coverage_summary();
-
     $display("tb_ahb_fabric_2m PASS");
     $finish;
   end

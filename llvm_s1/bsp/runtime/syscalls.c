@@ -1,15 +1,15 @@
 #include <stddef.h>
 #include <stdint.h>
+#include "wasp1_runtime.h"
 #include "wasp1_uart.h"
 
-/* Stage-1 fatal trap hook. Full context save is deferred to runtime work. */
-void wasp1_trap_handler(uint32_t mcause, uint32_t mepc, uint32_t mtval)
+/* Default fatal trap hook. Firmware examples may override this weak symbol. */
+void __attribute__((weak)) wasp1_trap_handler(uint32_t mcause, uint32_t mepc, uint32_t mtval)
 {
   (void)mcause;
   (void)mepc;
   (void)mtval;
-  for (;;) {
-  }
+  wasp1_idle_forever();
 }
 
 int puts(const char *text)
@@ -30,6 +30,5 @@ void _exit(int status)
 {
   /* Bare-metal programs have no host process to return to. */
   (void)status;
-  for (;;) {
-  }
+  wasp1_idle_forever();
 }

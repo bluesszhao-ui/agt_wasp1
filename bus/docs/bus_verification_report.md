@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-07-02 |
+| Date | 2026-07-05 |
 | Tool | Verilator 5.046 |
 | Lint command | `make -C bus lint` |
 | Simulation command | `make -C bus sim` |
@@ -13,8 +13,8 @@
 | `ahb_decoder` self-check count | 183 |
 | `ahb_default_slave` self-check count | 136 |
 | `ahb_slave_mux` self-check count | 144 |
-| `ahb_arbiter_2m` self-check count | 100 |
-| `ahb_fabric_2m` self-check count | 16 |
+| `ahb_arbiter_2m` self-check count | 43 |
+| `ahb_fabric_2m` self-check count | 47 |
 | Lint log | `bus/logs/lint.log` |
 | Simulation log | `bus/logs/tb_ahb_decoder.log` |
 
@@ -143,45 +143,43 @@ These are initial parameters, not final capacity decisions.
 | Time | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
 | Cycles 0-2 | Assert reset | No grant, output transfer IDLE | PASS |
-| Cycles 3-6 | Drive m0-only then m1-only requests | Requesting master granted, response routed back | PASS |
-| Cycles 7-30 | Drive continuous simultaneous requests | Grants alternate m0/m1 round-robin | PASS |
-| Cycles 31-35 | Force downstream HREADY low | Grant and output address/control remain stable | PASS |
-| Cycles 36-99 | Drive 64 deterministic random request patterns | RTL grant matches scoreboard model | PASS |
+| Cycles 3-10 | Drive m0 read transaction | ADDR pulse, WAIT hold, response routed to m0 | PASS |
+| Cycles 11-20 | Drive m1 write with response ERROR and ready-low wait | HWDATA held, m1 receives ERROR | PASS |
+| Cycles 21-44 | Drive simultaneous m0/m1 requests repeatedly | Round-robin alternates transaction owners | PASS |
 
 ## 11. ahb_arbiter_2m Functional Coverage Summary
 
 | Coverage item | Result |
 | --- | --- |
-| Total self-checks | 100 |
-| m0 grant count | 33 |
-| m1 grant count | 33 |
-| simultaneous request count | 32 |
-| downstream stall hold checks | 3 |
-| selected HREADY low checks | 3 |
-| response ERROR route checks | 7 |
-| held response route after address phase | PASS |
-| deterministic random request patterns | 64 |
+| Total self-checks | 43 |
+| m0 grant count | 5 |
+| m1 grant count | 5 |
+| simultaneous request count | 8 |
+| WAIT/data-phase hold checks | 12 |
+| selected HREADY low checks | 2 |
+| response ERROR route checks | 1 |
+| write-data hold checks | 7 |
+| non-owner requesting HREADY-low checks | PASS |
 
 ## 12. ahb_fabric_2m Case Table
 
 | Time | Action | Expected result | Observed result |
 | --- | --- | --- | --- |
 | Cycles 0-2 | Assert reset | No grant, no external slave select, default not selected | PASS |
-| Cycles 3-4 | m0 reads OTP region | OTP select asserted, m0 receives OTP mock response | PASS |
-| Cycles 5-6 | m1 writes D-SRAM region | D-SRAM select asserted, m1 receives D-SRAM mock response | PASS |
-| Cycles 7-8 | m0 reads unmapped address | No external select, default selected, m0 receives ERROR | PASS |
-| Cycles 9-10 | D-SRAM mock slave stalls | m0 sees HREADY low, then completes after release | PASS |
-| Cycles 11-18 | m0 and m1 request simultaneously | Round-robin routes m0 to OTP and m1 to DMA regs | PASS |
-| Cycle 19 | Both masters idle | No external select and default not selected | PASS |
+| Cycles 3-8 | m0 reads OTP region | OTP select asserted in ADDR, m0 receives OTP mock response in RESP | PASS |
+| Cycles 9-18 | m1 writes D-SRAM region with ready-low wait | D-SRAM select asserted, HWDATA held, m1 completes after release | PASS |
+| Cycles 19-24 | m0 reads unmapped address | No external select, default selected in ADDR, m0 receives held ERROR response | PASS |
+| Cycles 25-48 | m0 and m1 request simultaneously | Round-robin routes m1 to DMA regs and m0 to I-SRAM according to previous winner | PASS |
 
 ## 13. ahb_fabric_2m Functional Coverage Summary
 
 | Coverage item | Result |
 | --- | --- |
-| Total self-checks | 16 |
+| Total self-checks | 47 |
 | m0 route count | 6 |
 | m1 route count | 5 |
 | default error count | 1 |
-| selected slave stall count | 1 |
+| selected slave stall count | 2 |
 | data-phase slave select hold | PASS |
 | round-robin integration count | 8 |
+| write-data hold checks | 7 |

@@ -20,6 +20,13 @@ module tb_wasp1;
   localparam int unsigned DMA_COPY_SRC_WORD_IDX = 32'h0000_3000 >> 2;
   localparam int unsigned DMA_COPY_DST_WORD_IDX = 32'h0000_3040 >> 2;
   localparam int unsigned DMA_COPY_WORDS = 4;
+  localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
+  localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
+  localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
+  localparam int unsigned TIMER_IRQ_DONE_WORD_IDX = 32'h0000_310c >> 2;
+  localparam logic [31:0] TIMER_IRQ_EXPECTED_MAGIC = 32'h5449_4d52;
+  localparam logic [31:0] TIMER_IRQ_EXPECTED_DONE = 32'h4952_5121;
+  localparam logic [31:0] TIMER_IRQ_EXPECTED_MCAUSE = 32'h8000_0007;
   localparam logic [31:0] DMA_COPY_EXPECTED [DMA_COPY_WORDS] = '{
     32'h1122_3344,
     32'h5566_7788,
@@ -59,7 +66,9 @@ module tb_wasp1;
   bit          otp_image_loaded;            // Set when +WASP1_OTP_HEX loaded a firmware image.
   bit          otp_program_check;           // Selects OTP programming firmware assertions.
   bit          dma_copy_check;              // Selects DMA real-memory-copy firmware assertions.
+  bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
+  bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
   int unsigned uart_tx_push_count;          // Number of bytes accepted into the UART TX FIFO.
@@ -136,7 +145,8 @@ module tb_wasp1;
                    $time, u_wasp1.u_ahb_uart.tx_fifo_wdata);
         end
       end
-      if (u_wasp1.u_core_ahb_bridge.state_q == u_wasp1.u_core_ahb_bridge.BR_RESP) begin
+      if ((u_wasp1.u_core_ahb_bridge.state_q == u_wasp1.u_core_ahb_bridge.BR_DATA_WAIT) &&
+          u_wasp1.core_hready) begin
         core_rsp_count <= core_rsp_count + 1;
         if (sw_trace && core_rsp_count < 8) begin
           $display("[%0t] tb_wasp1 core bridge rsp addr=0x%08h write=%0b rdata=0x%08h hresp=%0b",
@@ -144,6 +154,31 @@ module tb_wasp1;
                    u_wasp1.u_core_ahb_bridge.req_write_q,
                    u_wasp1.core_hrdata, u_wasp1.core_hresp);
         end
+      end
+      if ((sw_trace || dma_trace) && u_wasp1.u_ahb_dsram.req_valid_q &&
+          u_wasp1.u_ahb_dsram.req_write_q && !u_wasp1.u_ahb_dsram.req_err_q) begin
+        $display("[%0t] tb_wasp1 DSRAM write addr=0x%08h data=0x%08h grant=%0b dma_state=%0d",
+                 $time,
+                 DSRAM_BASE + u_wasp1.u_ahb_dsram.req_addr_q,
+                 u_wasp1.slave_hwdata,
+                 bus_grant_idx,
+                 u_wasp1.u_ahb_dma.state_q);
+      end
+      if (dma_trace && (u_wasp1.u_ahb_dma.state_q != u_wasp1.u_ahb_dma.DMA_IDLE)) begin
+        $display("[%0t] tb_wasp1 DMA state=%0d m_addr=0x%08h m_trans=%0b m_write=%0b m_wdata=0x%08h m_rdata=0x%08h m_ready=%0b m_resp=%0b grant=%0b slave_sel=0x%0h slave_addr=0x%08h slave_write=%0b",
+                 $time,
+                 u_wasp1.u_ahb_dma.state_q,
+                 u_wasp1.dma_m_haddr,
+                 u_wasp1.dma_m_htrans,
+                 u_wasp1.dma_m_hwrite,
+                 u_wasp1.dma_m_hwdata,
+                 u_wasp1.dma_m_hrdata,
+                 u_wasp1.dma_m_hready,
+                 u_wasp1.dma_m_hresp,
+                 bus_grant_idx,
+                 u_wasp1.slave_hsel,
+                 u_wasp1.slave_haddr,
+                 u_wasp1.slave_hwrite);
       end
     end
   end
@@ -155,7 +190,9 @@ module tb_wasp1;
     otp_image_loaded = 1'b0;
     otp_program_check = $test$plusargs("WASP1_OTP_PROGRAM_CHECK");
     dma_copy_check = $test$plusargs("WASP1_DMA_COPY_CHECK");
+    timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
+    dma_trace = $test$plusargs("WASP1_DMA_TRACE");
     otp_hex_path = "";
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
       #1ps;
@@ -554,6 +591,11 @@ module tb_wasp1;
             copy_done = 1'b0;
           end
         end
+        if (u_wasp1.u_ahb_dma.done_q !== 1'b1 ||
+            u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+            u_wasp1.dma_irq !== 1'b1) begin
+          copy_done = 1'b0;
+        end
         if (!copy_done) begin
           @(posedge hclk);
           #1ns;
@@ -597,6 +639,59 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_timer_irq_activity;
+    int unsigned timeout;
+    logic [31:0] magic_word;
+    logic [31:0] mcause_word;
+    logic [31:0] mepc_word;
+    logic [31:0] done_word;
+    begin
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      while (((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
+              (done_word !== TIMER_IRQ_EXPECTED_DONE)) &&
+             timeout < 40000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_DONE_WORD_IDX];
+        if ((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
+            (done_word !== TIMER_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      mcause_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MCAUSE_WORD_IDX];
+      mepc_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MEPC_WORD_IDX];
+      if ((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
+          (done_word !== TIMER_IRQ_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("timer IRQ firmware did not complete: magic=0x%08h done=0x%08h mcause=0x%08h mepc=0x%08h",
+               magic_word, done_word, mcause_word, mepc_word);
+        $fatal(1);
+      end
+      if (mcause_word !== TIMER_IRQ_EXPECTED_MCAUSE ||
+          u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q !==
+          TIMER_IRQ_EXPECTED_MCAUSE) begin
+        $error("timer IRQ mcause mismatch: mailbox=0x%08h csr=0x%08h expected=0x%08h",
+               mcause_word,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q,
+               TIMER_IRQ_EXPECTED_MCAUSE);
+        $fatal(1);
+      end
+      if ((mepc_word[1:0] !== 2'b00) || (mepc_word >= 32'h0000_ff00)) begin
+        $error("timer IRQ mepc out of executable OTP range: 0x%08h", mepc_word);
+        $fatal(1);
+      end
+      if (u_wasp1.timer_irq !== 1'b0) begin
+        $error("timer IRQ still asserted after handler completion");
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   initial begin
     drive_defaults();
     hresetn = 1'b0;
@@ -614,6 +709,8 @@ module tb_wasp1;
     if (otp_image_loaded) begin
       if (dma_copy_check) begin
         wait_for_dma_copy_activity();
+      end else if (timer_irq_check) begin
+        wait_for_timer_irq_activity();
       end else if (otp_program_check) begin
         wait_for_otp_program_activity();
       end else begin

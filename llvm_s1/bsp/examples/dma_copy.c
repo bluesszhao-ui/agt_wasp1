@@ -57,8 +57,7 @@ static void start_dma_copy_no_poll(void)
   dma[WASP1_DMA_CTRL / 4u] =
     WASP1_DMA_CTRL_START | WASP1_DMA_CTRL_IRQ_EN | WASP1_DMA_CTRL_CLEAR;
 
-  for (;;) {
-  }
+  wasp1_idle_forever();
 }
 
 int main(void)

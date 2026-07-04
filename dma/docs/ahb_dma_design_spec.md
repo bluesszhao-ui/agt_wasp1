@@ -133,13 +133,8 @@ DMA_READ_ADDR:
   HREADY -> DMA_READ_WAIT
 
 DMA_READ_WAIT:
-  absorb one registered fabric/SRAM response latency slot
-  HRESP=ERROR is remembered for DMA_READ_DATA
-  HREADY -> DMA_READ_DATA
-
-DMA_READ_DATA:
   wait for read response
-  remembered HRESP=ERROR or current HRESP=ERROR -> DMA_IDLE, busy=0, error=1
+  HRESP=ERROR -> DMA_FINISH, error=1
   no error -> latch read data, DMA_WRITE_ADDR
 
 DMA_WRITE_ADDR:
@@ -148,15 +143,19 @@ DMA_WRITE_ADDR:
 
 DMA_WRITE_RESP:
   wait for write response
-  HRESP=ERROR -> DMA_IDLE, busy=0, error=1
+  HRESP=ERROR -> DMA_FINISH, error=1
   HRESP=OKAY and more words:
     SRC <- SRC + 4
     DST <- DST + 4
     remaining <- remaining - 1
     -> DMA_READ_ADDR
   HRESP=OKAY and last word:
-    busy=0, done=1, error=0
-    -> DMA_IDLE
+    done=1, error=0
+    -> DMA_FINISH
+
+DMA_FINISH:
+  one-cycle terminal cleanup
+  -> DMA_IDLE
 ```
 
 The slave register path is a separate one-cycle AHB response state machine:

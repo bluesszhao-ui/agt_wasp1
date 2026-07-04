@@ -10,6 +10,7 @@ make -C wasp1 sim
 make -C wasp1 sim-sw
 make -C wasp1 sim-otp-program
 make -C wasp1 sim-dma-copy
+make -C wasp1 sim-timer-irq
 make -C wasp1 sim-rbb-smoke
 openocd -f wasp1/dv/openocd/wasp1_remote_bitbang.cfg -c shutdown
 riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
@@ -26,6 +27,7 @@ riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
 | `tb_wasp1` OTP firmware simulation | PASS |
 | `tb_wasp1` OTP programming firmware simulation | PASS |
 | `tb_wasp1` DMA copy firmware simulation | PASS |
+| `tb_wasp1` timer IRQ firmware simulation | PASS |
 | Remote-bitbang socket smoke | PASS |
 | OpenOCD process smoke | PASS |
 | GDB process smoke | PASS |
@@ -39,7 +41,9 @@ tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_run
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/otp_program_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/dma_copy_otp.hex
-tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=1 dbg_running=1 dbg_halted=0 dbg_dmactive=1
+tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
+tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/timer_irq_otp.hex
+tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 wasp1_rbb_smoke PASS
 OpenOCD: hart 0: XLEN=32, misa=0x40000100
 GDB: registers read, pc=0x00000000, detach PASS
@@ -63,6 +67,7 @@ GDB: registers read, pc=0x00000000, detach PASS
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
 | 105ns-33us | OTP programming firmware run | Startup copies `.fasttext` to I-SRAM; CPU executes the programming routine from I-SRAM and programs OTP word `0x00003fa0` to `0x13572468` with `done=1` and `error=0` | PASS |
 | 105ns-21us | DMA copy firmware run | CPU seeds D-SRAM source words at `0x20003000`, starts DMA to copy four words to `0x20003040`, and the testbench observes matching destination words with `done=1`, `error=0`, and `irq=1` | PASS |
+| 105ns-50us | Timer IRQ firmware run | CPU programs `mtime/mtimecmp`, enables MTIE/MIE, services one machine timer interrupt, writes trap mailbox values in D-SRAM, disables timer IRQ, and returns to idle | PASS |
 
 ## 4. Residual Risk
 
@@ -71,6 +76,8 @@ OpenOCD/GDB process path is now verified for connect, halt, register read, PC
 read, and detach over remote-bitbang JTAG. The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
-Remaining top-level work includes interrupt-driven software, longer SoC boot
-tests from `llvm_s1` output, and richer debug operations such as single-step,
-breakpoints, abstract memory access, and true core DPC capture.
+The machine timer interrupt path is covered by a generated firmware image that
+returns through the C trap handler. Remaining top-level work includes external
+interrupt-driven software through INTC, longer SoC boot tests from `llvm_s1`
+output, and richer debug operations such as single-step, breakpoints, abstract
+memory access, and true core DPC capture.

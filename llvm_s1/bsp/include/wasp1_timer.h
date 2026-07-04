@@ -28,6 +28,19 @@ static inline void wasp1_timer_enable(uint32_t irq_en)
   wasp1_write32(WASP1_TIMER_BASE + WASP1_TIMER_CTRL, ctrl);
 }
 
+static inline void wasp1_timer_disable(void)
+{
+  /* Disabling the timer also gates its interrupt output through CTRL. */
+  wasp1_write32(WASP1_TIMER_BASE + WASP1_TIMER_CTRL, 0u);
+}
+
+static inline void wasp1_timer_set_mtime(uint32_t lo, uint32_t hi)
+{
+  /* Low/high writes give tests a deterministic starting counter value. */
+  wasp1_write32(WASP1_TIMER_BASE + WASP1_TIMER_MTIME_LO, lo);
+  wasp1_write32(WASP1_TIMER_BASE + WASP1_TIMER_MTIME_HI, hi);
+}
+
 static inline void wasp1_timer_set_cmp(uint32_t lo, uint32_t hi)
 {
   /* Write high then low so the final low write arms the desired compare value. */

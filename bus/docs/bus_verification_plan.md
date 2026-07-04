@@ -22,8 +22,8 @@ response muxing, and default error handling.
 | 480ns-540ns | Selected slave stalls HREADY low | Master sees HREADY low from selected slave | PASS for `ahb_slave_mux` |
 | 540ns-640ns | Arbiter handles single-master requests | Requesting master granted and response routed | PASS for `ahb_arbiter_2m` |
 | 640ns-760ns | Arbiter handles simultaneous requests | Grants alternate round-robin | PASS for `ahb_arbiter_2m` |
-| 760ns-840ns | Arbiter sees downstream HREADY low | Grant and output controls remain stable | PASS for `ahb_arbiter_2m` |
-| 840ns-940ns | Arbiter deterministic random requests | RTL grants match scoreboard model | PASS for `ahb_arbiter_2m` |
+| 760ns-840ns | Arbiter sees downstream HREADY low in WAIT/RESP | Owner remains stalled and write data remains stable | PASS for `ahb_arbiter_2m` |
+| 840ns-940ns | Arbiter holds write data after write address phase | HWDATA remains from transaction owner through WAIT | PASS for `ahb_arbiter_2m` |
 | 940ns-1040ns | Fabric routes m0/m1 to external slaves | Correct slave select and response routing | PASS for `ahb_fabric_2m` |
 | 1040ns-1140ns | Fabric handles unmapped address | No external select, default ERROR response | PASS for `ahb_fabric_2m` |
 | 1140ns-1240ns | Full fabric selected slave stalls HREADY low | Master observes HREADY low, then completes | PASS for `ahb_fabric_2m` |
@@ -35,7 +35,7 @@ only one slave select is active per accepted address phase
 default slave selected for unmapped regions
 granted master receives selected slave response
 non-granted master is stalled
-address/control stay stable while HREADY is low
+address/control are emitted only in ADDR; HWDATA remains stable through WAIT
 round-robin grant toggles under simultaneous valid requests
 ```
 
@@ -81,10 +81,10 @@ reset no-grant state
 single m0 request grant
 single m1 request grant
 simultaneous request round-robin alternation
-downstream HREADY low grant hold
+WAIT/RESP HREADY low transaction-owner hold
+write-data hold through registered slave data phase
 selected master response routing
 non-selected requesting master held with HREADY low
-deterministic random request scoreboard
 ```
 
 `ahb_fabric_2m` additionally checks:
@@ -96,7 +96,7 @@ m1 route through decoder/mux to D-SRAM mock slave
 unmapped route to internal default slave
 external slave HREADY low propagation
 round-robin integration across two masters
-idle no-select behavior
+write-data hold through fabric wait phase
 ```
 
 ## 4. Coverage Intent
@@ -117,7 +117,8 @@ slave mux every slave response path
 slave mux HREADY low and HRESP ERROR paths
 arbiter m0-only and m1-only grants
 arbiter simultaneous request alternation
-arbiter downstream stall hold
+arbiter WAIT/RESP stall hold
+arbiter write-data hold
 arbiter response routing and error path
 fabric external slave routing
 fabric default error routing

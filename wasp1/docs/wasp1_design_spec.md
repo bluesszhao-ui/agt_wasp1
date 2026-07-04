@@ -37,22 +37,21 @@ fabric decode/muxing, and peripheral sequential blocks.
 
 ## 4. Core AHB Bridge FSM
 
-`wasp1_core_ahb_bridge` uses five states:
+`wasp1_core_ahb_bridge` uses four states:
 
 | State | Meaning | Transition |
 | --- | --- | --- |
 | `BR_IDLE` | No outstanding request | D-cache valid -> `BR_ADDR`; else I-cache valid -> `BR_ADDR`. |
 | `BR_ADDR` | AHB address phase is driven | `hready_i=1` -> `BR_DATA_WAIT`; otherwise hold. |
-| `BR_DATA_WAIT` | Registered SoC slave/fabric response path advances one cycle | `hready_i=1` -> `BR_RESP`; otherwise hold. |
-| `BR_RESP` | AHB response phase is sampled | `hready_i=1` -> latch `hrdata_i/hresp_i`, then `BR_RSP_HOLD`. |
+| `BR_DATA_WAIT` | Wait for fabric response-ready | `hready_i=1` -> latch `hrdata_i/hresp_i`, then `BR_RSP_HOLD`; otherwise hold. |
 | `BR_RSP_HOLD` | Selected cache response is held | Selected cache `rsp_ready=1` -> `BR_IDLE`. |
 
 D-cache wins when both cache ports request while the bridge is idle. The bridge
 allows only one outstanding transfer, which matches the simple single-beat
 AHB-Lite transfers used by current caches and SRAM/peripheral targets.
-`BR_DATA_WAIT` matches the project slave contract: SRAM, OTP, and peripherals
-capture the address phase first and drive their registered read data/response on
-the following clock.
+`BR_DATA_WAIT` matches the project bus contract: the fabric accepts one address
+phase, waits for the registered slave response to become stable, then returns a
+single response-ready pulse to the bridge.
 
 ## 5. Address and Interrupt Integration
 

@@ -74,6 +74,7 @@ module ahb_fabric_2m #(
   logic [DATA_WIDTH-1:0] default_hrdata;
   logic                  default_hready;
   logic                  default_hresp;
+  logic                  default_resp_hold_q;
 
   ahb_arbiter_2m #(
     .ADDR_WIDTH(ADDR_WIDTH),
@@ -156,18 +157,27 @@ module ahb_fabric_2m #(
 
     mux_slave_hrdata[AHB_SLAVE_DEFAULT] = default_hrdata;
     mux_slave_hready[AHB_SLAVE_DEFAULT] = default_hready;
-    mux_slave_hresp[AHB_SLAVE_DEFAULT] = default_hresp;
+    mux_slave_hresp[AHB_SLAVE_DEFAULT] = default_resp_hold_q;
   end
 
   always_ff @(posedge hclk_i or negedge hresetn_i) begin
     if (!hresetn_i) begin
       data_hsel_q <= '0;
-    end else if (mux_hready && |decoder_hsel) begin
+      default_resp_hold_q <= AHB_HRESP_OKAY;
+    end else if (arb_htrans[1] && |decoder_hsel) begin
       data_hsel_q <= decoder_hsel;
+      default_resp_hold_q <= decoder_hsel[AHB_SLAVE_DEFAULT] ? AHB_HRESP_ERROR : AHB_HRESP_OKAY;
     end
   end
 
-  assign mux_hsel = (|decoder_hsel) ? decoder_hsel : data_hsel_q;
+  logic unused_default_hresp;
+  assign unused_default_hresp = default_hresp;
+
+  // Slave response muxing uses the data-phase slave captured from the previous
+  // address phase. The non-pipelined arbiter keeps the fabric idle until the
+  // routed response is consumed, so this select remains stable for the whole
+  // WAIT/RESP interval.
+  assign mux_hsel = data_hsel_q;
 
   ahb_slave_mux #(
     .DATA_WIDTH(DATA_WIDTH),

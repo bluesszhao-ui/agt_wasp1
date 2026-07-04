@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-06-11 |
+| Date | 2026-07-05 |
 | Tool | Verilator 5.046 |
 | Lint command | `make -C dma lint` |
 | IC lint command | `make -C dma lint-ic` |
