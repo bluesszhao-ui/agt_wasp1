@@ -34,4 +34,10 @@ static inline void wasp1_dma_start(uint32_t src, uint32_t dst, uint32_t len_word
   wasp1_write32(WASP1_DMA_BASE + WASP1_DMA_CTRL, ctrl);
 }
 
+static inline void wasp1_dma_clear_done_error(void)
+{
+  /* Clear sticky done/error and drop IRQ enable unless a later start sets it. */
+  wasp1_write32(WASP1_DMA_BASE + WASP1_DMA_CTRL, WASP1_DMA_CTRL_CLEAR);
+}
+
 #endif

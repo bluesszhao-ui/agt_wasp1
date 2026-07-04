@@ -6,12 +6,13 @@ WASP1_TOP := tb_wasp1
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
 OTP_PROGRAM_HEX ?= ../llvm_s1/build/smoke/otp_program_otp.hex
 DMA_COPY_HEX ?= ../llvm_s1/build/smoke/dma_copy_otp.hex
+DMA_IRQ_HEX ?= ../llvm_s1/build/smoke/dma_irq_otp.hex
 TIMER_IRQ_HEX ?= ../llvm_s1/build/smoke/timer_irq_otp.hex
 RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-timer-irq sim-rbb-build sim-rbb-smoke clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-timer-irq sim-rbb-build sim-rbb-smoke clean
 
 all: lint
 
@@ -47,6 +48,17 @@ sim-dma-copy:
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(DMA_COPY_HEX) \
 		+WASP1_DMA_COPY_CHECK > logs/tb_wasp1_dma_copy.log 2>&1
 	@cat logs/tb_wasp1_dma_copy.log
+
+sim-dma-irq:
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_dma_irq_build.log 2>&1
+	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(DMA_IRQ_HEX) \
+		+WASP1_DMA_IRQ_CHECK > logs/tb_wasp1_dma_irq.log 2>&1
+	@cat logs/tb_wasp1_dma_irq.log
 
 sim-timer-irq:
 	$(MAKE) -C ../llvm_s1 smoke

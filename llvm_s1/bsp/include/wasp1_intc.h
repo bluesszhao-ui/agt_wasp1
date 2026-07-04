@@ -26,6 +26,31 @@ static inline void wasp1_intc_enable(uint32_t irq_id)
   wasp1_set32(WASP1_INTC_BASE + WASP1_INTC_ENABLE, UINT32_C(1) << irq_id);
 }
 
+static inline void wasp1_intc_disable(uint32_t irq_id)
+{
+  /* Disable a single external interrupt source. */
+  wasp1_clear32(WASP1_INTC_BASE + WASP1_INTC_ENABLE, UINT32_C(1) << irq_id);
+}
+
+static inline void wasp1_intc_set_priority(uint32_t irq_id, uint32_t priority)
+{
+  /* Priority 0 is effectively disabled; ID 0 is reserved by hardware. */
+  wasp1_write32(WASP1_INTC_BASE + WASP1_INTC_PRIORITY_BASE +
+                (irq_id * WASP1_INTC_PRIORITY_STRIDE), priority);
+}
+
+static inline void wasp1_intc_set_threshold(uint32_t threshold)
+{
+  /* Interrupts with priority greater than threshold can assert MEIP. */
+  wasp1_write32(WASP1_INTC_BASE + WASP1_INTC_THRESHOLD, threshold);
+}
+
+static inline void wasp1_intc_clear_pending(uint32_t irq_id)
+{
+  /* PENDING is write-one-to-clear for latched interrupt sources. */
+  wasp1_write32(WASP1_INTC_BASE + WASP1_INTC_PENDING, UINT32_C(1) << irq_id);
+}
+
 static inline uint32_t wasp1_intc_claim(void)
 {
   /* Claim returns 0 when no enabled interrupt exceeds the threshold. */

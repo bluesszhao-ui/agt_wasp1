@@ -113,10 +113,11 @@ implemented:
   UART/GPIO/timer/WDG/DMA/INTC/OTP/I2C register helpers
   OTP-first linker script
   crt0 reset entry
-  minimal trap stub
+  machine-mode trap entry with integer context save/restore
   memcpy/memset/syscall stubs
   UART, GPIO, and OTP programming examples
   DMA real-memory-copy example
+  DMA external interrupt example through INTC
   timer interrupt example with C trap handler
   structural BSP self-check
   toolchain discovery and syntax/codegen/link smoke-test harness
@@ -126,13 +127,14 @@ implemented:
   local sparse LLVM source checkout for llvm/clang/lld
   SoC boot regression that consumes generated hello_uart OTP image
   SoC DMA copy regression that consumes generated dma_copy OTP image
+  SoC DMA external interrupt regression that consumes generated dma_irq OTP image
   SoC timer interrupt regression that consumes generated timer_irq OTP image
   SoC OTP programming regression that consumes generated otp_program OTP image
 
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  external interrupt firmware regressions through INTC
+  additional external interrupt firmware regressions for GPIO/UART
 ```
 
 ## 5. Linker Layout
@@ -157,6 +159,7 @@ trap handler build checks
 UART hello program
 timer interrupt program
 DMA copy program
+DMA external interrupt program
 OTP programming program
 ```
 
@@ -173,8 +176,8 @@ symbols, aggregate-header syntax, tool discovery, and BSP source syntax. It also
 attempts RV32I object generation, startup assembly, ELF linking, and optional
 binary/OTP image generation when a full RISC-V LLVM toolchain is installed.
 The current smoke flow builds `hello_uart_otp.hex`, `dma_copy_otp.hex`,
-`timer_irq_otp.hex`, and `otp_program_otp.hex`; the `wasp1` top-level
-regression consumes all four images.
+`dma_irq_otp.hex`, `timer_irq_otp.hex`, and `otp_program_otp.hex`; the `wasp1`
+top-level regression consumes all five images.
 
 On a workstation without RISC-V LLVM code generation support, unavailable
 compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode

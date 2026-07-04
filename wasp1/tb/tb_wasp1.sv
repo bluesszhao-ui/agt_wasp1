@@ -20,6 +20,17 @@ module tb_wasp1;
   localparam int unsigned DMA_COPY_SRC_WORD_IDX = 32'h0000_3000 >> 2;
   localparam int unsigned DMA_COPY_DST_WORD_IDX = 32'h0000_3040 >> 2;
   localparam int unsigned DMA_COPY_WORDS = 4;
+  localparam int unsigned DMA_IRQ_SRC_WORD_IDX = 32'h0000_3200 >> 2;
+  localparam int unsigned DMA_IRQ_DST_WORD_IDX = 32'h0000_3240 >> 2;
+  localparam int unsigned DMA_IRQ_WORDS = 4;
+  localparam int unsigned DMA_IRQ_MAGIC_WORD_IDX = 32'h0000_3300 >> 2;
+  localparam int unsigned DMA_IRQ_MCAUSE_WORD_IDX = 32'h0000_3304 >> 2;
+  localparam int unsigned DMA_IRQ_CLAIM_WORD_IDX = 32'h0000_3308 >> 2;
+  localparam int unsigned DMA_IRQ_DONE_WORD_IDX = 32'h0000_330c >> 2;
+  localparam logic [31:0] DMA_IRQ_EXPECTED_MAGIC = 32'h444d_4149;
+  localparam logic [31:0] DMA_IRQ_EXPECTED_DONE = 32'h4558_4954;
+  localparam logic [31:0] DMA_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
+  localparam logic [31:0] DMA_IRQ_EXPECTED_CLAIM = 32'h0000_0005;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -32,6 +43,12 @@ module tb_wasp1;
     32'h5566_7788,
     32'h99aa_bbcc,
     32'hddee_ff00
+  };
+  localparam logic [31:0] DMA_IRQ_EXPECTED [DMA_IRQ_WORDS] = '{
+    32'h1020_3040,
+    32'h5060_7080,
+    32'h90a0_b0c0,
+    32'hd0e0_f000
   };
 
   logic                  hclk;              // 100 MHz verification clock.
@@ -66,6 +83,7 @@ module tb_wasp1;
   bit          otp_image_loaded;            // Set when +WASP1_OTP_HEX loaded a firmware image.
   bit          otp_program_check;           // Selects OTP programming firmware assertions.
   bit          dma_copy_check;              // Selects DMA real-memory-copy firmware assertions.
+  bit          dma_irq_check;               // Selects DMA external interrupt firmware assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -190,6 +208,7 @@ module tb_wasp1;
     otp_image_loaded = 1'b0;
     otp_program_check = $test$plusargs("WASP1_OTP_PROGRAM_CHECK");
     dma_copy_check = $test$plusargs("WASP1_DMA_COPY_CHECK");
+    dma_irq_check = $test$plusargs("WASP1_DMA_IRQ_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -639,6 +658,91 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_dma_irq_activity;
+    int unsigned timeout;
+    logic [31:0] magic_word;
+    logic [31:0] mcause_word;
+    logic [31:0] claim_word;
+    logic [31:0] done_word;
+    bit          irq_done;
+    begin
+      timeout = 0;
+      irq_done = 1'b0;
+      magic_word = '0;
+      done_word = '0;
+      while (!irq_done && timeout < 50000) begin
+        irq_done = 1'b1;
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DONE_WORD_IDX];
+        if ((magic_word !== DMA_IRQ_EXPECTED_MAGIC) ||
+            (done_word !== DMA_IRQ_EXPECTED_DONE)) begin
+          irq_done = 1'b0;
+        end
+        for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
+          if (u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DST_WORD_IDX + idx] !==
+              DMA_IRQ_EXPECTED[idx]) begin
+            irq_done = 1'b0;
+          end
+        end
+        if (!irq_done) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      mcause_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_CLAIM_WORD_IDX];
+      if (!irq_done) begin
+        dump_sw_timeout_diagnostics();
+        for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
+          $display("  dma_irq src[%0d] got=0x%08h expected=0x%08h",
+                   idx,
+                   u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
+                   DMA_IRQ_EXPECTED[idx]);
+          $display("  dma_irq dst[%0d] got=0x%08h expected=0x%08h",
+                   idx,
+                   u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DST_WORD_IDX + idx],
+                   DMA_IRQ_EXPECTED[idx]);
+        end
+        $error("DMA IRQ firmware did not complete: magic=0x%08h done=0x%08h mcause=0x%08h claim=0x%08h",
+               magic_word, done_word, mcause_word, claim_word);
+        $fatal(1);
+      end
+      if (mcause_word !== DMA_IRQ_EXPECTED_MCAUSE ||
+          u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q !==
+          DMA_IRQ_EXPECTED_MCAUSE) begin
+        $error("DMA IRQ mcause mismatch: mailbox=0x%08h csr=0x%08h expected=0x%08h",
+               mcause_word,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q,
+               DMA_IRQ_EXPECTED_MCAUSE);
+        $fatal(1);
+      end
+      if (claim_word !== DMA_IRQ_EXPECTED_CLAIM) begin
+        $error("DMA IRQ claim mismatch: got=0x%08h expected=0x%08h",
+               claim_word, DMA_IRQ_EXPECTED_CLAIM);
+        $fatal(1);
+      end
+      for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
+        if (u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx] !==
+            DMA_IRQ_EXPECTED[idx]) begin
+          $error("DMA IRQ source word[%0d] changed: got=0x%08h expected=0x%08h",
+                 idx,
+                 u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
+                 DMA_IRQ_EXPECTED[idx]);
+          $fatal(1);
+        end
+      end
+      if (u_wasp1.dma_irq !== 1'b0 || u_wasp1.external_irq !== 1'b0 ||
+          u_wasp1.u_ahb_intc.meip_o !== 1'b0) begin
+        $error("DMA external IRQ did not deassert: dma_irq=%0b external_irq=%0b meip=%0b",
+               u_wasp1.dma_irq, u_wasp1.external_irq, u_wasp1.u_ahb_intc.meip_o);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -709,6 +813,8 @@ module tb_wasp1;
     if (otp_image_loaded) begin
       if (dma_copy_check) begin
         wait_for_dma_copy_activity();
+      end else if (dma_irq_check) begin
+        wait_for_dma_irq_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin
