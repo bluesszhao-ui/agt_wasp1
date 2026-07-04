@@ -26,7 +26,7 @@ PASS       Current verification target passes
 | `timer/ahb_timer` | PASS | 64-bit mtime/mtimecmp, IRQ mask/pending, error paths pass |
 | `gpio/ahb_gpio` | PASS | 32-bit IO, direction, set/clear/toggle, level/edge IRQ paths pass |
 | `uart/ahb_uart` | PASS | 8N1 TX/RX loopback, FIFO, IRQ, overrun, error paths pass |
-| `dma/ahb_dma` | PASS | Single-channel word copy, DMA master, IRQ, error paths pass |
+| `dma/ahb_dma` | PASS | Single-channel word copy, registered read-response wait, DMA master, IRQ, error paths pass |
 | `intc/ahb_intc` | PASS | PLIC-lite pending, enable, priority, threshold, claim/complete paths pass |
 | `core/core_alu` | PASS | RV32I integer ALU ops, edge cases, random reference checks pass |
 | `core/core_regfile` | PASS | Reset, x0, dual-read, write, bypass, and random access tests pass |
@@ -66,17 +66,17 @@ PASS       Current verification target passes
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, OpenOCD/GDB process smoke, generated OTP firmware boot-to-UART smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, OpenOCD/GDB process smoke, generated OTP firmware boot-to-UART smoke, DMA real-memory-copy firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/programming smokes pass |
+| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/DMA/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/DMA/programming smokes pass |
 | `ftdi_debugger` | TODO | FT2232H external hardware debugger requirements are captured; schematic, PCB, OpenOCD board config validation, and FPGA/board bring-up remain |
-| full system software | TODO | Interrupt-driven firmware, DMA real-memory copy, and longer generated-image regressions remain |
+| full system software | TODO | Interrupt-driven firmware and longer generated-image regressions remain |
 
 ## Near-Term Plan
 
 ```text
-1. Add interrupt-driven firmware and DMA real-memory-copy software tests
+1. Add interrupt-driven firmware software tests
 2. Add longer generated-image software boot regressions
 3. Extend debug beyond smoke: true DPC capture, single-step, breakpoints, and abstract memory access
 4. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware

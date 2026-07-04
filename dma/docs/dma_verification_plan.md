@@ -15,6 +15,7 @@ target macro compile coverage.
 | Cycles 0-3 | Apply reset | Slave OKAY, master idle, IRQ low, status clear | PASS |
 | Directed | Read reset status | busy/done/error clear | PASS |
 | Directed | Program SRC/DST/LEN and start 4-word copy | Destination words match source words | PASS |
+| Directed | Registered read response latency | Read data is sampled after the DMA read wait slot | PASS |
 | Random | 4 deterministic copy cases | Destination words match source words | PASS |
 | Directed | Complete with IRQ enabled | `dma_irq_o` asserts on done | PASS |
 | Directed | Clear status | done/error clear | PASS |

@@ -17,6 +17,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | Fetch-path activity | Check tile -> bridge -> fabric path | Wait for the core AHB master to issue a valid transfer after reset. |
 | OTP firmware smoke | Check generated `llvm_s1` image can execute from OTP | Load `hello_uart_otp.hex`, wait for firmware to push the first UART TX byte. |
 | OTP programming firmware smoke | Check CPU-controlled OTP programming flow | Load `otp_program_otp.hex`, copy `.fasttext` to I-SRAM, execute the OTP programming routine from I-SRAM, and check the programmed OTP word plus status bits. |
+| DMA copy firmware smoke | Check DMA moves real D-SRAM contents | Load `dma_copy_otp.hex`, let CPU seed D-SRAM source/destination windows, start DMA, and check the destination words plus DMA done/error/IRQ status. |
 | Debug status | Check core debug status is driven | Wait for either running or halted status to become asserted. |
 | JTAG debug smoke | Check SoC-level Debug Module access | Bit-bang JTAG to read IDCODE/DTMCS, write `dmcontrol.dmactive`, and read `dmstatus`. |
 | Remote-bitbang smoke | Check OpenOCD-facing socket bridge | Build `Vwasp1` remote-bitbang harness and use a Python client to exercise IDCODE/DTMCS/DMI over TCP. |
@@ -31,13 +32,15 @@ coverage. It verifies that the full SoC hierarchy elaborates, that reset-time
 CPU traffic can traverse the integrated memory path, and that a generated
 stage-1 OTP image reaches the UART MMIO path, that a CPU-controlled OTP
 programming routine can run from I-SRAM and update the OTP model through its
-register interface, that the SoC JTAG pins reach the integrated Debug Module,
-and that an external OpenOCD/GDB process can complete the stage-1 debug smoke.
+register interface, that a DMA firmware image can move real D-SRAM contents
+through the second AHB master path, that the SoC JTAG pins reach the integrated
+Debug Module, and that an external OpenOCD/GDB process can complete the stage-1
+debug smoke.
 
 ## 4. Pass Criteria
 
 All lint targets plus `tb_wasp1` bare/software-loaded simulations, the OTP
-programming firmware simulation, remote-bitbang smoke, OpenOCD smoke, and GDB
-smoke must pass without `$error`, `$fatal`, or debugger command failure. The
-verification report must record the observed time-sequenced test actions and
-pass counter.
+programming firmware simulation, the DMA copy firmware simulation,
+remote-bitbang smoke, OpenOCD smoke, and GDB smoke must pass without `$error`,
+`$fatal`, or debugger command failure. The verification report must record the
+observed time-sequenced test actions and pass counter.

@@ -130,12 +130,17 @@ DMA_IDLE:
 
 DMA_READ_ADDR:
   drive AHB master read address for current SRC
+  HREADY -> DMA_READ_WAIT
+
+DMA_READ_WAIT:
+  absorb one registered fabric/SRAM response latency slot
+  HRESP=ERROR is remembered for DMA_READ_DATA
   HREADY -> DMA_READ_DATA
 
 DMA_READ_DATA:
   wait for read response
-  HRESP=ERROR -> DMA_IDLE, busy=0, error=1
-  HRESP=OKAY  -> latch read data, DMA_WRITE_ADDR
+  remembered HRESP=ERROR or current HRESP=ERROR -> DMA_IDLE, busy=0, error=1
+  no error -> latch read data, DMA_WRITE_ADDR
 
 DMA_WRITE_ADDR:
   drive AHB master write address/current DST and latched data

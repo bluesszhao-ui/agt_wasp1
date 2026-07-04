@@ -39,6 +39,7 @@ module ahb_dma #(
   typedef enum logic [2:0] {
     DMA_IDLE,
     DMA_READ_ADDR,
+    DMA_READ_WAIT,
     DMA_READ_RESP,
     DMA_WRITE_ADDR,
     DMA_WRITE_RESP,
@@ -67,6 +68,7 @@ module ahb_dma #(
   logic [31:0] cur_dst_q;
   logic [31:0] remaining_q;
   logic [31:0] data_q;
+  logic        read_error_q;
 
   assign s_hready_o = 1'b1;
   assign dma_irq_o = irq_en_q && (done_q || error_q);
@@ -158,6 +160,7 @@ module ahb_dma #(
       cur_dst_q <= '0;
       remaining_q <= '0;
       data_q <= '0;
+      read_error_q <= 1'b0;
       s_hrdata_o <= '0;
       s_hresp_o <= AHB_HRESP_OKAY;
     end else begin
@@ -188,6 +191,7 @@ module ahb_dma #(
                   remaining_q <= len_q;
                   done_q <= 1'b0;
                   error_q <= 1'b0;
+                  read_error_q <= 1'b0;
                   state_q <= DMA_READ_ADDR;
                 end
               end
@@ -201,16 +205,25 @@ module ahb_dma #(
         DMA_IDLE: begin end
         DMA_READ_ADDR: begin
           if (m_hready_i) begin
+            read_error_q <= 1'b0;
+            state_q <= DMA_READ_WAIT;
+          end
+        end
+        DMA_READ_WAIT: begin
+          if (m_hready_i) begin
+            read_error_q <= m_hresp_i;
             state_q <= DMA_READ_RESP;
           end
         end
         DMA_READ_RESP: begin
           if (m_hready_i) begin
-            if (m_hresp_i) begin
+            if (read_error_q || m_hresp_i) begin
               error_q <= 1'b1;
+              read_error_q <= 1'b0;
               state_q <= DMA_FINISH;
             end else begin
               data_q <= m_hrdata_i;
+              read_error_q <= 1'b0;
               state_q <= DMA_WRITE_ADDR;
             end
           end

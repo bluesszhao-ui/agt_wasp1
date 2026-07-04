@@ -92,8 +92,8 @@ software/toolchain:
   llvm_s1 BSP, linker script, startup code, runtime, examples, tests
 
 full-system validation:
-  DMA memory-copy through real contents, interrupt-driven firmware,
-  longer generated-image boot/programming regressions
+  interrupt-driven firmware, longer generated-image boot/DMA/programming
+  regressions
 ```
 
 See [ROADMAP.md](ROADMAP.md) for the live progress list and next steps.

@@ -17,6 +17,15 @@ module tb_wasp1;
   localparam logic [4:0] JTAG_IR_DMI = 5'b10001;
   localparam int unsigned OTP_PROGRAM_WORD_IDX = 32'h0000_3FA0;
   localparam logic [31:0] OTP_PROGRAM_EXPECTED_DATA = 32'h1357_2468;
+  localparam int unsigned DMA_COPY_SRC_WORD_IDX = 32'h0000_3000 >> 2;
+  localparam int unsigned DMA_COPY_DST_WORD_IDX = 32'h0000_3040 >> 2;
+  localparam int unsigned DMA_COPY_WORDS = 4;
+  localparam logic [31:0] DMA_COPY_EXPECTED [DMA_COPY_WORDS] = '{
+    32'h1122_3344,
+    32'h5566_7788,
+    32'h99aa_bbcc,
+    32'hddee_ff00
+  };
 
   logic                  hclk;              // 100 MHz verification clock.
   logic                  hresetn;           // Active-low reset driven by TB.
@@ -49,6 +58,7 @@ module tb_wasp1;
   int unsigned pass_count;
   bit          otp_image_loaded;            // Set when +WASP1_OTP_HEX loaded a firmware image.
   bit          otp_program_check;           // Selects OTP programming firmware assertions.
+  bit          dma_copy_check;              // Selects DMA real-memory-copy firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
@@ -144,6 +154,7 @@ module tb_wasp1;
   initial begin
     otp_image_loaded = 1'b0;
     otp_program_check = $test$plusargs("WASP1_OTP_PROGRAM_CHECK");
+    dma_copy_check = $test$plusargs("WASP1_DMA_COPY_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     otp_hex_path = "";
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
@@ -425,6 +436,11 @@ module tb_wasp1;
       $display("  trap: valid=%0b cause=0x%02h tval=0x%08h pc=0x%08h redirect=%0b redirect_pc=0x%08h dbg_running=%0b dbg_halted=%0b",
                trap_valid, trap_cause, u_wasp1.trap_tval, u_wasp1.trap_pc,
                u_wasp1.redirect_valid, u_wasp1.redirect_pc, dbg_running, dbg_halted);
+      $display("  csr: mepc=0x%08h mcause=0x%08h mtval=0x%08h mtvec=0x%08h",
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mepc_q,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mtval_q,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mtvec_q);
       $display("  core_ahb: htrans=%0b haddr=0x%08h hwrite=%0b hsize=%0d hwdata=0x%08h hrdata=0x%08h hready=%0b hresp=%0b bridge_state=%0d",
                u_wasp1.core_htrans, u_wasp1.core_haddr, u_wasp1.core_hwrite,
                u_wasp1.core_hsize, u_wasp1.core_hwdata, u_wasp1.core_hrdata,
@@ -445,6 +461,23 @@ module tb_wasp1;
                u_wasp1.u_tile.core_dmem_if.rsp_err,
                u_wasp1.u_tile.u_dcache.u_refill.state_q,
                u_wasp1.u_tile.u_dcache.u_store.state_q);
+      $display("  dma: state=%0d src=0x%08h dst=0x%08h len=%0d cur_src=0x%08h cur_dst=0x%08h rem=%0d data=0x%08h done=%0b err=%0b irq=%0b m_haddr=0x%08h m_htrans=%0b m_hwrite=%0b m_hready=%0b m_hresp=%0b",
+               u_wasp1.u_ahb_dma.state_q,
+               u_wasp1.u_ahb_dma.src_q,
+               u_wasp1.u_ahb_dma.dst_q,
+               u_wasp1.u_ahb_dma.len_q,
+               u_wasp1.u_ahb_dma.cur_src_q,
+               u_wasp1.u_ahb_dma.cur_dst_q,
+               u_wasp1.u_ahb_dma.remaining_q,
+               u_wasp1.u_ahb_dma.data_q,
+               u_wasp1.u_ahb_dma.done_q,
+               u_wasp1.u_ahb_dma.error_q,
+               u_wasp1.dma_irq,
+               u_wasp1.dma_m_haddr,
+               u_wasp1.dma_m_htrans,
+               u_wasp1.dma_m_hwrite,
+               u_wasp1.dma_m_hready,
+               u_wasp1.dma_m_hresp);
       $display("  uart: addr_count=%0d tx_push_count=%0d enable=%0b tx_en=%0b baud_div=%0d tx_ready=%0b tx_busy=%0b tx_valid=%0b tx_fifo_ready=%0b tx_fifo_wdata=0x%02h",
                uart_addr_count, uart_tx_push_count, u_wasp1.u_ahb_uart.enable_q,
                u_wasp1.u_ahb_uart.tx_en_q, u_wasp1.u_ahb_uart.baud_div_q,
@@ -507,6 +540,63 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_dma_copy_activity;
+    int unsigned timeout;
+    bit          copy_done;
+    begin
+      timeout = 0;
+      copy_done = 1'b0;
+      while (!copy_done && timeout < 40000) begin
+        copy_done = 1'b1;
+        for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
+          if (u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_DST_WORD_IDX + idx] !==
+              DMA_COPY_EXPECTED[idx]) begin
+            copy_done = 1'b0;
+          end
+        end
+        if (!copy_done) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      if (!copy_done) begin
+        dump_sw_timeout_diagnostics();
+        for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
+          $display("  dma src[%0d] got=0x%08h expected=0x%08h",
+                   idx,
+                   u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
+                   DMA_COPY_EXPECTED[idx]);
+          $display("  dma dst[%0d] got=0x%08h expected=0x%08h",
+                   idx,
+                   u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_DST_WORD_IDX + idx],
+                   DMA_COPY_EXPECTED[idx]);
+        end
+        $error("DMA copy firmware did not update D-SRAM destination buffer");
+        $fatal(1);
+      end
+      for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
+        if (u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx] !==
+            DMA_COPY_EXPECTED[idx]) begin
+          $error("DMA source word[%0d] changed: got=0x%08h expected=0x%08h",
+                 idx,
+                 u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
+                 DMA_COPY_EXPECTED[idx]);
+          $fatal(1);
+        end
+      end
+      if (u_wasp1.u_ahb_dma.done_q !== 1'b1 ||
+          u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+          u_wasp1.dma_irq !== 1'b1) begin
+        $error("DMA status mismatch: done=%0b error=%0b irq=%0b",
+               u_wasp1.u_ahb_dma.done_q, u_wasp1.u_ahb_dma.error_q, u_wasp1.dma_irq);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   initial begin
     drive_defaults();
     hresetn = 1'b0;
@@ -522,7 +612,9 @@ module tb_wasp1;
     wait_for_debug_running_known();
     check_jtag_dmstatus_smoke();
     if (otp_image_loaded) begin
-      if (otp_program_check) begin
+      if (dma_copy_check) begin
+        wait_for_dma_copy_activity();
+      end else if (otp_program_check) begin
         wait_for_otp_program_activity();
       end else begin
         wait_for_uart_tx_activity();

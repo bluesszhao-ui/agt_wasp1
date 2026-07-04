@@ -65,6 +65,7 @@ bsp_files="
   bsp/runtime/memset.c
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/dma_copy.c
   bsp/examples/otp_program.c
   docs/wasp1_bsp_stage1.md
   scripts/check_otp_image.sh
@@ -85,7 +86,7 @@ require_grep '__trap_entry' bsp/startup/trap.S 'trap entry'
 require_grep '\.fasttext' bsp/examples/otp_program.c 'OTP programming routine in I-SRAM section'
 
 if command -v cc >/dev/null 2>&1; then
-  tmp_c=$(mktemp "${TMPDIR:-/tmp}/wasp1_bsp_headers.XXXXXX.c")
+  tmp_c=$(mktemp "${TMPDIR:-/tmp}/wasp1_bsp_headers.$$.XXXXXX.c")
   {
     printf '#include "wasp1.h"\n'
     printf 'int main(void) { return (int)(WASP1_RESET_VECTOR + WASP1_IRQ_DMA); }\n'

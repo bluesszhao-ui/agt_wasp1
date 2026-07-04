@@ -119,6 +119,7 @@ fi
 syntax_sources="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/dma_copy.c
   bsp/examples/otp_program.c
   bsp/runtime/memcpy.c
   bsp/runtime/memset.c
@@ -186,6 +187,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "link skipped because required objects were not produced"
+  fi
+
+  dma_obj="build/smoke/dma_copy.o"
+  if [ -f "$dma_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link dma_copy ELF" "$clang_bin" $ldflags $asm_objects "$dma_obj" $runtime_objects -o build/smoke/dma_copy.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy dma_copy binary" "$objcopy_bin" -O binary build/smoke/dma_copy.elf build/smoke/dma_copy.bin; then
+          run_capture "make dma_copy OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/dma_copy.bin \
+            --output-hex build/smoke/dma_copy_otp.hex \
+            --output-bin build/smoke/dma_copy_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for dma_copy riscv32"
+    fi
+  else
+    require_or_skip "dma_copy link skipped because required objects were not produced"
   fi
 
   otp_obj="build/smoke/otp_program.o"
