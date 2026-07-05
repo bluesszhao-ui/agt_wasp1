@@ -53,8 +53,8 @@ header syntax, tool discovery, example/runtime source syntax, and OTP image
 format generation. If a full RISC-V LLVM toolchain is available, the smoke
 script also attempts RV32I object generation, startup assembly, bare-metal ELF
 linking, binary image generation, and generated OTP image creation for
-`hello_uart`, `uart_irq`, `uart_rx_irq`, `long_boot`, `gpio_irq`, `dma_copy`,
-`dma_irq`, `timer_irq`, and `otp_program`.
+`hello_uart`, `uart_irq`, `uart_rx_irq`, `long_boot`, `mixed_irq_dma`,
+`gpio_irq`, `dma_copy`, `dma_irq`, `timer_irq`, and `otp_program`.
 
 By default, missing RISC-V code generation or LLVM binary utilities are reported
 as `SKIP` so a normal workstation can still validate the BSP source tree. To
@@ -67,8 +67,9 @@ REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
 The top-level `wasp1` simulation already consumes generated OTP images for the
 UART boot smoke, the UART TX-empty external interrupt smoke, the UART
 RX-available/RX-overrun external interrupt smoke, the long multi-peripheral boot
-smoke, the DMA real-memory-copy smoke, the DMA external interrupt smoke, the
-GPIO external interrupt smoke, the timer interrupt smoke, and the OTP
+smoke, the mixed interrupt-and-DMA smoke, the DMA real-memory-copy smoke, the
+DMA external interrupt smoke, the GPIO external interrupt smoke, the timer
+interrupt smoke, and the OTP
 programming-register smoke. The
 OTP programming example places the
 programming routine in `.fasttext` so startup copies it to I-SRAM before it
@@ -78,6 +79,9 @@ starts DMA and lets the top-level testbench check copied memory and DMA status.
 The long boot example performs UART output, GPIO output/toggle operations,
 D-SRAM pattern stores and reads, a polled DMA copy, a polled timer compare, and
 an executable OTP word read before writing completion mailboxes.
+The mixed IRQ/DMA example enables DMA completion and GPIO level-high external
+interrupts together, gives DMA higher INTC priority, starts a DMA copy, and
+records the expected DMA-then-GPIO claim sequence plus copied D-SRAM data.
 The UART IRQ example enables the UART TX-empty interrupt, routes it through INTC
 as machine external interrupt IRQ ID 2, claims/completes the interrupt in the C
 trap handler, clears the sticky UART source, disables the TX IRQ enable, and
@@ -101,5 +105,4 @@ boot regressions:
 
 1. Add an installed LLVM bundle under `llvm_s1/toolchain/install` or document
    an external LLVM install path.
-2. Add broader top-level software regressions with mixed interrupt and DMA
-   activity.
+2. Add richer debug operations and longer software stress regressions.

@@ -92,6 +92,29 @@ module tb_wasp1;
   localparam logic [31:0] LONG_BOOT_EXPECTED_GPIO = 32'h0000_000a;
   localparam logic [31:0] LONG_BOOT_EXPECTED_DMA_STATUS = 32'h0000_0002;
   localparam logic [31:0] LONG_BOOT_EXPECTED_TIMER_STATUS = 32'h0000_0001;
+  localparam int unsigned MIXED_IRQ_READY_WORD_IDX = 32'h0000_3900 >> 2;
+  localparam int unsigned MIXED_IRQ_DMA_MAGIC_WORD_IDX = 32'h0000_3904 >> 2;
+  localparam int unsigned MIXED_IRQ_GPIO_MAGIC_WORD_IDX = 32'h0000_3908 >> 2;
+  localparam int unsigned MIXED_IRQ_CLAIM0_WORD_IDX = 32'h0000_390c >> 2;
+  localparam int unsigned MIXED_IRQ_CLAIM1_WORD_IDX = 32'h0000_3910 >> 2;
+  localparam int unsigned MIXED_IRQ_MCAUSE0_WORD_IDX = 32'h0000_3914 >> 2;
+  localparam int unsigned MIXED_IRQ_MCAUSE1_WORD_IDX = 32'h0000_3918 >> 2;
+  localparam int unsigned MIXED_IRQ_GPIO_LEVEL_WORD_IDX = 32'h0000_391c >> 2;
+  localparam int unsigned MIXED_IRQ_DMA_STATUS_WORD_IDX = 32'h0000_3920 >> 2;
+  localparam int unsigned MIXED_IRQ_HANDLED_MASK_WORD_IDX = 32'h0000_3924 >> 2;
+  localparam int unsigned MIXED_IRQ_DONE_WORD_IDX = 32'h0000_3928 >> 2;
+  localparam int unsigned MIXED_IRQ_DMA_SRC_WORD_IDX = 32'h0000_3a00 >> 2;
+  localparam int unsigned MIXED_IRQ_DMA_DST_WORD_IDX = 32'h0000_3a40 >> 2;
+  localparam int unsigned MIXED_IRQ_WORDS = 4;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_READY = 32'h4d58_5244;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_DMA_MAGIC = 32'h4d58_444d;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_GPIO_MAGIC = 32'h4d58_4750;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_DONE = 32'h4d58_4f4b;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_CLAIM0 = 32'h0000_0005;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_CLAIM1 = 32'h0000_0004;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_HANDLED = 32'h0000_0003;
+  localparam logic [31:0] MIXED_IRQ_EXPECTED_DMA_STATUS = 32'h0000_0002;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -120,6 +143,12 @@ module tb_wasp1;
     32'h1357_2468,
     32'h2468_ace0,
     32'hf0e0_d0c0
+  };
+  localparam logic [31:0] MIXED_IRQ_EXPECTED [MIXED_IRQ_WORDS] = '{
+    32'h0bad_c0de,
+    32'h1234_5678,
+    32'h89ab_cdef,
+    32'hfedc_ba98
   };
 
   logic                  hclk;              // 100 MHz verification clock.
@@ -159,6 +188,7 @@ module tb_wasp1;
   bit          uart_irq_check;              // Selects UART external interrupt firmware assertions.
   bit          uart_rx_irq_check;           // Selects UART RX/overrun interrupt assertions.
   bit          long_boot_check;             // Selects longer generated-image boot assertions.
+  bit          mixed_irq_dma_check;         // Selects mixed DMA/GPIO interrupt assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -314,6 +344,7 @@ module tb_wasp1;
     uart_irq_check = $test$plusargs("WASP1_UART_IRQ_CHECK");
     uart_rx_irq_check = $test$plusargs("WASP1_UART_RX_IRQ_CHECK");
     long_boot_check = $test$plusargs("WASP1_LONG_BOOT_CHECK");
+    mixed_irq_dma_check = $test$plusargs("WASP1_MIXED_IRQ_DMA_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -1242,6 +1273,122 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_mixed_irq_dma_activity;
+    int unsigned timeout;
+    logic [31:0] ready_word;
+    logic [31:0] dma_magic_word;
+    logic [31:0] gpio_magic_word;
+    logic [31:0] done_word;
+    logic [31:0] claim0_word;
+    logic [31:0] claim1_word;
+    logic [31:0] mcause0_word;
+    logic [31:0] mcause1_word;
+    logic [31:0] gpio_level_word;
+    logic [31:0] dma_status_word;
+    logic [31:0] handled_word;
+    begin
+      timeout = 0;
+      ready_word = '0;
+      while ((ready_word !== MIXED_IRQ_EXPECTED_READY) && timeout < 50000) begin
+        ready_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_READY_WORD_IDX];
+        if (ready_word !== MIXED_IRQ_EXPECTED_READY) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      if (ready_word !== MIXED_IRQ_EXPECTED_READY) begin
+        dump_sw_timeout_diagnostics();
+        $error("mixed IRQ/DMA firmware did not advertise ready");
+        $fatal(1);
+      end
+
+      // Firmware has armed GPIO as a level-high source alongside DMA IRQ.
+      gpio_in[0] = 1'b1;
+
+      timeout = 0;
+      dma_magic_word = '0;
+      gpio_magic_word = '0;
+      done_word = '0;
+      while (((dma_magic_word !== MIXED_IRQ_EXPECTED_DMA_MAGIC) ||
+              (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
+              (done_word !== MIXED_IRQ_EXPECTED_DONE)) &&
+             timeout < 70000) begin
+        dma_magic_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_MAGIC_WORD_IDX];
+        gpio_magic_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_GPIO_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DONE_WORD_IDX];
+        if ((dma_magic_word !== MIXED_IRQ_EXPECTED_DMA_MAGIC) ||
+            (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
+            (done_word !== MIXED_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      claim0_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_CLAIM0_WORD_IDX];
+      claim1_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_CLAIM1_WORD_IDX];
+      mcause0_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_MCAUSE0_WORD_IDX];
+      mcause1_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_MCAUSE1_WORD_IDX];
+      gpio_level_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_GPIO_LEVEL_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_STATUS_WORD_IDX];
+      handled_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_HANDLED_MASK_WORD_IDX];
+      if ((dma_magic_word !== MIXED_IRQ_EXPECTED_DMA_MAGIC) ||
+          (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
+          (done_word !== MIXED_IRQ_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("mixed IRQ/DMA firmware did not complete: dma_magic=0x%08h gpio_magic=0x%08h done=0x%08h claim0=0x%08h claim1=0x%08h handled=0x%08h",
+               dma_magic_word, gpio_magic_word, done_word,
+               claim0_word, claim1_word, handled_word);
+        $fatal(1);
+      end
+      if (claim0_word !== MIXED_IRQ_EXPECTED_CLAIM0 ||
+          claim1_word !== MIXED_IRQ_EXPECTED_CLAIM1 ||
+          mcause0_word !== MIXED_IRQ_EXPECTED_MCAUSE ||
+          mcause1_word !== MIXED_IRQ_EXPECTED_MCAUSE) begin
+        $error("mixed IRQ/DMA claim order mismatch: claim0=0x%08h claim1=0x%08h mcause0=0x%08h mcause1=0x%08h",
+               claim0_word, claim1_word, mcause0_word, mcause1_word);
+        $fatal(1);
+      end
+      if ((gpio_level_word & 32'h0000_0001) !== 32'h0000_0001 ||
+          (dma_status_word & MIXED_IRQ_EXPECTED_DMA_STATUS) !==
+          MIXED_IRQ_EXPECTED_DMA_STATUS ||
+          (dma_status_word & 32'h0000_0004) !== 32'h0 ||
+          handled_word !== MIXED_IRQ_EXPECTED_HANDLED) begin
+        $error("mixed IRQ/DMA mailbox mismatch: gpio_level=0x%08h dma_status=0x%08h handled=0x%08h",
+               gpio_level_word, dma_status_word, handled_word);
+        $fatal(1);
+      end
+      for (int idx = 0; idx < MIXED_IRQ_WORDS; idx++) begin
+        if (u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx] !==
+            MIXED_IRQ_EXPECTED[idx] ||
+            u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx] !==
+            MIXED_IRQ_EXPECTED[idx]) begin
+          $error("mixed IRQ/DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
+                 idx,
+                 u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx],
+                 MIXED_IRQ_EXPECTED[idx]);
+          $fatal(1);
+        end
+      end
+      if (u_wasp1.dma_irq !== 1'b0 || u_wasp1.gpio_irq !== 1'b0 ||
+          u_wasp1.external_irq !== 1'b0 || u_wasp1.u_ahb_intc.meip_o !== 1'b0 ||
+          u_wasp1.u_ahb_dma.done_q !== 1'b0 ||
+          u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+          u_wasp1.u_ahb_gpio.irq_status_q[0] !== 1'b0) begin
+        $error("mixed IRQ/DMA final IRQ state mismatch: dma_irq=%0b gpio_irq=%0b external_irq=%0b meip=%0b dma_done=%0b dma_error=%0b gpio_status=0x%08h",
+               u_wasp1.dma_irq, u_wasp1.gpio_irq, u_wasp1.external_irq,
+               u_wasp1.u_ahb_intc.meip_o,
+               u_wasp1.u_ahb_dma.done_q,
+               u_wasp1.u_ahb_dma.error_q,
+               u_wasp1.u_ahb_gpio.irq_status_q);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -1322,6 +1469,8 @@ module tb_wasp1;
         wait_for_uart_rx_irq_activity();
       end else if (long_boot_check) begin
         wait_for_long_boot_activity();
+      end else if (mixed_irq_dma_check) begin
+        wait_for_mixed_irq_dma_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin

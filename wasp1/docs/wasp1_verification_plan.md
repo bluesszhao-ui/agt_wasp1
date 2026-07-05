@@ -17,6 +17,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | Fetch-path activity | Check tile -> bridge -> fabric path | Wait for the core AHB master to issue a valid transfer after reset. |
 | OTP firmware smoke | Check generated `llvm_s1` image can execute from OTP | Load `hello_uart_otp.hex`, wait for firmware to push the first UART TX byte. |
 | Long boot firmware smoke | Check longer generated-image mixed peripheral path | Load `long_boot_otp.hex`, run UART output, GPIO writes/toggle, D-SRAM stores/loads, polled DMA copy, polled timer compare, and OTP readback, then check D-SRAM mailboxes and hardware side effects. |
+| Mixed IRQ/DMA firmware smoke | Check multi-source INTC handling with DMA active | Load `mixed_irq_dma_otp.hex`, start a DMA copy with IRQ enabled while GPIO level IRQ is armed, drive `gpio_in[0]`, require DMA priority/claim before GPIO, and check copied D-SRAM data plus final IRQ deassertion. |
 | OTP programming firmware smoke | Check CPU-controlled OTP programming flow | Load `otp_program_otp.hex`, copy `.fasttext` to I-SRAM, execute the OTP programming routine from I-SRAM, and check the programmed OTP word plus status bits. |
 | DMA copy firmware smoke | Check DMA moves real D-SRAM contents | Load `dma_copy_otp.hex`, let CPU seed D-SRAM source/destination windows, start DMA, and check the destination words plus DMA done/error/IRQ status. |
 | UART IRQ firmware smoke | Check UART external interrupt through INTC | Load `uart_irq_otp.hex`, enable UART TX-empty IRQ ID 2 in INTC, claim/complete MEIP in the C trap handler, clear the sticky UART IRQ source, and check D-SRAM mailboxes plus IRQ deassertion. |
@@ -39,9 +40,10 @@ CPU traffic can traverse the integrated memory path, and that a generated
 stage-1 OTP image reaches the UART MMIO path, that a CPU-controlled OTP
 programming routine can run from I-SRAM and update the OTP model through its
 register interface, that a longer generated OTP image can combine UART, GPIO,
-D-SRAM, DMA, timer, and OTP reads in one boot, that a DMA firmware image can
-move real D-SRAM contents through the second AHB master path, that DMA
-completion can reach the core as a
+D-SRAM, DMA, timer, and OTP reads in one boot, that a mixed generated OTP image
+can handle DMA and GPIO external interrupt sources in one run while preserving
+priority order, that a DMA firmware image can move real D-SRAM contents through
+the second AHB master path, that DMA completion can reach the core as a
 machine external interrupt through INTC, that a UART TX-empty source can reach
 the same machine external interrupt path through INTC, that external UART RX
 serial input can trigger RX-available and RX-overrun interrupt handling through
@@ -55,6 +57,7 @@ OpenOCD/GDB process can complete the stage-1 debug smoke.
 
 All lint targets plus `tb_wasp1` bare/software-loaded simulations, the OTP
 programming firmware simulation, the long boot firmware simulation,
+the mixed IRQ/DMA firmware simulation,
 the DMA copy firmware simulation,
 the UART IRQ firmware simulation, the UART RX IRQ firmware simulation,
 the DMA IRQ firmware simulation,
