@@ -42,6 +42,16 @@ module tb_wasp1;
   localparam logic [31:0] GPIO_IRQ_EXPECTED_DONE = 32'h4750_4f4b;
   localparam logic [31:0] GPIO_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
   localparam logic [31:0] GPIO_IRQ_EXPECTED_CLAIM = 32'h0000_0004;
+  localparam int unsigned UART_IRQ_MAGIC_WORD_IDX = 32'h0000_3500 >> 2;
+  localparam int unsigned UART_IRQ_MCAUSE_WORD_IDX = 32'h0000_3504 >> 2;
+  localparam int unsigned UART_IRQ_CLAIM_WORD_IDX = 32'h0000_3508 >> 2;
+  localparam int unsigned UART_IRQ_STATUS_WORD_IDX = 32'h0000_350c >> 2;
+  localparam int unsigned UART_IRQ_DONE_WORD_IDX = 32'h0000_3510 >> 2;
+  localparam logic [31:0] UART_IRQ_EXPECTED_MAGIC = 32'h5552_4951;
+  localparam logic [31:0] UART_IRQ_EXPECTED_DONE = 32'h5552_4f4b;
+  localparam logic [31:0] UART_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
+  localparam logic [31:0] UART_IRQ_EXPECTED_CLAIM = 32'h0000_0002;
+  localparam logic [31:0] UART_IRQ_EXPECTED_STATUS = 32'h0000_0001;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -96,6 +106,7 @@ module tb_wasp1;
   bit          dma_copy_check;              // Selects DMA real-memory-copy firmware assertions.
   bit          dma_irq_check;               // Selects DMA external interrupt firmware assertions.
   bit          gpio_irq_check;              // Selects GPIO external interrupt firmware assertions.
+  bit          uart_irq_check;              // Selects UART external interrupt firmware assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -248,6 +259,7 @@ module tb_wasp1;
     dma_copy_check = $test$plusargs("WASP1_DMA_COPY_CHECK");
     dma_irq_check = $test$plusargs("WASP1_DMA_IRQ_CHECK");
     gpio_irq_check = $test$plusargs("WASP1_GPIO_IRQ_CHECK");
+    uart_irq_check = $test$plusargs("WASP1_UART_IRQ_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -865,6 +877,74 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_uart_irq_activity;
+    int unsigned timeout;
+    logic [31:0] magic_word;
+    logic [31:0] mcause_word;
+    logic [31:0] claim_word;
+    logic [31:0] status_word;
+    logic [31:0] done_word;
+    begin
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      while (((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
+              (done_word !== UART_IRQ_EXPECTED_DONE)) &&
+             timeout < 50000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_DONE_WORD_IDX];
+        if ((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
+            (done_word !== UART_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      mcause_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_CLAIM_WORD_IDX];
+      status_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_STATUS_WORD_IDX];
+      if ((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
+          (done_word !== UART_IRQ_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("UART IRQ firmware did not complete: magic=0x%08h done=0x%08h mcause=0x%08h claim=0x%08h status=0x%08h",
+               magic_word, done_word, mcause_word, claim_word, status_word);
+        $fatal(1);
+      end
+      if (mcause_word !== UART_IRQ_EXPECTED_MCAUSE ||
+          u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q !==
+          UART_IRQ_EXPECTED_MCAUSE) begin
+        $error("UART IRQ mcause mismatch: mailbox=0x%08h csr=0x%08h expected=0x%08h",
+               mcause_word,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q,
+               UART_IRQ_EXPECTED_MCAUSE);
+        $fatal(1);
+      end
+      if (claim_word !== UART_IRQ_EXPECTED_CLAIM) begin
+        $error("UART IRQ claim mismatch: got=0x%08h expected=0x%08h",
+               claim_word, UART_IRQ_EXPECTED_CLAIM);
+        $fatal(1);
+      end
+      if ((status_word & UART_IRQ_EXPECTED_STATUS) !== UART_IRQ_EXPECTED_STATUS) begin
+        $error("UART IRQ handler did not observe TX-empty status: status=0x%08h",
+               status_word);
+        $fatal(1);
+      end
+      if (u_wasp1.uart_irq !== 1'b0 || u_wasp1.external_irq !== 1'b0 ||
+          u_wasp1.u_ahb_intc.meip_o !== 1'b0 ||
+          u_wasp1.u_ahb_uart.irq_status_q[UART_IRQ_TX_EMPTY_BIT] !== 1'b0 ||
+          u_wasp1.u_ahb_uart.tx_irq_en_q !== 1'b0) begin
+        $error("UART external IRQ did not deassert: uart_irq=%0b external_irq=%0b meip=%0b irq_status=0x%0h tx_irq_en=%0b",
+               u_wasp1.uart_irq, u_wasp1.external_irq,
+               u_wasp1.u_ahb_intc.meip_o,
+               u_wasp1.u_ahb_uart.irq_status_q,
+               u_wasp1.u_ahb_uart.tx_irq_en_q);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -939,6 +1019,8 @@ module tb_wasp1;
         wait_for_dma_irq_activity();
       end else if (gpio_irq_check) begin
         wait_for_gpio_irq_activity();
+      end else if (uart_irq_check) begin
+        wait_for_uart_irq_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin

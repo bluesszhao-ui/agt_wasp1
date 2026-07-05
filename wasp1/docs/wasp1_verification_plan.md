@@ -18,6 +18,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | OTP firmware smoke | Check generated `llvm_s1` image can execute from OTP | Load `hello_uart_otp.hex`, wait for firmware to push the first UART TX byte. |
 | OTP programming firmware smoke | Check CPU-controlled OTP programming flow | Load `otp_program_otp.hex`, copy `.fasttext` to I-SRAM, execute the OTP programming routine from I-SRAM, and check the programmed OTP word plus status bits. |
 | DMA copy firmware smoke | Check DMA moves real D-SRAM contents | Load `dma_copy_otp.hex`, let CPU seed D-SRAM source/destination windows, start DMA, and check the destination words plus DMA done/error/IRQ status. |
+| UART IRQ firmware smoke | Check UART external interrupt through INTC | Load `uart_irq_otp.hex`, enable UART TX-empty IRQ ID 2 in INTC, claim/complete MEIP in the C trap handler, clear the sticky UART IRQ source, and check D-SRAM mailboxes plus IRQ deassertion. |
 | DMA IRQ firmware smoke | Check INTC machine external interrupt path | Load `dma_irq_otp.hex`, enable DMA IRQ ID 5 in INTC, start DMA, claim/complete MEIP in the C trap handler, and check D-SRAM mailboxes plus IRQ deassertion. |
 | GPIO IRQ firmware smoke | Check external GPIO interrupt through INTC | Load `gpio_irq_otp.hex`, arm GPIO bit 0 as a level-high interrupt, drive `gpio_in[0]`, claim/complete GPIO IRQ ID 4 in the C trap handler, and check D-SRAM mailboxes plus IRQ deassertion. |
 | Timer IRQ firmware smoke | Check machine timer interrupt entry/return | Load `timer_irq_otp.hex`, program `mtime/mtimecmp`, enable MTIE/MIE, wait for D-SRAM trap mailboxes, and check timer IRQ deassertion. |
@@ -37,9 +38,10 @@ stage-1 OTP image reaches the UART MMIO path, that a CPU-controlled OTP
 programming routine can run from I-SRAM and update the OTP model through its
 register interface, that a DMA firmware image can move real D-SRAM contents
 through the second AHB master path, that DMA completion can reach the core as a
-machine external interrupt through INTC, that GPIO input level interrupts can
-reach the same machine external interrupt path through INTC, that a timer
-interrupt firmware image can enter and return from the C trap handler, that the
+machine external interrupt through INTC, that a UART TX-empty source can reach
+the same machine external interrupt path through INTC, that GPIO input level
+interrupts can reach the same path through INTC, that a timer interrupt firmware
+image can enter and return from the C trap handler, that the
 SoC JTAG pins reach the integrated Debug Module, and that an external
 OpenOCD/GDB process can complete the stage-1 debug smoke.
 
@@ -47,8 +49,8 @@ OpenOCD/GDB process can complete the stage-1 debug smoke.
 
 All lint targets plus `tb_wasp1` bare/software-loaded simulations, the OTP
 programming firmware simulation, the DMA copy firmware simulation,
-the DMA IRQ firmware simulation, the GPIO IRQ firmware simulation,
-the timer IRQ firmware simulation,
+the UART IRQ firmware simulation, the DMA IRQ firmware simulation,
+the GPIO IRQ firmware simulation, the timer IRQ firmware simulation,
 remote-bitbang smoke, OpenOCD smoke, and GDB smoke must pass without `$error`,
 `$fatal`, or debugger command failure. The verification report must record the
 observed time-sequenced test actions and pass counter.

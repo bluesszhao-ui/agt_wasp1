@@ -24,7 +24,7 @@ system software regression suite.
 | `bsp/startup/crt0.S` | Reset entry, stack setup, mtvec setup, copy/zero loops, `main` call |
 | `bsp/startup/trap.S` | Machine trap entry saving integer context and calling `wasp1_trap_handler` |
 | `bsp/runtime/` | Minimal freestanding runtime helpers |
-| `bsp/examples/` | Tiny UART, GPIO, GPIO IRQ, DMA copy, DMA IRQ, timer IRQ, and OTP programming examples |
+| `bsp/examples/` | Tiny UART, UART IRQ, GPIO, GPIO IRQ, DMA copy, DMA IRQ, timer IRQ, and OTP programming examples |
 | `scripts/check_bsp.sh` | Structural BSP check that avoids requiring a RISC-V compiler |
 | `scripts/run_smoke_tests.sh` | Toolchain discovery plus syntax/compile/link smoke tests |
 | `scripts/wasp1_make_otp_image.py` | ELF/raw-binary to OTP `$readmemh` image converter |
@@ -53,7 +53,7 @@ header syntax, tool discovery, example/runtime source syntax, and OTP image
 format generation. If a full RISC-V LLVM toolchain is available, the smoke
 script also attempts RV32I object generation, startup assembly, bare-metal ELF
 linking, binary image generation, and generated OTP image creation for
-`hello_uart`, `gpio_irq`, `dma_copy`, `dma_irq`, `timer_irq`, and
+`hello_uart`, `uart_irq`, `gpio_irq`, `dma_copy`, `dma_irq`, `timer_irq`, and
 `otp_program`.
 
 By default, missing RISC-V code generation or LLVM binary utilities are reported
@@ -65,14 +65,18 @@ REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
 ```
 
 The top-level `wasp1` simulation already consumes generated OTP images for the
-UART boot smoke, the DMA real-memory-copy smoke, the DMA external interrupt
-smoke, the GPIO external interrupt smoke, the timer interrupt smoke, and the OTP
-programming-register smoke. The
+UART boot smoke, the UART external interrupt smoke, the DMA real-memory-copy
+smoke, the DMA external interrupt smoke, the GPIO external interrupt smoke, the
+timer interrupt smoke, and the OTP programming-register smoke. The
 OTP programming example places the
 programming routine in `.fasttext` so startup copies it to I-SRAM before it
 writes OTP control registers. The DMA copy example seeds real D-SRAM
 source/destination windows, drains the source stores with a readback, then
 starts DMA and lets the top-level testbench check copied memory and DMA status.
+The UART IRQ example enables the UART TX-empty interrupt, routes it through INTC
+as machine external interrupt IRQ ID 2, claims/completes the interrupt in the C
+trap handler, clears the sticky UART source, disables the TX IRQ enable, and
+records trap mailbox values in D-SRAM.
 The DMA IRQ example routes the same DMA completion through INTC as machine
 external interrupt, claims/completes IRQ ID 5, and clears the sticky DMA IRQ
 source before returning.
@@ -88,5 +92,6 @@ boot regressions:
 
 1. Add an installed LLVM bundle under `llvm_s1/toolchain/install` or document
    an external LLVM install path.
-2. Add additional external interrupt firmware tests through INTC for UART.
+2. Add additional UART RX-available and RX-overrun interrupt firmware tests
+   through INTC.
 3. Add longer top-level boot regressions using generated OTP images.

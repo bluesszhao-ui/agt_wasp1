@@ -120,6 +120,7 @@ syntax_sources="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
   bsp/examples/gpio_irq.c
+  bsp/examples/uart_irq.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
@@ -211,6 +212,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "gpio_irq link skipped because required objects were not produced"
+  fi
+
+  uart_irq_obj="build/smoke/uart_irq.o"
+  if [ -f "$uart_irq_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link uart_irq ELF" "$clang_bin" $ldflags $asm_objects "$uart_irq_obj" $runtime_objects -o build/smoke/uart_irq.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy uart_irq binary" "$objcopy_bin" -O binary build/smoke/uart_irq.elf build/smoke/uart_irq.bin; then
+          run_capture "make uart_irq OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/uart_irq.bin \
+            --output-hex build/smoke/uart_irq_otp.hex \
+            --output-bin build/smoke/uart_irq_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for uart_irq riscv32"
+    fi
+  else
+    require_or_skip "uart_irq link skipped because required objects were not produced"
   fi
 
   dma_obj="build/smoke/dma_copy.o"

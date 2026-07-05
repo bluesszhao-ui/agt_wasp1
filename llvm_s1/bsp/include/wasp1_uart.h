@@ -27,6 +27,10 @@
 #define WASP1_UART_STATUS_TX_BUSY  (UINT32_C(1) << 4)
 #define WASP1_UART_STATUS_RX_OVERRUN (UINT32_C(1) << 5)
 
+#define WASP1_UART_IRQ_TX_EMPTY (UINT32_C(1) << 0)
+#define WASP1_UART_IRQ_RX_AVAIL (UINT32_C(1) << 1)
+#define WASP1_UART_IRQ_RX_OVERRUN (UINT32_C(1) << 2)
+
 static inline void wasp1_uart_init(uint32_t baud_div)
 {
   /* Program divisor before enabling TX/RX so the first character uses it. */
@@ -52,6 +56,41 @@ static inline void wasp1_uart_puts(const char *text)
     }
     wasp1_uart_putc(*text++);
   }
+}
+
+static inline uint32_t wasp1_uart_irq_status(void)
+{
+  /* IRQ_STATUS is sticky W1C state, independent of the live STATUS register. */
+  return wasp1_read32(WASP1_UART_BASE + WASP1_UART_IRQ_STATUS);
+}
+
+static inline void wasp1_uart_irq_clear(uint32_t mask)
+{
+  /* Hardware clears only the status bits written as 1. */
+  wasp1_write32(WASP1_UART_BASE + WASP1_UART_IRQ_STATUS, mask);
+}
+
+static inline void wasp1_uart_irq_config(uint32_t baud_div, uint32_t ctrl_irq_mask)
+{
+  /*
+   * Clear stale sticky IRQ status before enabling IRQ sources. The caller passes
+   * CTRL IRQ enable bits, such as WASP1_UART_CTRL_TX_IRQ_EN.
+   */
+  wasp1_write32(WASP1_UART_BASE + WASP1_UART_BAUD, baud_div);
+  wasp1_uart_irq_clear(WASP1_UART_IRQ_TX_EMPTY |
+                       WASP1_UART_IRQ_RX_AVAIL |
+                       WASP1_UART_IRQ_RX_OVERRUN);
+  wasp1_write32(WASP1_UART_BASE + WASP1_UART_CTRL,
+                WASP1_UART_CTRL_ENABLE |
+                WASP1_UART_CTRL_TX_EN |
+                WASP1_UART_CTRL_RX_EN |
+                ctrl_irq_mask);
+}
+
+static inline void wasp1_uart_irq_disable(uint32_t ctrl_irq_mask)
+{
+  /* Disable selected UART IRQ-enable bits without changing UART TX/RX enables. */
+  wasp1_clear32(WASP1_UART_BASE + WASP1_UART_CTRL, ctrl_irq_mask);
 }
 
 #endif
