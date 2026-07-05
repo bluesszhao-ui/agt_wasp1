@@ -116,6 +116,7 @@ implemented:
   machine-mode trap entry with integer context save/restore
   memcpy/memset/syscall stubs
   UART, GPIO, and OTP programming examples
+  long multi-peripheral boot example
   DMA real-memory-copy example
   UART external interrupt example through INTC
   DMA external interrupt example through INTC
@@ -128,6 +129,7 @@ implemented:
   Homebrew LLVM/lld strict RV32I compile/link smoke pass
   local sparse LLVM source checkout for llvm/clang/lld
   SoC boot regression that consumes generated hello_uart OTP image
+  SoC long boot regression that consumes generated long_boot OTP image
   SoC DMA copy regression that consumes generated dma_copy OTP image
   SoC UART external interrupt regression that consumes generated uart_irq OTP image
   SoC DMA external interrupt regression that consumes generated dma_irq OTP image
@@ -162,6 +164,7 @@ startup copy/zero checks
 trap handler build checks
 UART hello program
 UART external interrupt program
+long multi-peripheral boot program
 timer interrupt program
 DMA copy program
 DMA external interrupt program
@@ -181,10 +184,10 @@ The default test target checks file completeness, critical linker/startup
 symbols, aggregate-header syntax, tool discovery, and BSP source syntax. It also
 attempts RV32I object generation, startup assembly, ELF linking, and optional
 binary/OTP image generation when a full RISC-V LLVM toolchain is installed.
-The current smoke flow builds `hello_uart_otp.hex`, `dma_copy_otp.hex`,
-`uart_irq_otp.hex`, `gpio_irq_otp.hex`, `dma_irq_otp.hex`,
-`timer_irq_otp.hex`, and `otp_program_otp.hex`; the `wasp1` top-level
-regression consumes these images.
+The current smoke flow builds `hello_uart_otp.hex`, `long_boot_otp.hex`,
+`dma_copy_otp.hex`, `uart_irq_otp.hex`, `gpio_irq_otp.hex`,
+`dma_irq_otp.hex`, `timer_irq_otp.hex`, and `otp_program_otp.hex`; the `wasp1`
+top-level regression consumes these images.
 
 On a workstation without RISC-V LLVM code generation support, unavailable
 compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode

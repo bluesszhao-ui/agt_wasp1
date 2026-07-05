@@ -121,6 +121,7 @@ syntax_sources="
   bsp/examples/gpio_blink.c
   bsp/examples/gpio_irq.c
   bsp/examples/uart_irq.c
+  bsp/examples/long_boot.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
@@ -233,6 +234,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "uart_irq link skipped because required objects were not produced"
+  fi
+
+  long_boot_obj="build/smoke/long_boot.o"
+  if [ -f "$long_boot_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link long_boot ELF" "$clang_bin" $ldflags $asm_objects "$long_boot_obj" $runtime_objects -o build/smoke/long_boot.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy long_boot binary" "$objcopy_bin" -O binary build/smoke/long_boot.elf build/smoke/long_boot.bin; then
+          run_capture "make long_boot OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/long_boot.bin \
+            --output-hex build/smoke/long_boot_otp.hex \
+            --output-bin build/smoke/long_boot_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for long_boot riscv32"
+    fi
+  else
+    require_or_skip "long_boot link skipped because required objects were not produced"
   fi
 
   dma_obj="build/smoke/dma_copy.o"

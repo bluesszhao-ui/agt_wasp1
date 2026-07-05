@@ -52,6 +52,22 @@ module tb_wasp1;
   localparam logic [31:0] UART_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
   localparam logic [31:0] UART_IRQ_EXPECTED_CLAIM = 32'h0000_0002;
   localparam logic [31:0] UART_IRQ_EXPECTED_STATUS = 32'h0000_0001;
+  localparam int unsigned LONG_BOOT_MAGIC_WORD_IDX = 32'h0000_3600 >> 2;
+  localparam int unsigned LONG_BOOT_SUM_WORD_IDX = 32'h0000_3604 >> 2;
+  localparam int unsigned LONG_BOOT_GPIO_WORD_IDX = 32'h0000_3608 >> 2;
+  localparam int unsigned LONG_BOOT_DMA_STATUS_WORD_IDX = 32'h0000_360c >> 2;
+  localparam int unsigned LONG_BOOT_TIMER_STATUS_WORD_IDX = 32'h0000_3610 >> 2;
+  localparam int unsigned LONG_BOOT_OTP0_WORD_IDX = 32'h0000_3614 >> 2;
+  localparam int unsigned LONG_BOOT_DONE_WORD_IDX = 32'h0000_3618 >> 2;
+  localparam int unsigned LONG_BOOT_DMA_SRC_WORD_IDX = 32'h0000_3700 >> 2;
+  localparam int unsigned LONG_BOOT_DMA_DST_WORD_IDX = 32'h0000_3740 >> 2;
+  localparam int unsigned LONG_BOOT_WORDS = 8;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_MAGIC = 32'h4c42_4f4f;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_DONE = 32'h4c42_4f4b;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_SUM = 32'h07c5_0aa4;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_GPIO = 32'h0000_000a;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_DMA_STATUS = 32'h0000_0002;
+  localparam logic [31:0] LONG_BOOT_EXPECTED_TIMER_STATUS = 32'h0000_0001;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -70,6 +86,16 @@ module tb_wasp1;
     32'h5060_7080,
     32'h90a0_b0c0,
     32'hd0e0_f000
+  };
+  localparam logic [31:0] LONG_BOOT_EXPECTED [LONG_BOOT_WORDS] = '{
+    32'h0102_0304,
+    32'h1122_3344,
+    32'h5566_7788,
+    32'h99aa_bbcc,
+    32'hddee_ff00,
+    32'h1357_2468,
+    32'h2468_ace0,
+    32'hf0e0_d0c0
   };
 
   logic                  hclk;              // 100 MHz verification clock.
@@ -107,6 +133,7 @@ module tb_wasp1;
   bit          dma_irq_check;               // Selects DMA external interrupt firmware assertions.
   bit          gpio_irq_check;              // Selects GPIO external interrupt firmware assertions.
   bit          uart_irq_check;              // Selects UART external interrupt firmware assertions.
+  bit          long_boot_check;             // Selects longer generated-image boot assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -260,6 +287,7 @@ module tb_wasp1;
     dma_irq_check = $test$plusargs("WASP1_DMA_IRQ_CHECK");
     gpio_irq_check = $test$plusargs("WASP1_GPIO_IRQ_CHECK");
     uart_irq_check = $test$plusargs("WASP1_UART_IRQ_CHECK");
+    long_boot_check = $test$plusargs("WASP1_LONG_BOOT_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -945,6 +973,102 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_long_boot_activity;
+    int unsigned timeout;
+    logic [31:0] magic_word;
+    logic [31:0] done_word;
+    logic [31:0] sum_word;
+    logic [31:0] gpio_word;
+    logic [31:0] dma_status_word;
+    logic [31:0] timer_status_word;
+    logic [31:0] otp0_word;
+    begin
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      while (((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
+              (done_word !== LONG_BOOT_EXPECTED_DONE)) &&
+             timeout < 80000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DONE_WORD_IDX];
+        if ((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
+            (done_word !== LONG_BOOT_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      sum_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_SUM_WORD_IDX];
+      gpio_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_GPIO_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_STATUS_WORD_IDX];
+      timer_status_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_TIMER_STATUS_WORD_IDX];
+      otp0_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_OTP0_WORD_IDX];
+      if ((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
+          (done_word !== LONG_BOOT_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("long boot firmware did not complete: magic=0x%08h done=0x%08h sum=0x%08h gpio=0x%08h dma=0x%08h timer=0x%08h otp0=0x%08h",
+               magic_word, done_word, sum_word, gpio_word, dma_status_word,
+               timer_status_word, otp0_word);
+        $fatal(1);
+      end
+      if (sum_word !== LONG_BOOT_EXPECTED_SUM) begin
+        $error("long boot D-SRAM checksum mismatch: got=0x%08h expected=0x%08h",
+               sum_word, LONG_BOOT_EXPECTED_SUM);
+        $fatal(1);
+      end
+      if (gpio_word !== LONG_BOOT_EXPECTED_GPIO ||
+          gpio_out !== LONG_BOOT_EXPECTED_GPIO ||
+          u_wasp1.u_ahb_gpio.dir_q[3:0] !== 4'hf) begin
+        $error("long boot GPIO mismatch: mailbox=0x%08h data_out=0x%08h dir=0x%08h",
+               gpio_word, gpio_out, u_wasp1.u_ahb_gpio.dir_q);
+        $fatal(1);
+      end
+      if ((dma_status_word & LONG_BOOT_EXPECTED_DMA_STATUS) !==
+          LONG_BOOT_EXPECTED_DMA_STATUS ||
+          (dma_status_word & 32'h0000_0004) !== 32'h0 ||
+          u_wasp1.u_ahb_dma.done_q !== 1'b1 ||
+          u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+          u_wasp1.dma_irq !== 1'b0) begin
+        $error("long boot DMA status mismatch: mailbox=0x%08h done=%0b error=%0b irq=%0b",
+               dma_status_word, u_wasp1.u_ahb_dma.done_q,
+               u_wasp1.u_ahb_dma.error_q, u_wasp1.dma_irq);
+        $fatal(1);
+      end
+      if ((timer_status_word & LONG_BOOT_EXPECTED_TIMER_STATUS) !==
+          LONG_BOOT_EXPECTED_TIMER_STATUS ||
+          u_wasp1.timer_irq !== 1'b0) begin
+        $error("long boot timer status mismatch: mailbox=0x%08h timer_irq=%0b",
+               timer_status_word, u_wasp1.timer_irq);
+        $fatal(1);
+      end
+      if (otp0_word !== u_wasp1.u_ahb_otp.otp_mem_q[0]) begin
+        $error("long boot OTP read mismatch: mailbox=0x%08h otp_mem0=0x%08h",
+               otp0_word, u_wasp1.u_ahb_otp.otp_mem_q[0]);
+        $fatal(1);
+      end
+      for (int idx = 0; idx < LONG_BOOT_WORDS; idx++) begin
+        if (u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx] !==
+            LONG_BOOT_EXPECTED[idx] ||
+            u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx] !==
+            LONG_BOOT_EXPECTED[idx]) begin
+          $error("long boot DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
+                 idx,
+                 u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx],
+                 LONG_BOOT_EXPECTED[idx]);
+          $fatal(1);
+        end
+      end
+      if (uart_tx_push_count < 4) begin
+        $error("long boot UART activity too short: tx_push_count=%0d",
+               uart_tx_push_count);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -1021,6 +1145,8 @@ module tb_wasp1;
         wait_for_gpio_irq_activity();
       end else if (uart_irq_check) begin
         wait_for_uart_irq_activity();
+      end else if (long_boot_check) begin
+        wait_for_long_boot_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin

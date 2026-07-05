@@ -8,6 +8,7 @@ make -C wasp1 lint-ic
 make -C wasp1 lint-fpga-v7
 make -C wasp1 sim
 make -C wasp1 sim-sw
+make -C wasp1 sim-long-boot
 make -C wasp1 sim-otp-program
 make -C wasp1 sim-dma-copy
 make -C wasp1 sim-uart-irq
@@ -28,6 +29,7 @@ riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
 | Virtex-7-target lint | PASS |
 | `tb_wasp1` simulation | PASS |
 | `tb_wasp1` OTP firmware simulation | PASS |
+| `tb_wasp1` long boot firmware simulation | PASS |
 | `tb_wasp1` OTP programming firmware simulation | PASS |
 | `tb_wasp1` DMA copy firmware simulation | PASS |
 | `tb_wasp1` UART IRQ firmware simulation | PASS |
@@ -43,6 +45,8 @@ Simulation output:
 ```text
 tb_wasp1 PASS pass_count=9 trap_valid=1 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/hello_uart_otp.hex
+tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
+tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/long_boot_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/otp_program_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
@@ -77,6 +81,7 @@ GDB: registers read, pc=0x00000000, detach PASS
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
+| 105ns-260us | Long boot firmware run | CPU executes one generated OTP image that performs UART output, GPIO output/toggle, D-SRAM pattern stores/reads, polled DMA copy of eight words, polled timer compare, and executable OTP readback; testbench checks completion mailboxes and hardware side effects | PASS |
 | 105ns-33us | OTP programming firmware run | Startup copies `.fasttext` to I-SRAM; CPU executes the programming routine from I-SRAM and programs OTP word `0x00003fa0` to `0x13572468` with `done=1` and `error=0` | PASS |
 | 105ns-21us | DMA copy firmware run | CPU seeds D-SRAM source words at `0x20003000`, starts DMA to copy four words to `0x20003040`, and the testbench observes matching destination words with `done=1`, `error=0`, and `irq=1` | PASS |
 | 105ns-75us | UART IRQ firmware run | CPU enables UART TX-empty IRQ ID 2 in INTC, services one machine external interrupt, claims/completes IRQ 2, clears UART sticky TX-empty status, disables UART TX IRQ enable, and returns to idle | PASS |
@@ -91,9 +96,11 @@ OpenOCD/GDB process path is now verified for connect, halt, register read, PC
 read, and detach over remote-bitbang JTAG. The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
+The long boot firmware image now combines UART, GPIO, D-SRAM, DMA, timer, and
+OTP readback activity in one generated-image run.
 The UART TX-empty, DMA, and GPIO external interrupt paths are covered through
 INTC claim/complete and MEIP. The machine timer interrupt path is covered by a
 generated firmware image that returns through the C trap handler. Remaining
 top-level work includes UART RX-available/RX-overrun interrupt firmware,
-longer SoC boot tests from `llvm_s1` output, and richer debug operations such
+mixed interrupt-and-DMA software regressions, and richer debug operations such
 as single-step, breakpoints, abstract memory access, and true core DPC capture.

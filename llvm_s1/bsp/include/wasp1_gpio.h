@@ -48,6 +48,12 @@ static inline void wasp1_gpio_clear(uint32_t mask)
   wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_CLR, mask);
 }
 
+static inline void wasp1_gpio_toggle(uint32_t mask)
+{
+  /* TOGGLE flips only asserted bits in the output register. */
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_TOGGLE, mask);
+}
+
 static inline void wasp1_gpio_irq_config(uint32_t enable_mask, uint32_t type_mask, uint32_t polarity_mask)
 {
   /*
