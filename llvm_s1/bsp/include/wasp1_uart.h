@@ -58,6 +58,18 @@ static inline void wasp1_uart_puts(const char *text)
   }
 }
 
+static inline uint32_t wasp1_uart_status(void)
+{
+  /* STATUS is live state for FIFO fullness, TX busy, and RX overrun. */
+  return wasp1_read32(WASP1_UART_BASE + WASP1_UART_STATUS);
+}
+
+static inline uint32_t wasp1_uart_getc_raw(void)
+{
+  /* Reading DATA pops one byte when RX FIFO is non-empty. */
+  return wasp1_read32(WASP1_UART_BASE + WASP1_UART_DATA) & UINT32_C(0xff);
+}
+
 static inline uint32_t wasp1_uart_irq_status(void)
 {
   /* IRQ_STATUS is sticky W1C state, independent of the live STATUS register. */
@@ -91,6 +103,12 @@ static inline void wasp1_uart_irq_disable(uint32_t ctrl_irq_mask)
 {
   /* Disable selected UART IRQ-enable bits without changing UART TX/RX enables. */
   wasp1_clear32(WASP1_UART_BASE + WASP1_UART_CTRL, ctrl_irq_mask);
+}
+
+static inline void wasp1_uart_irq_enable(uint32_t ctrl_irq_mask)
+{
+  /* Enable selected UART IRQ-enable bits without changing UART TX/RX enables. */
+  wasp1_set32(WASP1_UART_BASE + WASP1_UART_CTRL, ctrl_irq_mask);
 }
 
 #endif

@@ -69,6 +69,7 @@ bsp_files="
   bsp/examples/gpio_blink.c
   bsp/examples/gpio_irq.c
   bsp/examples/uart_irq.c
+  bsp/examples/uart_rx_irq.c
   bsp/examples/long_boot.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c

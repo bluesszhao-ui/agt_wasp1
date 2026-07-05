@@ -66,20 +66,19 @@ PASS       Current verification target passes
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, OpenOCD/GDB process smoke, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, DMA real-memory-copy firmware smoke, UART/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, OpenOCD/GDB process smoke, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/UART-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/DMA/UART-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
+| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
 | `ftdi_debugger` | TODO | FT2232H external hardware debugger requirements are captured; schematic, PCB, OpenOCD board config validation, and FPGA/board bring-up remain |
-| full system software | TODO | Machine timer, UART TX-empty, DMA external interrupt, GPIO external interrupt, and long generated-image boot smokes pass; UART RX/overrun interrupt firmware and mixed interrupt/DMA software regressions remain |
+| full system software | TODO | Machine timer, UART TX-empty, UART RX/overrun, DMA external interrupt, GPIO external interrupt, and long generated-image boot smokes pass; mixed interrupt/DMA software regressions remain |
 
 ## Near-Term Plan
 
 ```text
-1. Add UART RX-available/RX-overrun interrupt firmware coverage through INTC
-2. Add mixed interrupt-and-DMA software regressions
-3. Extend debug beyond smoke: true DPC capture, single-step, breakpoints, and abstract memory access
-4. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
+1. Add mixed interrupt-and-DMA software regressions
+2. Extend debug beyond smoke: true DPC capture, single-step, breakpoints, and abstract memory access
+3. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 ```
 
 ## Commit Policy Going Forward

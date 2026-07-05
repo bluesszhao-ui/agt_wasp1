@@ -52,6 +52,30 @@ module tb_wasp1;
   localparam logic [31:0] UART_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
   localparam logic [31:0] UART_IRQ_EXPECTED_CLAIM = 32'h0000_0002;
   localparam logic [31:0] UART_IRQ_EXPECTED_STATUS = 32'h0000_0001;
+  localparam int unsigned UART_RX_IRQ_READY_WORD_IDX = 32'h0000_3800 >> 2;
+  localparam int unsigned UART_RX_IRQ_MAGIC_WORD_IDX = 32'h0000_3804 >> 2;
+  localparam int unsigned UART_RX_IRQ_MCAUSE_WORD_IDX = 32'h0000_3808 >> 2;
+  localparam int unsigned UART_RX_IRQ_CLAIM_WORD_IDX = 32'h0000_380c >> 2;
+  localparam int unsigned UART_RX_IRQ_STATUS_WORD_IDX = 32'h0000_3810 >> 2;
+  localparam int unsigned UART_RX_IRQ_DATA_WORD_IDX = 32'h0000_3814 >> 2;
+  localparam int unsigned UART_RX_IRQ_OVR_READY_WORD_IDX = 32'h0000_3818 >> 2;
+  localparam int unsigned UART_RX_IRQ_OVR_MAGIC_WORD_IDX = 32'h0000_381c >> 2;
+  localparam int unsigned UART_RX_IRQ_OVR_STATUS_WORD_IDX = 32'h0000_3820 >> 2;
+  localparam int unsigned UART_RX_IRQ_OVR_UART_STATUS_WORD_IDX = 32'h0000_3824 >> 2;
+  localparam int unsigned UART_RX_IRQ_DONE_WORD_IDX = 32'h0000_3828 >> 2;
+  localparam int unsigned UART_RX_IRQ_BAUD_CYCLES = 4;
+  localparam int unsigned UART_RX_IRQ_OVR_BYTES = 9;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_READY = 32'h5552_5244;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_MAGIC = 32'h5552_5841;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_OVR_READY = 32'h5552_4f52;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_OVR_MAGIC = 32'h5552_4f56;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_DONE = 32'h5552_4f4b;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_CLAIM = 32'h0000_0002;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_DATA = 32'h0000_005a;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_RX_STATUS = 32'h0000_0002;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_OVR_STATUS = 32'h0000_0004;
+  localparam logic [31:0] UART_RX_IRQ_EXPECTED_OVR_UART_STATUS = 32'h0000_0020;
   localparam int unsigned LONG_BOOT_MAGIC_WORD_IDX = 32'h0000_3600 >> 2;
   localparam int unsigned LONG_BOOT_SUM_WORD_IDX = 32'h0000_3604 >> 2;
   localparam int unsigned LONG_BOOT_GPIO_WORD_IDX = 32'h0000_3608 >> 2;
@@ -133,6 +157,7 @@ module tb_wasp1;
   bit          dma_irq_check;               // Selects DMA external interrupt firmware assertions.
   bit          gpio_irq_check;              // Selects GPIO external interrupt firmware assertions.
   bit          uart_irq_check;              // Selects UART external interrupt firmware assertions.
+  bit          uart_rx_irq_check;           // Selects UART RX/overrun interrupt assertions.
   bit          long_boot_check;             // Selects longer generated-image boot assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
@@ -287,6 +312,7 @@ module tb_wasp1;
     dma_irq_check = $test$plusargs("WASP1_DMA_IRQ_CHECK");
     gpio_irq_check = $test$plusargs("WASP1_GPIO_IRQ_CHECK");
     uart_irq_check = $test$plusargs("WASP1_UART_IRQ_CHECK");
+    uart_rx_irq_check = $test$plusargs("WASP1_UART_RX_IRQ_CHECK");
     long_boot_check = $test$plusargs("WASP1_LONG_BOOT_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
@@ -973,6 +999,153 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic uart_rx_wait_bit_time;
+    begin
+      repeat (UART_RX_IRQ_BAUD_CYCLES) @(posedge hclk);
+      #1ns;
+    end
+  endtask
+
+  task automatic send_uart_rx_byte(input logic [7:0] data);
+    begin
+      // 8N1 serial frame driven into the SoC UART RX pin.
+      uart_rx = 1'b0;
+      uart_rx_wait_bit_time();
+      for (int bit_idx = 0; bit_idx < 8; bit_idx++) begin
+        uart_rx = data[bit_idx];
+        uart_rx_wait_bit_time();
+      end
+      uart_rx = 1'b1;
+      uart_rx_wait_bit_time();
+      uart_rx_wait_bit_time();
+    end
+  endtask
+
+  task automatic wait_for_uart_rx_irq_activity;
+    int unsigned timeout;
+    logic [31:0] ready_word;
+    logic [31:0] magic_word;
+    logic [31:0] mcause_word;
+    logic [31:0] claim_word;
+    logic [31:0] status_word;
+    logic [31:0] data_word;
+    logic [31:0] ovr_ready_word;
+    logic [31:0] ovr_magic_word;
+    logic [31:0] ovr_status_word;
+    logic [31:0] ovr_uart_status_word;
+    logic [31:0] done_word;
+    begin
+      timeout = 0;
+      ready_word = '0;
+      while ((ready_word !== UART_RX_IRQ_EXPECTED_READY) && timeout < 50000) begin
+        ready_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_READY_WORD_IDX];
+        if (ready_word !== UART_RX_IRQ_EXPECTED_READY) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      if (ready_word !== UART_RX_IRQ_EXPECTED_READY) begin
+        dump_sw_timeout_diagnostics();
+        $error("UART RX IRQ firmware did not arm RX-available phase");
+        $fatal(1);
+      end
+
+      send_uart_rx_byte(8'h5a);
+
+      timeout = 0;
+      magic_word = '0;
+      while ((magic_word !== UART_RX_IRQ_EXPECTED_MAGIC) && timeout < 50000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_MAGIC_WORD_IDX];
+        if (magic_word !== UART_RX_IRQ_EXPECTED_MAGIC) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      mcause_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_CLAIM_WORD_IDX];
+      status_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_STATUS_WORD_IDX];
+      data_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_DATA_WORD_IDX];
+      if (magic_word !== UART_RX_IRQ_EXPECTED_MAGIC ||
+          mcause_word !== UART_RX_IRQ_EXPECTED_MCAUSE ||
+          claim_word !== UART_RX_IRQ_EXPECTED_CLAIM ||
+          (status_word & UART_RX_IRQ_EXPECTED_RX_STATUS) !==
+          UART_RX_IRQ_EXPECTED_RX_STATUS ||
+          data_word !== UART_RX_IRQ_EXPECTED_DATA) begin
+        dump_sw_timeout_diagnostics();
+        $error("UART RX IRQ phase mismatch: magic=0x%08h mcause=0x%08h claim=0x%08h status=0x%08h data=0x%08h",
+               magic_word, mcause_word, claim_word, status_word, data_word);
+        $fatal(1);
+      end
+
+      timeout = 0;
+      ovr_ready_word = '0;
+      while ((ovr_ready_word !== UART_RX_IRQ_EXPECTED_OVR_READY) &&
+             timeout < 50000) begin
+        ovr_ready_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_READY_WORD_IDX];
+        if (ovr_ready_word !== UART_RX_IRQ_EXPECTED_OVR_READY) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      if (ovr_ready_word !== UART_RX_IRQ_EXPECTED_OVR_READY) begin
+        dump_sw_timeout_diagnostics();
+        $error("UART RX IRQ firmware did not arm overrun phase");
+        $fatal(1);
+      end
+
+      for (int idx = 0; idx < UART_RX_IRQ_OVR_BYTES; idx++) begin
+        send_uart_rx_byte(8'(8'h80 + idx));
+      end
+
+      timeout = 0;
+      ovr_magic_word = '0;
+      done_word = '0;
+      while (((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
+              (done_word !== UART_RX_IRQ_EXPECTED_DONE)) &&
+             timeout < 50000) begin
+        ovr_magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_DONE_WORD_IDX];
+        if ((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
+            (done_word !== UART_RX_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      ovr_status_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_STATUS_WORD_IDX];
+      ovr_uart_status_word =
+        u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_UART_STATUS_WORD_IDX];
+      if ((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
+          (done_word !== UART_RX_IRQ_EXPECTED_DONE) ||
+          (ovr_status_word & UART_RX_IRQ_EXPECTED_OVR_STATUS) !==
+          UART_RX_IRQ_EXPECTED_OVR_STATUS ||
+          (ovr_uart_status_word & UART_RX_IRQ_EXPECTED_OVR_UART_STATUS) !==
+          UART_RX_IRQ_EXPECTED_OVR_UART_STATUS) begin
+        dump_sw_timeout_diagnostics();
+        $error("UART overrun IRQ phase mismatch: magic=0x%08h done=0x%08h irq_status=0x%08h uart_status=0x%08h",
+               ovr_magic_word, done_word, ovr_status_word, ovr_uart_status_word);
+        $fatal(1);
+      end
+      if (u_wasp1.uart_irq !== 1'b0 || u_wasp1.external_irq !== 1'b0 ||
+          u_wasp1.u_ahb_intc.meip_o !== 1'b0 ||
+          u_wasp1.u_ahb_uart.irq_status_q[UART_IRQ_RX_OVERRUN_BIT] !== 1'b0 ||
+          u_wasp1.u_ahb_uart.rx_overrun_q !== 1'b0 ||
+          u_wasp1.u_ahb_uart.ovr_irq_en_q !== 1'b0) begin
+        $error("UART RX/overrun IRQ did not deassert: uart_irq=%0b external_irq=%0b meip=%0b irq_status=0x%0h rx_overrun=%0b ovr_irq_en=%0b",
+               u_wasp1.uart_irq, u_wasp1.external_irq,
+               u_wasp1.u_ahb_intc.meip_o,
+               u_wasp1.u_ahb_uart.irq_status_q,
+               u_wasp1.u_ahb_uart.rx_overrun_q,
+               u_wasp1.u_ahb_uart.ovr_irq_en_q);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_long_boot_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -1145,6 +1318,8 @@ module tb_wasp1;
         wait_for_gpio_irq_activity();
       end else if (uart_irq_check) begin
         wait_for_uart_irq_activity();
+      end else if (uart_rx_irq_check) begin
+        wait_for_uart_rx_irq_activity();
       end else if (long_boot_check) begin
         wait_for_long_boot_activity();
       end else if (timer_irq_check) begin
