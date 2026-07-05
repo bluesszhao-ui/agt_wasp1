@@ -33,6 +33,7 @@ Debug Module activation through dmcontrol.dmactive
 haltreq and resumereq delivery to core_debug
 dmstatus running/halted/resumeack/havereset reporting
 RV32 GPR Access Register abstract commands
+`dcsr.step` single-step setup and resume delivery
 ```
 
 ## 4. Unsupported Stage-1 Scope
@@ -40,7 +41,6 @@ RV32 GPR Access Register abstract commands
 The following remain outside this wrapper:
 
 ```text
-single-step
 program buffer
 abstract memory access
 debug ROM

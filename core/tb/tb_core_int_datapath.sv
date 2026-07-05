@@ -650,6 +650,60 @@ module tb_core_int_datapath;
     end
   endtask
 
+  // Release one instruction from Debug Mode, verify it retires, and confirm
+  // the core returns to halted state with DPC advanced to the next stream PC.
+  task automatic debug_single_step_addi(
+    input string       name,
+    input logic [4:0]  rd,
+    input logic [11:0] imm,
+    input logic [31:0] exp_data
+  );
+    begin
+      @(negedge clk);
+      core_debug.halt_req = 1'b0;
+      core_debug.resume_req = 1'b1;
+      core_debug.step_req = 1'b1;
+      @(posedge clk);
+      #1;
+      core_debug.resume_req = 1'b0;
+      core_debug.step_req = 1'b0;
+      if (!core_debug.running || core_debug.halted || !instr_ready) begin
+        $fatal(1, "%s step release mismatch running=%0b halted=%0b ready=%0b",
+               name, core_debug.running, core_debug.halted, instr_ready);
+      end
+
+      drive_instr(enc_i(imm, 5'd0, 3'b000, rd));
+      @(negedge clk);
+      instr_valid = 1'b0;
+      instr = 32'h0000_0013;
+      instr_fault = 1'b0;
+      @(posedge clk);
+      expect_commit(name, rd, exp_data);
+      alu_i_count++;
+
+      for (int unsigned tries = 0; tries < 8; tries++) begin
+        @(posedge clk);
+        #1;
+        if (core_debug.halted) begin
+          if (core_debug.running || instr_ready) begin
+            $fatal(1, "%s rehalt status mismatch running=%0b ready=%0b",
+                   name, core_debug.running, instr_ready);
+          end
+          @(posedge clk);
+          #1;
+          if (core_debug.dpc !== exp_fetch_pc) begin
+            $fatal(1, "%s rehalt DPC mismatch dpc=%08x exp=%08x",
+                   name, core_debug.dpc, exp_fetch_pc);
+          end
+          pass_count++;
+          debug_count++;
+          return;
+        end
+      end
+      $fatal(1, "%s did not re-enter halt after step", name);
+    end
+  endtask
+
   // Resume normal execution from Debug Mode and verify running status returns.
   task automatic debug_resume(input string name);
     begin
@@ -958,6 +1012,9 @@ module tb_core_int_datapath;
     timer_irq = 1'b0;
 
     debug_enter_halt("debug halt after program");
+    debug_single_step_addi("debug single-step addi", 5'd12, 12'h123,
+                           32'h0000_0123);
+    debug_read_gpr("debug read stepped x12", 5'd12, 32'h0000_0123);
     debug_read_gpr("debug read x26", 5'd26, 32'h0000_0888);
     debug_write_gpr("debug write x10", 5'd10, 32'hCAFE_1234);
     debug_read_gpr("debug readback x10", 5'd10, 32'hCAFE_1234);
@@ -971,7 +1028,7 @@ module tb_core_int_datapath;
         lsu_fault_count < 1 || dmem_wait_count < 2 || dmem_bp_count < 1 ||
         csr_count < 9 || trap_count < 4 ||
         irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
-        pc_count < 56 || debug_count < 7) begin
+        pc_count < 57 || debug_count < 9) begin
       $fatal(1, "coverage goal missed");
     end
 

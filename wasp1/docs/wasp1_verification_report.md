@@ -114,5 +114,5 @@ The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
 interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes richer debug
-operations such as single-step, breakpoints, and abstract memory access, plus
-longer software stress regressions.
+operations such as breakpoints and abstract memory access, plus longer software
+stress regressions.

@@ -27,6 +27,7 @@ module debug (
   logic        hart_havereset;       // Sticky reset observation to dmstatus.
   logic        core_halt_req;        // Halt request level driven to core_debug.
   logic        core_resume_req;      // Resume request level driven to core_debug.
+  logic        dcsr_step;            // Latched DCSR.step bit for single-step resume.
 
   logic        command_valid;        // Accepted DMI command write pulse.
   logic [31:0] command;              // Raw abstract command register value.
@@ -57,10 +58,10 @@ module debug (
   assign ndmreset_o = ndmreset;
 
   // Hart control outputs are the only top-level drivers for these core-debug
-  // controls. Single-step is explicitly unsupported in this stage and held low.
+  // controls. DCSR.step turns a resume transaction into one-instruction step.
   assign core_debug.halt_req = core_halt_req;
   assign core_debug.resume_req = core_resume_req;
-  assign core_debug.step_req = 1'b0;
+  assign core_debug.step_req = core_resume_req && dcsr_step;
 
   // Bridge the GPR-only internal modport to the full core_debug top port.
   assign gpr_debug.gpr_req_ready = core_debug.gpr_req_ready;
@@ -137,6 +138,7 @@ module debug (
     .reg_rsp_ready_o(reg_rsp_ready),
     .reg_rsp_rdata_i(reg_rsp_rdata),
     .reg_rsp_error_i(reg_rsp_error),
+    .dcsr_step_o(dcsr_step),
     .reg_flush_o(reg_flush)
   );
 

@@ -41,6 +41,7 @@ package debug_dmi_pkg;
   localparam logic [15:0] ABSTRACT_CSR_DPC = 16'h07B1;
   localparam logic [31:0] ABSTRACT_CSR_MISA_RV32I = 32'h4000_0100;
   localparam logic [31:0] ABSTRACT_CSR_DCSR_HALTED_M = 32'h4000_00C3;
+  localparam logic [31:0] ABSTRACT_CSR_DCSR_STEP_MASK = 32'h0000_0004;
   localparam logic [31:0] ABSTRACT_CSR_DPC_RESET = 32'h0000_0000;
   localparam logic [15:0] ABSTRACT_GPR_BASE = 16'h1000;
   localparam logic [15:0] ABSTRACT_GPR_LAST = 16'h101F;

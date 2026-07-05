@@ -18,7 +18,7 @@ make -C debug lint-fpga-v7
 Observed simulation summary:
 
 ```text
-tb_debug_jtag coverage: pass_count=57 dmi_reads=8 dmi_writes=8 halt=1 resume=1 gpr_write=1 gpr_read=1 csr_read=1 reset=1
+tb_debug_jtag coverage: pass_count=77 dmi_reads=10 dmi_writes=14 halt=1 resume=1 gpr_write=1 gpr_read=1 csr_read=1 step=1 reset=1
 tb_debug_jtag PASS
 ```
 
@@ -36,20 +36,22 @@ tb_debug_jtag PASS
 | 9435 ns to 12595 ns | Write `data0`, issue Access Register write x5, complete GPR response. | Core GPR write request x5 carries `0x13572468`; `abstractcs` stays clean. | PASS |
 | 12595 ns to 15495 ns | Issue Access Register read x6 and complete GPR response. | `data0` reads back `0x24681357`. | PASS |
 | 15495 ns to 17365 ns | Issue Access Register read of `dpc` through JTAG DMI. | `data0` reads back core-supplied DPC `0x10000104`. | PASS |
-| 17365 ns to 19000 ns | Pulse hart reset event and clear with `ackhavereset`. | Sticky `havereset` is visible then clears. | PASS |
+| 17365 ns to 27600 ns | Write `dcsr.step`, read it back, issue resume, and model one single-step. | `core_debug.step_req` asserts during the resume transaction; halted resumeack status reads back. | PASS |
+| 27600 ns to 29000 ns | Pulse hart reset event and clear with `ackhavereset`. | Sticky `havereset` is visible then clears. | PASS |
 
 ## 3. Coverage Summary
 
 | Metric | Observed |
 | --- | ---: |
-| Self-checking assertions passed | 57 |
-| JTAG DMI reads | 8 |
-| JTAG DMI writes | 8 |
+| Self-checking assertions passed | 77 |
+| JTAG DMI reads | 10 |
+| JTAG DMI writes | 14 |
 | Halt transactions | 1 |
 | Resume transactions | 1 |
 | GPR write transactions | 1 |
 | GPR read transactions | 1 |
 | DPC CSR read transactions | 1 |
+| Single-step transactions | 1 |
 | Reset sequences | 1 |
 
 ## 4. Residual Risk

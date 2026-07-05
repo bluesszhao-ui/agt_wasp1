@@ -26,6 +26,7 @@ module debug_abstract_cmd (
   output logic        reg_rsp_ready_o,       // Abstract controller accepts the result.
   input  logic [31:0] reg_rsp_rdata_i,       // Successful GPR read data.
   input  logic        reg_rsp_error_i,       // Register-access sequencer/core reported error.
+  output logic        dcsr_step_o,           // Latched DCSR.step bit used by resume single-step.
   output logic        reg_flush_o            // Abort/drain downstream work on DM/hart loss.
 );
   import debug_dmi_pkg::*;
@@ -52,6 +53,8 @@ module debug_abstract_cmd (
   logic [15:0] command_regno;
   logic        command_gpr_supported;
   logic        command_csr_read_supported;
+  logic        command_csr_write_supported;
+  logic        command_csr_supported;
   logic        command_transfer_supported;
   logic        command_encoding_supported;
   logic [31:0] command_csr_rdata;
@@ -63,6 +66,7 @@ module debug_abstract_cmd (
   logic        read_result_valid_q;
   logic [31:0] read_result_q;
   logic [2:0]  completion_error_q;
+  logic        dcsr_step_q;
 
   logic reg_cmd_fire;
   logic reg_rsp_fire;
@@ -85,8 +89,12 @@ module debug_abstract_cmd (
       ((command_regno == ABSTRACT_CSR_MISA) ||
        (command_regno == ABSTRACT_CSR_DCSR) ||
        (command_regno == ABSTRACT_CSR_DPC)) && !command_write;
+  assign command_csr_write_supported =
+      (command_regno == ABSTRACT_CSR_DCSR) && command_write;
+  assign command_csr_supported = command_csr_read_supported ||
+                                 command_csr_write_supported;
   assign command_transfer_supported = command_gpr_supported ||
-                                      command_csr_read_supported;
+                                      command_csr_supported;
   assign command_encoding_supported =
       (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
       !command_reserved_bit && !command_postincrement && !command_postexec &&
@@ -98,7 +106,9 @@ module debug_abstract_cmd (
   always_comb begin
     unique case (command_regno)
       ABSTRACT_CSR_MISA: command_csr_rdata = ABSTRACT_CSR_MISA_RV32I;
-      ABSTRACT_CSR_DCSR: command_csr_rdata = ABSTRACT_CSR_DCSR_HALTED_M;
+      ABSTRACT_CSR_DCSR: command_csr_rdata =
+          ABSTRACT_CSR_DCSR_HALTED_M |
+          (dcsr_step_q ? ABSTRACT_CSR_DCSR_STEP_MASK : 32'h0000_0000);
       ABSTRACT_CSR_DPC:  command_csr_rdata = hart_dpc_i;
       default:           command_csr_rdata = '0;
     endcase
@@ -114,6 +124,7 @@ module debug_abstract_cmd (
   assign reg_cmd_addr_o = reg_addr_q;
   assign reg_cmd_wdata_o = reg_wdata_q;
   assign reg_rsp_ready_o = (state_q == ABSTRACT_WAIT);
+  assign dcsr_step_o = dcsr_step_q;
 
   // Losing DM activation or halted state aborts the downstream transaction.
   assign reg_flush_o = !dmactive_i ||
@@ -137,7 +148,7 @@ module debug_abstract_cmd (
       ABSTRACT_IDLE: begin
         if (command_valid_i && dmactive_i) begin
           if (!command_encoding_supported || !hart_halted_i || !command_transfer ||
-              command_csr_read_supported) begin
+              command_csr_supported) begin
             state_d = ABSTRACT_COMPLETE;
           end else begin
             state_d = ABSTRACT_ISSUE;
@@ -182,12 +193,14 @@ module debug_abstract_cmd (
       read_result_valid_q <= 1'b0;
       read_result_q <= '0;
       completion_error_q <= CMDERR_NONE;
+      dcsr_step_q <= 1'b0;
     end else begin
       state_q <= state_d;
 
       if (!dmactive_i) begin
         read_result_valid_q <= 1'b0;
         completion_error_q <= CMDERR_NONE;
+        dcsr_step_q <= 1'b0;
       end else if ((state_q == ABSTRACT_IDLE) && command_valid_i) begin
         reg_write_q <= command_write;
         reg_addr_q <= command_regno[4:0];
@@ -199,10 +212,13 @@ module debug_abstract_cmd (
           completion_error_q <= CMDERR_NOTSUP;
         end else if (!hart_halted_i) begin
           completion_error_q <= CMDERR_HALT_RESUME;
-        end else if (command_transfer && command_csr_read_supported) begin
+        end else if (command_transfer && command_csr_supported) begin
           completion_error_q <= CMDERR_NONE;
-          read_result_valid_q <= 1'b1;
-          read_result_q <= command_csr_rdata;
+          read_result_valid_q <= command_csr_read_supported;
+          read_result_q <= command_csr_read_supported ? command_csr_rdata : '0;
+          if (command_csr_write_supported) begin
+            dcsr_step_q <= (data0_i & ABSTRACT_CSR_DCSR_STEP_MASK) != 32'h0000_0000;
+          end
         end else begin
           completion_error_q <= CMDERR_NONE;
         end

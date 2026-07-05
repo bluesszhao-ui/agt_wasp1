@@ -37,6 +37,7 @@ module tb_debug_jtag;
   int unsigned gpr_write_count;
   int unsigned gpr_read_count;
   int unsigned csr_read_count;
+  int unsigned step_count;
   int unsigned reset_count;
 
   debug_jtag u_debug_jtag (
@@ -337,6 +338,7 @@ module tb_debug_jtag;
     gpr_write_count = 0;
     gpr_read_count = 0;
     csr_read_count = 0;
+    step_count = 0;
     reset_count = 0;
     rst_n = 1'b0;
     trst_n = 1'b0;
@@ -418,6 +420,43 @@ module tb_debug_jtag;
                   "data0 readback after JTAG dpc read");
     csr_read_count++;
 
+    // DCSR.step converts the next resume request into a core single-step.
+    jtag_dmi_write(DMI_ADDR_DATA0,
+                   ABSTRACT_CSR_DCSR_HALTED_M | ABSTRACT_CSR_DCSR_STEP_MASK,
+                   "write stepped dcsr data0 over JTAG");
+    jtag_dmi_write(DMI_ADDR_COMMAND,
+                   make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b1,
+                                       ABSTRACT_CSR_DCSR),
+                   "abstract dcsr write over JTAG");
+    wait_debug_clocks(4);
+    jtag_dmi_write(DMI_ADDR_COMMAND,
+                   make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b0,
+                                       ABSTRACT_CSR_DCSR),
+                   "abstract dcsr read over JTAG");
+    jtag_dmi_read(DMI_ADDR_DATA0,
+                  ABSTRACT_CSR_DCSR_HALTED_M | ABSTRACT_CSR_DCSR_STEP_MASK,
+                  32'hFFFF_FFFF, "data0 readback after JTAG dcsr read");
+    jtag_dmi_write(DMI_ADDR_DMCONTROL, 32'h4000_0001, "step resume over JTAG");
+    check(core_debug.resume_req && core_debug.step_req && !core_debug.halt_req,
+          "single-step request reaches core");
+    core_debug.halted = 1'b0;
+    core_debug.running = 1'b1;
+    step_clock();
+    check(!core_debug.resume_req && !core_debug.step_req,
+          "single-step resume retires after running");
+    core_debug.running = 1'b0;
+    core_debug.halted = 1'b1;
+    jtag_dmi_read(DMI_ADDR_DMSTATUS, 32'h000F_0382, 32'h000F_FFFF,
+                  "halted resumeack after single-step over JTAG");
+    jtag_dmi_write(DMI_ADDR_DATA0, ABSTRACT_CSR_DCSR_HALTED_M,
+                   "clear stepped dcsr data0 over JTAG");
+    jtag_dmi_write(DMI_ADDR_COMMAND,
+                   make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b1,
+                                       ABSTRACT_CSR_DCSR),
+                   "clear dcsr step over JTAG");
+    wait_debug_clocks(4);
+    step_count++;
+
     // Hart reset sticky state and ackhavereset over JTAG.
     @(negedge clk);
     hart_reset_event = 1'b1;
@@ -429,10 +468,10 @@ module tb_debug_jtag;
     jtag_dmi_read(DMI_ADDR_DMSTATUS, 32'h000C_0382 & ~32'h000C_0000,
                   32'h000C_0000, "havereset clear over JTAG");
 
-    $display("tb_debug_jtag coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d reset=%0d",
+    $display("tb_debug_jtag coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d step=%0d reset=%0d",
              pass_count, jtag_dmi_reads, jtag_dmi_writes, halt_count,
              resume_count, gpr_write_count, gpr_read_count, csr_read_count,
-             reset_count);
+             step_count, reset_count);
     $display("tb_debug_jtag PASS");
     $finish;
   end

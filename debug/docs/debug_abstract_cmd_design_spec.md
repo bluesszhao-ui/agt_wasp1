@@ -2,10 +2,11 @@
 
 ## 1. Scope
 
-The block decodes and executes the RV32 GPR subset of Access Register commands
-and local read-only CSR probes for `misa`, `dcsr`, and core-captured `dpc`. CSR writes, all
-other CSR addresses, FPR access, postincrement, program-buffer execution,
-memory access, and other command types remain explicitly unsupported.
+The block decodes and executes the RV32 GPR subset of Access Register commands,
+local CSR reads for `misa`, `dcsr`, and core-captured `dpc`, and the minimal
+`dcsr.step` write used for single-step. Other CSR writes, all other CSR
+addresses, FPR access, postincrement, program-buffer execution, memory access,
+and other command types remain explicitly unsupported.
 
 ## 2. Editable FSM/Block Diagram
 
@@ -36,7 +37,7 @@ IDLE -> ISSUE:
 
 IDLE -> COMPLETE:
   command_valid && dmactive &&
-  (unsupported || !hart_halted || !transfer || supported_CSR_read)
+  (unsupported || !hart_halted || !transfer || supported_local_CSR_access)
 
 ISSUE -> WAIT:
   reg_cmd_valid && reg_cmd_ready
@@ -57,11 +58,11 @@ COMPLETE -> IDLE:
 ## 4. Decoder
 
 The raw `command_i` field extraction and support predicate are combinational.
-Only a transfer command requires `aarsize=2` and either a GPR register range or
-one of the supported read-only CSR addresses. This keeps the architecturally valid
-transfer-disabled no-op independent of unused fields. Hart halted policy is
-checked separately and therefore still applies to no-op Access Register
-commands.
+Only a transfer command requires `aarsize=2` and either a GPR register range,
+one of the supported local CSR reads, or the supported `dcsr.step` write. This
+keeps the architecturally valid transfer-disabled no-op independent of unused
+fields. Hart halted policy is checked separately and therefore still applies to
+no-op Access Register commands.
 
 ## 5. Request Registers
 
@@ -84,10 +85,17 @@ successful supported CSR read sets the same completion registers locally during
 command capture. The `COMPLETE` state converts these registers into one-cycle
 pulses for `debug_dmi_regs`.
 
-Successful writes, transfer-disabled commands, and unsupported CSR writes
-report no data0 pulse because no read value is produced. For the supported CSR
-probe set, `misa` and `dcsr` are fixed discovery values while `dpc` is forwarded
-from `hart_dpc_i`, which is driven by the core-side Debug PC capture logic.
+Successful GPR writes, supported `dcsr.step` writes, transfer-disabled
+commands, and unsupported CSR writes report no data0 pulse because no read
+value is produced. For the supported CSR probe set, `misa` is fixed, `dcsr`
+combines the fixed discovery/cause value with the latched step bit, and `dpc`
+is forwarded from `hart_dpc_i`, which is driven by the core-side Debug PC
+capture logic.
+
+`dcsr_step_q` is local sequential state. It resets to zero and clears when
+`dmactive_i` is deasserted. A supported Access Register write to `dcsr` updates
+only this bit from `data0_i[2]`; other DCSR fields remain fixed readback
+metadata in this stage.
 
 ## 7. Target Behavior
 

@@ -5,9 +5,9 @@
 `debug` is the stage-1 single-hart Debug Module integration boundary. It targets
 RISC-V External Debug Specification 0.13.x behavior sufficient for hart
 discovery, halt/resume control, and RV32 integer GPR abstract access.
-It also exposes the minimal read-only `misa`, `dcsr`, and core-captured `dpc`
-abstract CSR probes required for OpenOCD/GDB discovery and register-packet
-reads.
+It also exposes the minimal `misa`, `dcsr`, and core-captured `dpc` abstract
+CSR probes required for OpenOCD/GDB discovery, register-packet reads, and
+single-step setup.
 
 The JTAG TAP/DTM transport is integrated with this Debug Module by the
 `debug_jtag` wrapper. This module intentionally remains the ready/valid DMI
@@ -24,8 +24,8 @@ Debug Module register/control boundary.
 | `dmactive_o` | output | Mirrors active Debug Module state |
 | `ndmreset_o` | output | Non-debug reset request from `dmcontrol.ndmreset` |
 
-`core_debug.step_req` is hardwired low in stage 1. Single-step is reserved for a
-later Debug Module milestone.
+`core_debug.step_req` asserts during a resume transaction when the latched
+`dcsr.step` bit is set.
 
 ## 3. Implemented Functions
 
@@ -34,8 +34,9 @@ later Debug Module milestone.
 | DMI registers | Implement `data0`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, and `command` |
 | Hart control | Convert `haltreq/resumereq` register fields into core Debug Mode requests |
 | Hart status | Report halted, running, resumeack, havereset, and nonexistent hart status |
-| Abstract commands | Support RV32 integer Access Register commands for x0-x31 plus read-only `misa`, `dcsr`, and core-captured `dpc` probes |
+| Abstract commands | Support RV32 integer Access Register commands for x0-x31, read-only `misa`, core-captured `dpc`, and `dcsr.step` read/write |
 | GPR transport | Sequence one core GPR request and one response per abstract transfer |
+| Single-step | Convert `dcsr.step=1` plus `dmcontrol.resumereq` into `core_debug.step_req` |
 | Error reporting | Preserve leaf-module `cmderr` mapping and DMI `FAILED` response behavior |
 
 ## 4. Unsupported Stage-1 Scope
@@ -43,11 +44,10 @@ later Debug Module milestone.
 The following are intentionally outside this module:
 
 ```text
-single-step
 program buffer
 abstract memory access
 debug ROM
-general CSR access beyond `misa`, `dcsr`, and `dpc`
+general CSR access beyond `misa`, `dcsr.step`, and `dpc`
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 

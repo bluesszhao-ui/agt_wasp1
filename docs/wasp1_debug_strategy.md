@@ -28,8 +28,8 @@ debug
 | Stage | Scope |
 | ---: | --- |
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
-| 2 | abstract command, system bus or program buffer memory access |
-| 3 | single step, breakpoints, robust GDB workflow |
+| 2 | abstract command, DPC readback, DCSR.step single-step |
+| 3 | system bus or program buffer memory access, breakpoints, robust GDB workflow |
 | 4 | FT2232H external debugger hardware, OpenOCD FTDI config, FPGA/board bring-up |
 
 ## 4. Core Interaction
@@ -56,9 +56,10 @@ read dmstatus
 halt the hart
 read and write GPRs
 resume the hart
+single-step one instruction through DCSR.step
 ```
 
-Memory access and GDB single-step are later-stage validation targets.
+Memory access and breakpoint validation are later-stage targets.
 
 ## 6. External FTDI Debugger
 

@@ -39,7 +39,7 @@ ECALL/EBREAK/illegal/CSR-fault trap redirect
 MRET redirect
 machine timer/external interrupt trap inputs
 load-use hazard stall and execute bubble
-Debug Mode halt-pending drain, halted status, resume, and step-running hook
+Debug Mode halt-pending drain, halted status, resume, and single-step re-halt
 halted-core GPR read/write access through `debug_if.core`
 halted Debug PC capture through `debug_if.core.dpc`
 ```

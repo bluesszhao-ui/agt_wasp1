@@ -4,9 +4,9 @@
 
 `debug_abstract_cmd` decodes RISC-V Debug Spec 0.13.x abstract commands,
 controls the verified `debug_reg_access` transport, and provides the minimal
-read-only CSR probes needed by OpenOCD/GDB. The first implementation supports
-RV32 integer GPR Access Register commands plus local reads of `misa`, `dcsr`,
-and the core-captured `dpc`.
+CSR probes needed by OpenOCD/GDB. The first implementation supports RV32
+integer GPR Access Register commands, local reads of `misa`, `dcsr`, and the
+core-captured `dpc`, plus writes to the `dcsr.step` bit used for single-step.
 
 ## 2. Supported Command
 
@@ -18,8 +18,8 @@ and the core-captured `dpc`.
 | `aarpostincrement[19]` | zero |
 | `postexec[18]` | zero; no program buffer yet |
 | `transfer[17]` | zero for no-op or one for GPR/CSR transfer |
-| `write[16]` | zero reads; one writes GPR |
-| `regno[15:0]` | `0x1000..0x101F` for x0-x31, or read-only `0x0301` `misa`, `0x07B0` `dcsr`, `0x07B1` `dpc` |
+| `write[16]` | zero reads; one writes GPR or the supported `dcsr.step` bit |
+| `regno[15:0]` | `0x1000..0x101F` for x0-x31, read-only `0x0301` `misa`, read/write-step `0x07B0` `dcsr`, or read-only `0x07B1` `dpc` |
 
 A command with `transfer=0`, supported command type, and no unsupported option
 is a successful no-op; size, register number, and write direction are ignored.
@@ -29,12 +29,14 @@ command, including this transfer-disabled no-op.
 CSR reads complete locally for the supported probe set:
 
 ```text
-misa -> 0x40000100, RV32 + I extension
-dcsr -> 0x400000C3, Debug Spec 0.13-style Debug Mode, haltreq cause, M-mode
-dpc  -> hart_dpc_i, the core-captured Debug PC/resume PC
+misa      -> 0x40000100, RV32 + I extension
+dcsr read -> 0x400000C3 with bit 2 reflecting the latched step bit
+dcsr write-> updates only bit 2, DCSR.step; other written bits are ignored
+dpc       -> hart_dpc_i, the core-captured Debug PC/resume PC
 ```
 
-CSR writes and all other CSR addresses remain unsupported.
+CSR writes other than `dcsr.step` and all other CSR addresses remain
+unsupported.
 
 ## 3. Error Mapping
 
@@ -54,8 +56,9 @@ data. Successful writes do not change data0.
 
 For GPR reads, successful downstream data generates one `data0_we_o` pulse.
 For local CSR reads, the controller generates the same data0 write pulse
-without issuing a downstream register command. Failed, unsupported, aborted,
-write, and no-op commands must not update data0.
+without issuing a downstream register command. A supported `dcsr.step` write
+updates the local step bit and does not update data0. Failed, unsupported,
+aborted, GPR write, and no-op commands must not update data0.
 
 ## 5. Busy and Handshake Requirements
 

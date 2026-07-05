@@ -93,8 +93,9 @@ registers, detaches, and exits.
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
 are verified. The current debug implementation is still stage-1: GDB can
-connect, halt, read GPRs and PC, and detach, but single-step, breakpoints,
-program buffer execution and abstract memory access are future milestones.
+connect, halt, read GPRs and PC, single-step through the internal DCSR.step
+path, and detach, but breakpoints, program buffer execution and abstract memory
+access are future milestones.
 
 Observed OpenOCD probe:
 

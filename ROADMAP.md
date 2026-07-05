@@ -39,7 +39,7 @@ PASS       Current verification target passes
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
 | `core/core_debug_ctrl` | PASS | Debug halt-pending drain, halted state, resume, step hook, busy block, and priority tests pass |
 | `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
-| `core/core_int_datapath` | PASS | Executable datapath plus core-side debug halt/GPR hooks pass directed coverage |
+| `core/core_int_datapath` | PASS | Executable datapath plus core-side debug halt/DPC/GPR/single-step hooks pass directed coverage |
 | `core` | PASS | Top-level wrapper exposes debug_if.core and passes wrapper/integrated simulation |
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |
 | `frontend/frontend_fetch` | PASS | Instruction request encoding, response backpressure, misalignment fault, flush drop, memory error, and random handshakes pass |
@@ -60,10 +60,10 @@ PASS       Current verification target passes
 | `debug/debug_dmi_regs` | PASS | DMI register transport, hart status/control, abstract state, errors, and backpressure pass |
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
-| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, OpenOCD/GDB CSR probes including core-captured DPC, cmderr mapping, aborts, and random commands pass |
+| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, OpenOCD/GDB CSR probes including core-captured DPC and DCSR.step, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
 | `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
-| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback over abstract CSR access |
+| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback and DCSR.step single-step over abstract CSR access |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, OpenOCD/GDB process smoke, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
@@ -76,7 +76,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Extend debug beyond smoke: single-step, breakpoints, and abstract memory access
+1. Extend debug beyond smoke: breakpoints and abstract memory access
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 3. Add longer software stress regressions
 ```

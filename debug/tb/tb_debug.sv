@@ -23,6 +23,7 @@ module tb_debug;
   int unsigned gpr_write_count;
   int unsigned gpr_read_count;
   int unsigned csr_read_count;
+  int unsigned step_count;
   int unsigned error_count;
   int unsigned reset_count;
 
@@ -307,6 +308,58 @@ module tb_debug;
     end
   endtask
 
+  task automatic write_dcsr(input logic [31:0] value, input string label);
+    logic [31:0] command_word;
+    begin
+      dmi_write(DMI_ADDR_DATA0, value, {label, " data0"});
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b1, 1'b1, ABSTRACT_CSR_DCSR);
+      dmi_write(DMI_ADDR_COMMAND, command_word, {label, " command"});
+      wait_abstract_idle({label, " idle"});
+    end
+  endtask
+
+  task automatic check_single_step;
+    logic [31:0] command_word;
+    begin
+      core_debug.running = 1'b0;
+      core_debug.halted = 1'b1;
+      write_dcsr(ABSTRACT_CSR_DCSR_HALTED_M | ABSTRACT_CSR_DCSR_STEP_MASK,
+                 "set dcsr step");
+
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b1, 1'b0, ABSTRACT_CSR_DCSR);
+      dmi_write(DMI_ADDR_COMMAND, command_word, "read stepped dcsr command");
+      wait_abstract_idle("stepped dcsr read idle");
+      dmi_read(DMI_ADDR_DATA0,
+               ABSTRACT_CSR_DCSR_HALTED_M | ABSTRACT_CSR_DCSR_STEP_MASK,
+               32'hFFFF_FFFF, "stepped dcsr data0");
+
+      dmi_write(DMI_ADDR_DMCONTROL, 32'h4000_0001, "step resume request");
+      if (!core_debug.resume_req || !core_debug.step_req || core_debug.halt_req) begin
+        $error("single-step request mismatch resume=%0b step=%0b halt=%0b",
+               core_debug.resume_req, core_debug.step_req, core_debug.halt_req);
+        $fatal(1);
+      end
+
+      core_debug.halted = 1'b0;
+      core_debug.running = 1'b1;
+      step_clock();
+      if (core_debug.resume_req || core_debug.step_req) begin
+        $error("single-step resume did not retire resume=%0b step=%0b",
+               core_debug.resume_req, core_debug.step_req);
+        $fatal(1);
+      end
+      core_debug.running = 1'b0;
+      core_debug.halted = 1'b1;
+      dmi_read(DMI_ADDR_DMSTATUS, 32'h000F_0382, 32'h000F_FFFF,
+               "single-step halted resumeack dmstatus");
+
+      write_dcsr(ABSTRACT_CSR_DCSR_HALTED_M, "clear dcsr step");
+      step_count++;
+    end
+  endtask
+
   task automatic check_errors_and_reset_status;
     logic [31:0] bad_command;
     begin
@@ -342,6 +395,7 @@ module tb_debug;
     gpr_write_count = 0;
     gpr_read_count = 0;
     csr_read_count = 0;
+    step_count = 0;
     error_count = 0;
     reset_count = 0;
 
@@ -351,18 +405,19 @@ module tb_debug;
     check_gpr_write();
     check_gpr_read();
     check_csr_read();
+    check_single_step();
     check_errors_and_reset_status();
 
     if ((halt_count != 1) || (resume_count != 1) || (gpr_write_count != 1) ||
-        (gpr_read_count != 1) || (csr_read_count != 1) || (error_count != 1) ||
-        (reset_count < 2)) begin
+        (gpr_read_count != 1) || (csr_read_count != 1) || (step_count != 1) ||
+        (error_count != 1) || (reset_count < 2)) begin
       $error("coverage counters missed expected top-level classes");
       $fatal(1);
     end
-    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d errors=%0d resets=%0d",
+    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d step=%0d errors=%0d resets=%0d",
              pass_count, dmi_read_count, dmi_write_count, halt_count,
              resume_count, gpr_write_count, gpr_read_count, csr_read_count,
-             error_count, reset_count);
+             step_count, error_count, reset_count);
     $display("tb_debug PASS");
     $finish;
   end
