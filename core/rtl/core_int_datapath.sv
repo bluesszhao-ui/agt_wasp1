@@ -195,6 +195,9 @@ module core_int_datapath (
   logic [31:0] debug_gpr_rsp_rdata_q;// Registered GPR read response payload.
   logic        debug_gpr_rsp_err_q; // Registered GPR response error.
   logic        debug_busy;         // Debug GPR response is pending or being created.
+  logic [31:0] debug_next_pc_q;    // Resume PC candidate updated by accepted fetches/retire.
+  logic [31:0] debug_dpc_q;        // DPC value captured while the hart is halted.
+  logic [31:0] debug_retire_next_pc;// Next PC implied by the retiring instruction.
   logic [4:0]  regfile_raddr1;     // Read port 1 address after debug muxing.
   logic        regfile_we;         // Register file write enable after debug muxing.
   logic [4:0]  regfile_waddr;      // Register file write address after debug muxing.
@@ -238,6 +241,7 @@ module core_int_datapath (
 
   assign core_debug.halted = debug_halted;
   assign core_debug.running = debug_running;
+  assign core_debug.dpc = debug_dpc_q;
   assign core_debug.gpr_req_ready = debug_halted && !debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_valid = debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_rdata = debug_gpr_rsp_rdata_q;
@@ -248,6 +252,33 @@ module core_int_datapath (
                                                 rf_waddr;
   assign regfile_wdata = debug_gpr_write_fire ? core_debug.gpr_req_wdata :
                                                 rf_wdata;
+
+  // DPC tracks the PC at which execution would resume after Debug Mode. Fetch
+  // acceptance seeds the value before the first retirement, while each retiring
+  // instruction updates it with the architectural next PC including redirects.
+  assign debug_retire_next_pc = trap_redirect ? trap_redirect_pc :
+                                (redirect_valid ? branch_target :
+                                                  (ex_pc + 32'd4));
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      debug_next_pc_q <= 32'h0000_0000;
+      debug_dpc_q <= 32'h0000_0000;
+    end else begin
+      if (instr_valid_i && instr_ready_o && !id_valid && !ex_valid &&
+          !lsu_req_outstanding_q) begin
+        debug_next_pc_q <= instr_pc_i;
+      end
+
+      if (retire_valid) begin
+        debug_next_pc_q <= debug_retire_next_pc;
+      end
+
+      if (debug_halted) begin
+        debug_dpc_q <= debug_next_pc_q;
+      end
+    end
+  end
 
   // The halted GPR channel returns one registered response per accepted
   // request. Reads capture the muxed regfile read port; writes use the same

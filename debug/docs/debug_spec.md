@@ -5,8 +5,9 @@
 `debug` is the stage-1 single-hart Debug Module integration boundary. It targets
 RISC-V External Debug Specification 0.13.x behavior sufficient for hart
 discovery, halt/resume control, and RV32 integer GPR abstract access.
-It also exposes the minimal read-only `misa`, `dcsr`, and `dpc` abstract CSR
-probes required for OpenOCD/GDB discovery and register-packet reads.
+It also exposes the minimal read-only `misa`, `dcsr`, and core-captured `dpc`
+abstract CSR probes required for OpenOCD/GDB discovery and register-packet
+reads.
 
 The JTAG TAP/DTM transport is integrated with this Debug Module by the
 `debug_jtag` wrapper. This module intentionally remains the ready/valid DMI
@@ -33,7 +34,7 @@ later Debug Module milestone.
 | DMI registers | Implement `data0`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, and `command` |
 | Hart control | Convert `haltreq/resumereq` register fields into core Debug Mode requests |
 | Hart status | Report halted, running, resumeack, havereset, and nonexistent hart status |
-| Abstract commands | Support RV32 integer Access Register commands for x0-x31 plus read-only `misa`, `dcsr`, and `dpc` probes |
+| Abstract commands | Support RV32 integer Access Register commands for x0-x31 plus read-only `misa`, `dcsr`, and core-captured `dpc` probes |
 | GPR transport | Sequence one core GPR request and one response per abstract transfer |
 | Error reporting | Preserve leaf-module `cmderr` mapping and DMI `FAILED` response behavior |
 

@@ -36,6 +36,7 @@ module tb_debug_jtag;
   int unsigned resume_count;
   int unsigned gpr_write_count;
   int unsigned gpr_read_count;
+  int unsigned csr_read_count;
   int unsigned reset_count;
 
   debug_jtag u_debug_jtag (
@@ -119,6 +120,7 @@ module tb_debug_jtag;
     begin
       core_debug.halted = 1'b0;
       core_debug.running = 1'b1;
+      core_debug.dpc = 32'h0000_0000;
       core_debug.gpr_req_ready = 1'b0;
       core_debug.gpr_rsp_valid = 1'b0;
       core_debug.gpr_rsp_rdata = '0;
@@ -334,6 +336,7 @@ module tb_debug_jtag;
     resume_count = 0;
     gpr_write_count = 0;
     gpr_read_count = 0;
+    csr_read_count = 0;
     reset_count = 0;
     rst_n = 1'b0;
     trst_n = 1'b0;
@@ -405,6 +408,16 @@ module tb_debug_jtag;
                   "data0 readback after JTAG GPR read");
     gpr_read_count++;
 
+    // Access Register read of dpc through JTAG DMI returns the core-captured PC.
+    core_debug.dpc = 32'h1000_0104;
+    jtag_dmi_write(DMI_ADDR_COMMAND,
+                   make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b0,
+                                       ABSTRACT_CSR_DPC),
+                   "abstract dpc read over JTAG");
+    jtag_dmi_read(DMI_ADDR_DATA0, 32'h1000_0104, 32'hFFFF_FFFF,
+                  "data0 readback after JTAG dpc read");
+    csr_read_count++;
+
     // Hart reset sticky state and ackhavereset over JTAG.
     @(negedge clk);
     hart_reset_event = 1'b1;
@@ -416,9 +429,10 @@ module tb_debug_jtag;
     jtag_dmi_read(DMI_ADDR_DMSTATUS, 32'h000C_0382 & ~32'h000C_0000,
                   32'h000C_0000, "havereset clear over JTAG");
 
-    $display("tb_debug_jtag coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d reset=%0d",
+    $display("tb_debug_jtag coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d reset=%0d",
              pass_count, jtag_dmi_reads, jtag_dmi_writes, halt_count,
-             resume_count, gpr_write_count, gpr_read_count, reset_count);
+             resume_count, gpr_write_count, gpr_read_count, csr_read_count,
+             reset_count);
     $display("tb_debug_jtag PASS");
     $finish;
   end

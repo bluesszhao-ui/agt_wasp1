@@ -5,8 +5,8 @@
 `debug_abstract_cmd` decodes RISC-V Debug Spec 0.13.x abstract commands,
 controls the verified `debug_reg_access` transport, and provides the minimal
 read-only CSR probes needed by OpenOCD/GDB. The first implementation supports
-RV32 integer GPR Access Register commands plus hardwired reads of `misa`,
-`dcsr`, and `dpc`.
+RV32 integer GPR Access Register commands plus local reads of `misa`, `dcsr`,
+and the core-captured `dpc`.
 
 ## 2. Supported Command
 
@@ -31,7 +31,7 @@ CSR reads complete locally for the supported probe set:
 ```text
 misa -> 0x40000100, RV32 + I extension
 dcsr -> 0x400000C3, Debug Spec 0.13-style Debug Mode, haltreq cause, M-mode
-dpc  -> 0x00000000, stage-1 PC placeholder until true Debug Mode DPC is wired
+dpc  -> hart_dpc_i, the core-captured Debug PC/resume PC
 ```
 
 CSR writes and all other CSR addresses remain unsupported.
@@ -53,7 +53,7 @@ For writes, `data0_i` is captured with the command and forwarded as GPR write
 data. Successful writes do not change data0.
 
 For GPR reads, successful downstream data generates one `data0_we_o` pulse.
-For hardwired CSR reads, the controller generates the same data0 write pulse
+For local CSR reads, the controller generates the same data0 write pulse
 without issuing a downstream register command. Failed, unsupported, aborted,
 write, and no-op commands must not update data0.
 

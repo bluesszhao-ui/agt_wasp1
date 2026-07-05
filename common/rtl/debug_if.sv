@@ -12,6 +12,7 @@ interface debug_if #(
   logic            step_req;       // Debug Module requests one instruction step.
   logic            halted;         // Core reports that it is halted in Debug Mode.
   logic            running;        // Core reports normal instruction execution.
+  logic [XLEN-1:0] dpc;            // Debug PC captured by the core when it enters Debug Mode.
 
   // Ready/valid GPR access request from Debug Module to the halted core.
   logic            gpr_req_valid;  // Request fields are valid and held until ready.
@@ -32,6 +33,7 @@ interface debug_if #(
     input  rst_n,
     input  halted,
     input  running,
+    input  dpc,
     output halt_req,
     output resume_req,
     output step_req
@@ -57,6 +59,7 @@ interface debug_if #(
     input  rst_n,
     input  halted,
     input  running,
+    input  dpc,
     input  gpr_req_ready,
     input  gpr_rsp_valid,
     input  gpr_rsp_rdata,
@@ -84,6 +87,7 @@ interface debug_if #(
     input  gpr_rsp_ready,
     output halted,
     output running,
+    output dpc,
     output gpr_req_ready,
     output gpr_rsp_valid,
     output gpr_rsp_rdata,
@@ -98,6 +102,7 @@ interface debug_if #(
     input step_req,
     input halted,
     input running,
+    input dpc,
     input gpr_req_valid,
     input gpr_req_ready,
     input gpr_req_write,

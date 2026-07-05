@@ -26,7 +26,7 @@ clock frequency = 100MHz
 | --- | --- | --- | --- |
 | `0ns-36ns` | Assert and release reset | idle, busy low, no request/error/data0 pulse | PASS |
 | `36ns-206ns` | Directed GPR read, write, delayed issue/response, and downstream error | fields hold; reads update data0; writes do not; error maps to EXCEPTION | PASS |
-| `206ns-266ns` | Read hardwired `misa`, `dcsr`, and `dpc` CSRs through Access Register | no downstream GPR request; data0 updates to the expected debugger probe values | PASS |
+| `206ns-266ns` | Read local `misa`, `dcsr`, and core-supplied `dpc` CSRs through Access Register | no downstream GPR request; data0 updates to the expected debugger probe values, including nonzero DPC | PASS |
 | `266ns-466ns` | Transfer-disabled no-op and unsupported type/size/options/registers/CSR writes plus running-hart command | no-op succeeds; unsupported maps to NOTSUP; running maps to HALT_RESUME | PASS |
 | `466ns-676ns` | Lose halted state in ISSUE/WAIT, deactivate DM in ISSUE/WAIT, inject busy command, reset active command | flush/error/abort priorities and captured fields remain correct | PASS |
 | `676ns-2146ns` | Run 20 deterministic-random valid GPR commands with randomized issue/response delay and error injection | every decoded request and completion matches the reference model | PASS |
@@ -64,7 +64,8 @@ code/toggle coverage.
 
 ## 6. Residual Scope
 
-The RV32 GPR Access Register decoder/controller and hardwired `misa`/`dcsr`/`dpc`
-CSR probes are verified against a mock `debug_reg_access`. Broader CSR access,
+The RV32 GPR Access Register decoder/controller plus local `misa`/`dcsr` and
+core-supplied `dpc` CSR probes are verified against a mock `debug_reg_access`.
+Broader CSR access,
 program-buffer execution, and abstract memory access remain separate integration
 scope. Full OpenOCD/GDB smoke is covered at the wasp1 top level.

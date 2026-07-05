@@ -125,6 +125,7 @@ module common_lint_top (
     dbg_if.step_req      = 1'b0;
     dbg_if.halted        = 1'b0;
     dbg_if.running       = 1'b1;
+    dbg_if.dpc           = '0;
     dbg_if.gpr_req_valid = 1'b0;
     dbg_if.gpr_req_ready = 1'b1;
     dbg_if.gpr_req_write = 1'b0;

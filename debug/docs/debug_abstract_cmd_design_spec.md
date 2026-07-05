@@ -3,7 +3,7 @@
 ## 1. Scope
 
 The block decodes and executes the RV32 GPR subset of Access Register commands
-and local read-only CSR probes for `misa`, `dcsr`, and `dpc`. CSR writes, all
+and local read-only CSR probes for `misa`, `dcsr`, and core-captured `dpc`. CSR writes, all
 other CSR addresses, FPR access, postincrement, program-buffer execution,
 memory access, and other command types remain explicitly unsupported.
 
@@ -85,7 +85,9 @@ command capture. The `COMPLETE` state converts these registers into one-cycle
 pulses for `debug_dmi_regs`.
 
 Successful writes, transfer-disabled commands, and unsupported CSR writes
-report no data0 pulse because no read value is produced.
+report no data0 pulse because no read value is produced. For the supported CSR
+probe set, `misa` and `dcsr` are fixed discovery values while `dpc` is forwarded
+from `hart_dpc_i`, which is driven by the core-side Debug PC capture logic.
 
 ## 7. Target Behavior
 

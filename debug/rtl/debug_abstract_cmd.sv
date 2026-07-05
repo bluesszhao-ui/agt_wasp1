@@ -11,6 +11,7 @@ module debug_abstract_cmd (
   input  logic        command_valid_i,       // One-cycle pulse for a newly accepted command.
   input  logic [31:0] command_i,             // Raw v0.13.x abstract command register value.
   input  logic [31:0] data0_i,               // Current abstract data0 write payload.
+  input  logic [31:0] hart_dpc_i,            // Core-captured Debug PC returned for CSR dpc reads.
   output logic        busy_o,                // Abstract command is decoding or executing.
   output logic        command_error_valid_o, // One-cycle pulse for a nonzero cmderr result.
   output logic [2:0]  command_error_o,       // cmderr encoding from debug_dmi_pkg.
@@ -75,8 +76,8 @@ module debug_abstract_cmd (
   assign command_write = command_i[16];
   assign command_regno = command_i[15:0];
 
-  // The first implementation accepts RV32 integer registers plus a read-only
-  // hardwired misa CSR. When transfer=0, size/regno/write are ignored and the
+  // The first implementation accepts RV32 integer registers plus local
+  // debugger probe CSRs. When transfer=0, size/regno/write are ignored and the
   // command is a successful no-op.
   assign command_gpr_supported = (command_regno >= ABSTRACT_GPR_BASE) &&
                                  (command_regno <= ABSTRACT_GPR_LAST);
@@ -92,12 +93,13 @@ module debug_abstract_cmd (
       (!command_transfer ||
        ((command_aarsize == ABSTRACT_AARSIZE_32) && command_transfer_supported));
 
-  // Hardwired CSR values cover debugger discovery and the GDB PC register.
+  // CSR values cover debugger discovery. dpc is captured by the core when it
+  // enters Debug Mode, so GDB sees the real resume PC instead of a reset stub.
   always_comb begin
     unique case (command_regno)
       ABSTRACT_CSR_MISA: command_csr_rdata = ABSTRACT_CSR_MISA_RV32I;
       ABSTRACT_CSR_DCSR: command_csr_rdata = ABSTRACT_CSR_DCSR_HALTED_M;
-      ABSTRACT_CSR_DPC:  command_csr_rdata = ABSTRACT_CSR_DPC_RESET;
+      ABSTRACT_CSR_DPC:  command_csr_rdata = hart_dpc_i;
       default:           command_csr_rdata = '0;
     endcase
   end

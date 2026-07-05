@@ -563,6 +563,12 @@ module tb_core_int_datapath;
             $fatal(1, "%s halted status mismatch running=%0b ready=%0b",
                    name, core_debug.running, instr_ready);
           end
+          @(posedge clk);
+          #1;
+          if (core_debug.dpc !== exp_fetch_pc) begin
+            $fatal(1, "%s DPC mismatch dpc=%08x exp=%08x",
+                   name, core_debug.dpc, exp_fetch_pc);
+          end
           pass_count++;
           debug_count++;
           return;

@@ -122,6 +122,7 @@ module debug (
     .command_valid_i(command_valid),
     .command_i(command),
     .data0_i(data0),
+    .hart_dpc_i(core_debug.dpc),
     .busy_o(abstract_busy),
     .command_error_valid_o(command_error_valid),
     .command_error_o(command_error),

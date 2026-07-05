@@ -14,6 +14,7 @@ module tb_debug_abstract_cmd;
   logic        command_valid;
   logic [31:0] command;
   logic [31:0] data0;
+  logic [31:0] hart_dpc;
   logic        busy;
   logic        command_error_valid;
   logic [2:0]  command_error;
@@ -56,6 +57,7 @@ module tb_debug_abstract_cmd;
     .command_valid_i(command_valid),
     .command_i(command),
     .data0_i(data0),
+    .hart_dpc_i(hart_dpc),
     .busy_o(busy),
     .command_error_valid_o(command_error_valid),
     .command_error_o(command_error),
@@ -118,6 +120,7 @@ module tb_debug_abstract_cmd;
       command_valid = 1'b0;
       command = '0;
       data0 = '0;
+      hart_dpc = 32'h0000_0000;
       reg_cmd_ready = 1'b0;
       reg_rsp_valid = 1'b0;
       reg_rsp_rdata = '0;
@@ -571,7 +574,8 @@ module tb_debug_abstract_cmd;
     $display("phase csr start=%0t", $time);
     check_csr_read(ABSTRACT_CSR_MISA, ABSTRACT_CSR_MISA_RV32I, "misa CSR read");
     check_csr_read(ABSTRACT_CSR_DCSR, ABSTRACT_CSR_DCSR_HALTED_M, "dcsr CSR read");
-    check_csr_read(ABSTRACT_CSR_DPC, ABSTRACT_CSR_DPC_RESET, "dpc CSR read");
+    hart_dpc = 32'h1000_0044;
+    check_csr_read(ABSTRACT_CSR_DPC, 32'h1000_0044, "dpc CSR read");
     $display("phase decode start=%0t", $time);
     check_decode_errors_and_noop();
     $display("phase abort start=%0t", $time);

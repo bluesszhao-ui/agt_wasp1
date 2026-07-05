@@ -74,8 +74,9 @@ hart_halted/hart_running/hart_resumeack/hart_havereset back to debug_dmi_regs
 ```
 
 `debug_abstract_cmd` decodes the command register and drives one decoded GPR
-transaction into `debug_reg_access`. It returns successful read data or cmderr
-updates to `debug_dmi_regs`.
+transaction into `debug_reg_access`. It also consumes `core_debug.dpc` for
+abstract CSR reads of `dpc`. It returns successful read data or cmderr updates
+to `debug_dmi_regs`.
 
 `debug_reg_access` uses an internal `debug_if` instance with the `dm_gpr`
 modport. The wrapper explicitly bridges only GPR request/response signals to

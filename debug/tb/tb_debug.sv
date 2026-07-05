@@ -22,6 +22,7 @@ module tb_debug;
   int unsigned resume_count;
   int unsigned gpr_write_count;
   int unsigned gpr_read_count;
+  int unsigned csr_read_count;
   int unsigned error_count;
   int unsigned reset_count;
 
@@ -74,6 +75,7 @@ module tb_debug;
       dmi.rsp_ready = 1'b1;
       core_debug.halted = 1'b0;
       core_debug.running = 1'b1;
+      core_debug.dpc = 32'h0000_0000;
       core_debug.gpr_req_ready = 1'b0;
       core_debug.gpr_rsp_valid = 1'b0;
       core_debug.gpr_rsp_rdata = '0;
@@ -290,6 +292,21 @@ module tb_debug;
     end
   endtask
 
+  task automatic check_csr_read;
+    logic [31:0] command_word;
+    begin
+      core_debug.running = 1'b0;
+      core_debug.halted = 1'b1;
+      core_debug.dpc = 32'h1000_00A8;
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b1, 1'b0, ABSTRACT_CSR_DPC);
+      dmi_write(DMI_ADDR_COMMAND, command_word, "read dpc abstract command");
+      wait_abstract_idle("dpc read idle");
+      dmi_read(DMI_ADDR_DATA0, 32'h1000_00A8, 32'hFFFF_FFFF, "dpc read data0");
+      csr_read_count++;
+    end
+  endtask
+
   task automatic check_errors_and_reset_status;
     logic [31:0] bad_command;
     begin
@@ -324,6 +341,7 @@ module tb_debug;
     resume_count = 0;
     gpr_write_count = 0;
     gpr_read_count = 0;
+    csr_read_count = 0;
     error_count = 0;
     reset_count = 0;
 
@@ -332,17 +350,19 @@ module tb_debug;
     check_halt_resume();
     check_gpr_write();
     check_gpr_read();
+    check_csr_read();
     check_errors_and_reset_status();
 
     if ((halt_count != 1) || (resume_count != 1) || (gpr_write_count != 1) ||
-        (gpr_read_count != 1) || (error_count != 1) || (reset_count < 2)) begin
+        (gpr_read_count != 1) || (csr_read_count != 1) || (error_count != 1) ||
+        (reset_count < 2)) begin
       $error("coverage counters missed expected top-level classes");
       $fatal(1);
     end
-    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d errors=%0d resets=%0d",
+    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d errors=%0d resets=%0d",
              pass_count, dmi_read_count, dmi_write_count, halt_count,
-             resume_count, gpr_write_count, gpr_read_count, error_count,
-             reset_count);
+             resume_count, gpr_write_count, gpr_read_count, csr_read_count,
+             error_count, reset_count);
     $display("tb_debug PASS");
     $finish;
   end

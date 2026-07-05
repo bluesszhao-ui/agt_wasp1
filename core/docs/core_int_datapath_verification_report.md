@@ -29,7 +29,7 @@ make lint
 | 456ns-496ns | Data response wait | Delayed LW response with request accepted before response valid | Pipeline held until response fire, then load committed |
 | 496ns-536ns | Data request backpressure | Hold `dmem_req_ready_i=0` for a load request, then release ready | Request stayed valid, pipeline held, then response committed |
 | 536ns-766ns | CSR/trap/IRQ | CSRRW/CSRRS, ECALL, MRET, CSR IRQ enable, timer IRQ | CSR writes, trap metadata, redirects, and interrupt entry matched |
-| 766ns-886ns | Debug halt/GPR/resume | Halt after program drain, read x26, write/read x10, prove x0 stays zero, resume | Halted status, frontend backpressure, GPR responses, and resume matched |
+| 766ns-896ns | Debug halt/DPC/GPR/resume | Halt after program drain, check captured DPC, read x26, write/read x10, prove x0 stays zero, resume | Halted status, DPC resume PC, frontend backpressure, GPR responses, and resume matched |
 
 ## 4. Coverage Summary
 
@@ -60,4 +60,4 @@ Coverage intent met:
 - x0 and NOP suppression.
 - Frontend-model PC stepping.
 - Debug halt entry, halted frontend backpressure, GPR read, GPR write/readback,
-  x0 debug access, and resume.
+  x0 debug access, captured DPC resume PC, and resume.

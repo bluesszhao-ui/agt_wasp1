@@ -123,6 +123,8 @@ debug_stop_fetch  -> added to pipe_fetch_stall
 debug_freeze_pipe -> added to pipe_decode_stall and blocks execute bubble update
 debug_halted      -> enables halted GPR request ready
 debug_running     -> exported through debug_if.core
+debug_next_pc_q   -> tracks the next PC implied by fetch/retire
+debug_dpc_q       -> exported through debug_if.core as captured DPC
 ```
 
 The pipeline drains rather than being frozen immediately:
@@ -135,6 +137,7 @@ halt request visible:
 
 halted state:
   instr_ready_o remains deasserted
+  dpc reports the PC where execution will resume
   GPR requests are accepted one at a time
   read response captures regfile read data
   write request uses the regfile write port
@@ -147,6 +150,19 @@ resume:
 The halted GPR path intentionally reuses register-file port 1 and the single
 write port because the pipeline is drained while debug access is allowed. This
 avoids adding a second architectural write path.
+
+DPC capture is intentionally tied to existing in-order commit information:
+
+```text
+first accepted fetch before retirement -> seed debug_next_pc_q with instr_pc_i
+normal retiring instruction             -> debug_next_pc_q = ex_pc + 4
+taken branch/JAL/JALR retire            -> debug_next_pc_q = branch target
+trap or MRET redirect retire            -> debug_next_pc_q = trap/MRET target
+halted Debug Mode                       -> debug_dpc_q captures debug_next_pc_q
+```
+
+The captured value is a resume PC, not a history trace PC. The Debug Module
+returns it through the abstract `dpc` CSR read path used by OpenOCD/GDB.
 
 ## 5. Sequential State Diagram
 
@@ -196,12 +212,15 @@ Each execute/writeback cycle:
   if branch/JAL/JALR redirects:
     core_pipe blocks instruction stream acceptance for the redirect cycle
     core_pipe flushes younger slots and forwards target PC
+  if retirement changes the architectural next PC:
+    debug_next_pc_q updates to the same resume target used by the frontend
   if valid and supported and rd!=x0:
     core_regfile writes rd on the next clock edge
 
 Debug halt/resume state:
   core_debug_ctrl reset state is running
   halt request stops new fetch and waits for the pipe to drain
+  halted state captures debug_next_pc_q into debug_dpc_q
   halted state freezes the empty pipeline and enables GPR debug access
   resume exits halted after pending GPR response traffic clears
 ```
