@@ -67,6 +67,7 @@ bsp_files="
   bsp/runtime/memset.c
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/gpio_irq.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c

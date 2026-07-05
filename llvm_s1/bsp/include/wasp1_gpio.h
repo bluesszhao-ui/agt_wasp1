@@ -48,4 +48,29 @@ static inline void wasp1_gpio_clear(uint32_t mask)
   wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_CLR, mask);
 }
 
+static inline void wasp1_gpio_irq_config(uint32_t enable_mask, uint32_t type_mask, uint32_t polarity_mask)
+{
+  /*
+   * IRQ_TYPE: 1=edge, 0=level. IRQ_POL: for edge 1=rising/0=falling;
+   * for level 1=high/0=low.
+   */
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_EN, 0u);
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_TYPE, type_mask);
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_POL, polarity_mask);
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_STATUS, enable_mask);
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_EN, enable_mask);
+}
+
+static inline void wasp1_gpio_irq_disable(uint32_t mask)
+{
+  /* Disable selected GPIO interrupt bits with an ordinary RMW clear. */
+  wasp1_clear32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_EN, mask);
+}
+
+static inline void wasp1_gpio_irq_clear(uint32_t mask)
+{
+  /* IRQ_STATUS is write-one-to-clear. */
+  wasp1_write32(WASP1_GPIO_BASE + WASP1_GPIO_IRQ_STATUS, mask);
+}
+
 #endif

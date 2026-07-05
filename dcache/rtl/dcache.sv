@@ -10,7 +10,13 @@ module dcache #(
   parameter int LINE_COUNT = 16,
   parameter int LINE_BYTES = 16,
   parameter int ADDR_WIDTH = 32,
-  parameter int DATA_WIDTH = 32
+  parameter int DATA_WIDTH = 32,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE0_BASE = 32'h0000_0000,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE0_SIZE = 32'h0000_FF00,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE1_BASE = 32'h1000_0000,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE1_SIZE = 32'h0001_0000,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE2_BASE = 32'h2000_0000,
+  parameter logic [ADDR_WIDTH-1:0] CACHEABLE2_SIZE = 32'h0001_0000
 ) (
   input  logic clk_i,        // D-cache clock shared by control, tag, data, refill, and store leaves.
   input  logic rst_ni,       // Active-low asynchronous reset for sequential leaves.
@@ -27,6 +33,7 @@ module dcache #(
   logic                    lookup_valid;        // Control-qualified tag/data lookup.
   logic [ADDR_WIDTH-1:0]   lookup_addr;         // Address presented to tag/data leaves.
   logic                    tag_hit;             // Tag leaf hit result.
+  logic                    req_cacheable;       // Current core request targets cacheable memory.
   logic [INDEX_BITS-1:0]   tag_lookup_index;    // Tag lookup index, exposed only for lint visibility.
   logic [INDEX_BITS-1:0]   data_lookup_index;   // Data lookup index, exposed only for lint visibility.
   logic [DATA_WIDTH-1:0]   data_word;           // Word selected from data leaf.
@@ -57,6 +64,19 @@ module dcache #(
   logic [STRB_WIDTH-1:0]   store_done_wstrb;    // Completed store byte strobes.
   logic                    store_done_error;    // Store downstream response error.
 
+  logic                    uncached_start_valid;// Control requests uncached single transaction.
+  logic                    uncached_start_ready;// Uncached sequencer can accept a start.
+  logic [ADDR_WIDTH-1:0]   uncached_start_addr; // Uncached transaction byte address.
+  logic                    uncached_start_write;// Uncached write indicator.
+  logic [1:0]              uncached_start_size; // Uncached access size.
+  logic [DATA_WIDTH-1:0]   uncached_start_wdata;// Uncached write data.
+  logic [STRB_WIDTH-1:0]   uncached_start_wstrb;// Uncached write byte strobes.
+  logic                    uncached_flush;      // Flush forwarded from control to uncached sequencer.
+  logic                    uncached_done_valid; // Uncached transaction completed.
+  logic                    uncached_done_ready; // Control accepts uncached completion.
+  logic [DATA_WIDTH-1:0]   uncached_done_rdata; // Uncached read response data.
+  logic                    uncached_done_error; // Uncached downstream response error.
+
   logic                    tag_refill_valid;    // Tag update pulse for accepted refill line.
   logic [ADDR_WIDTH-1:0]   tag_refill_addr;     // Refill line address for tag update.
   logic                    tag_refill_error;    // Refill error keeps tag invalid.
@@ -84,20 +104,63 @@ module dcache #(
     .rst_n(rst_ni)
   );
 
+  mem_req_rsp_if #(
+    .ADDR_WIDTH(ADDR_WIDTH),
+    .DATA_WIDTH(DATA_WIDTH)
+  ) uncached_mem_if (
+    .clk(clk_i),
+    .rst_n(rst_ni)
+  );
+
+  function automatic logic addr_in_window(
+    input logic [ADDR_WIDTH-1:0] addr,
+    input logic [ADDR_WIDTH-1:0] base,
+    input logic [ADDR_WIDTH-1:0] size
+  );
+    logic [ADDR_WIDTH-1:0] offset;
+    begin
+      offset = addr - base;
+      addr_in_window = (addr >= base) && (offset < size);
+    end
+  endfunction
+
+  function automatic logic is_cacheable_addr(input logic [ADDR_WIDTH-1:0] addr);
+    begin
+      is_cacheable_addr = addr_in_window(addr, CACHEABLE0_BASE, CACHEABLE0_SIZE) ||
+                          addr_in_window(addr, CACHEABLE1_BASE, CACHEABLE1_SIZE) ||
+                          addr_in_window(addr, CACHEABLE2_BASE, CACHEABLE2_SIZE);
+    end
+  endfunction
+
+  assign req_cacheable = is_cacheable_addr(core_if.req_addr);
+
   // Refill and store sequencers are mutually exclusive by construction in
   // dcache_ctrl. This combinational mux keeps the top-level wrapper stateless
   // while presenting one downstream memory initiator port to the SoC fabric.
   always_comb begin
-    mem_if.req_valid = refill_mem_if.req_valid || store_mem_if.req_valid;
-    mem_if.req_addr = store_mem_if.req_valid ? store_mem_if.req_addr : refill_mem_if.req_addr;
-    mem_if.req_write = store_mem_if.req_valid ? store_mem_if.req_write : refill_mem_if.req_write;
-    mem_if.req_size = store_mem_if.req_valid ? store_mem_if.req_size : refill_mem_if.req_size;
-    mem_if.req_wdata = store_mem_if.req_valid ? store_mem_if.req_wdata : refill_mem_if.req_wdata;
-    mem_if.req_wstrb = store_mem_if.req_valid ? store_mem_if.req_wstrb : refill_mem_if.req_wstrb;
+    mem_if.req_valid = refill_mem_if.req_valid || store_mem_if.req_valid ||
+                       uncached_mem_if.req_valid;
+    mem_if.req_addr = store_mem_if.req_valid ? store_mem_if.req_addr :
+                      (uncached_mem_if.req_valid ? uncached_mem_if.req_addr :
+                       refill_mem_if.req_addr);
+    mem_if.req_write = store_mem_if.req_valid ? store_mem_if.req_write :
+                       (uncached_mem_if.req_valid ? uncached_mem_if.req_write :
+                        refill_mem_if.req_write);
+    mem_if.req_size = store_mem_if.req_valid ? store_mem_if.req_size :
+                      (uncached_mem_if.req_valid ? uncached_mem_if.req_size :
+                       refill_mem_if.req_size);
+    mem_if.req_wdata = store_mem_if.req_valid ? store_mem_if.req_wdata :
+                       (uncached_mem_if.req_valid ? uncached_mem_if.req_wdata :
+                        refill_mem_if.req_wdata);
+    mem_if.req_wstrb = store_mem_if.req_valid ? store_mem_if.req_wstrb :
+                       (uncached_mem_if.req_valid ? uncached_mem_if.req_wstrb :
+                        refill_mem_if.req_wstrb);
     mem_if.req_instr = 1'b0;
-    mem_if.rsp_ready = refill_mem_if.rsp_ready || store_mem_if.rsp_ready;
+    mem_if.rsp_ready = refill_mem_if.rsp_ready || store_mem_if.rsp_ready ||
+                       uncached_mem_if.rsp_ready;
 
-    refill_mem_if.req_ready = mem_if.req_ready && refill_mem_if.req_valid && !store_mem_if.req_valid;
+    refill_mem_if.req_ready = mem_if.req_ready && refill_mem_if.req_valid &&
+                              !store_mem_if.req_valid && !uncached_mem_if.req_valid;
     refill_mem_if.rsp_valid = mem_if.rsp_valid && refill_mem_if.rsp_ready;
     refill_mem_if.rsp_rdata = mem_if.rsp_rdata;
     refill_mem_if.rsp_err = mem_if.rsp_err;
@@ -106,6 +169,12 @@ module dcache #(
     store_mem_if.rsp_valid = mem_if.rsp_valid && store_mem_if.rsp_ready;
     store_mem_if.rsp_rdata = mem_if.rsp_rdata;
     store_mem_if.rsp_err = mem_if.rsp_err;
+
+    uncached_mem_if.req_ready = mem_if.req_ready && uncached_mem_if.req_valid &&
+                                !store_mem_if.req_valid;
+    uncached_mem_if.rsp_valid = mem_if.rsp_valid && uncached_mem_if.rsp_ready;
+    uncached_mem_if.rsp_rdata = mem_if.rsp_rdata;
+    uncached_mem_if.rsp_err = mem_if.rsp_err;
   end
 
   dcache_ctrl #(
@@ -117,6 +186,7 @@ module dcache #(
     .rst_ni(rst_ni),
     .flush_i(flush_i),
     .core_if(core_if),
+    .req_cacheable_i(req_cacheable),
     .lookup_valid_o(lookup_valid),
     .lookup_addr_o(lookup_addr),
     .tag_hit_i(tag_hit),
@@ -144,6 +214,18 @@ module dcache #(
     .store_done_wdata_i(store_done_wdata),
     .store_done_wstrb_i(store_done_wstrb),
     .store_done_error_i(store_done_error),
+    .uncached_start_valid_o(uncached_start_valid),
+    .uncached_start_ready_i(uncached_start_ready),
+    .uncached_start_addr_o(uncached_start_addr),
+    .uncached_start_write_o(uncached_start_write),
+    .uncached_start_size_o(uncached_start_size),
+    .uncached_start_wdata_o(uncached_start_wdata),
+    .uncached_start_wstrb_o(uncached_start_wstrb),
+    .uncached_flush_o(uncached_flush),
+    .uncached_done_valid_i(uncached_done_valid),
+    .uncached_done_ready_o(uncached_done_ready),
+    .uncached_done_rdata_i(uncached_done_rdata),
+    .uncached_done_error_i(uncached_done_error),
     .tag_refill_valid_o(tag_refill_valid),
     .tag_refill_addr_o(tag_refill_addr),
     .tag_refill_error_o(tag_refill_error),
@@ -234,5 +316,26 @@ module dcache #(
     .done_wstrb_o(store_done_wstrb),
     .done_error_o(store_done_error),
     .mem_if(store_mem_if)
+  );
+
+  dcache_uncached #(
+    .ADDR_WIDTH(ADDR_WIDTH),
+    .DATA_WIDTH(DATA_WIDTH)
+  ) u_uncached (
+    .clk_i(clk_i),
+    .rst_ni(rst_ni),
+    .flush_i(uncached_flush),
+    .start_valid_i(uncached_start_valid),
+    .start_ready_o(uncached_start_ready),
+    .start_addr_i(uncached_start_addr),
+    .start_write_i(uncached_start_write),
+    .start_size_i(uncached_start_size),
+    .start_wdata_i(uncached_start_wdata),
+    .start_wstrb_i(uncached_start_wstrb),
+    .done_valid_o(uncached_done_valid),
+    .done_ready_i(uncached_done_ready),
+    .done_rdata_o(uncached_done_rdata),
+    .done_error_o(uncached_done_error),
+    .mem_if(uncached_mem_if)
   );
 endmodule

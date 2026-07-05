@@ -14,6 +14,7 @@ dcache_data
 dcache_ctrl
 dcache_refill
 dcache_store
+dcache_uncached
 ```
 
 ## 3. Functional Requirements
@@ -27,6 +28,7 @@ use direct-mapped tag/data storage
 allocate cache lines on load miss
 return load hits from the cached line
 issue one downstream word read per line word during refill
+route non-cacheable MMIO/device accesses as single uncached transactions
 propagate downstream load/refill errors as data access faults
 write stores through to downstream memory
 update the cached line on a store hit after downstream write success
@@ -101,13 +103,25 @@ flush abort
 
 ```text
 core load/store request acceptance
+cacheable versus uncached request steering
 load hit response from cached data
 load miss refill allocation and response
+uncached load/store response forwarding without tag/data allocation
 store write-through sequencing on hit and miss
 successful store-hit cache data update
 store miss no-write-allocate policy enforcement
 invalid request fault response
-flush abort forwarding to refill/store leaves
+flush abort forwarding to refill/store/uncached leaves
+```
+
+`dcache_uncached` provides:
+
+```text
+one downstream transaction for each non-cacheable load or store
+single-word read behavior for MMIO, avoiding cache-line side-effect reads
+no tag/data allocation or cache update
+request/response backpressure handling
+flush abort
 ```
 
 The integrated `dcache` top provides:
@@ -116,10 +130,16 @@ The integrated `dcache` top provides:
 real tag/data/control/refill/store leaf interconnection
 one core data request/response port
 one downstream data memory request/response port
-combinational downstream mux between refill and store sequencers
+address-window cacheability classification
+combinational downstream mux between refill, store, and uncached sequencers
 top-level invalidate forwarding to tag valid bits
-top-level flush forwarding through control to active refill/store work
+top-level flush forwarding through control to active refill/store/uncached work
 ```
+
+Default cacheable address windows are the executable/read-only OTP data window,
+I-SRAM, and D-SRAM. The OTP programming register window and peripheral MMIO
+regions are non-cacheable by default so volatile software reads observe current
+device state and writes are not merged into cache lines.
 
 ## 6. Target Requirements
 

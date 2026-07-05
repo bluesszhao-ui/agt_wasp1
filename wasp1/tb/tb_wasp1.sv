@@ -31,6 +31,17 @@ module tb_wasp1;
   localparam logic [31:0] DMA_IRQ_EXPECTED_DONE = 32'h4558_4954;
   localparam logic [31:0] DMA_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
   localparam logic [31:0] DMA_IRQ_EXPECTED_CLAIM = 32'h0000_0005;
+  localparam int unsigned GPIO_IRQ_READY_WORD_IDX = 32'h0000_3400 >> 2;
+  localparam int unsigned GPIO_IRQ_MAGIC_WORD_IDX = 32'h0000_3404 >> 2;
+  localparam int unsigned GPIO_IRQ_MCAUSE_WORD_IDX = 32'h0000_3408 >> 2;
+  localparam int unsigned GPIO_IRQ_CLAIM_WORD_IDX = 32'h0000_340c >> 2;
+  localparam int unsigned GPIO_IRQ_LEVEL_WORD_IDX = 32'h0000_3410 >> 2;
+  localparam int unsigned GPIO_IRQ_DONE_WORD_IDX = 32'h0000_3414 >> 2;
+  localparam logic [31:0] GPIO_IRQ_EXPECTED_READY = 32'h4750_4459;
+  localparam logic [31:0] GPIO_IRQ_EXPECTED_MAGIC = 32'h4750_4951;
+  localparam logic [31:0] GPIO_IRQ_EXPECTED_DONE = 32'h4750_4f4b;
+  localparam logic [31:0] GPIO_IRQ_EXPECTED_MCAUSE = 32'h8000_000b;
+  localparam logic [31:0] GPIO_IRQ_EXPECTED_CLAIM = 32'h0000_0004;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -84,9 +95,11 @@ module tb_wasp1;
   bit          otp_program_check;           // Selects OTP programming firmware assertions.
   bit          dma_copy_check;              // Selects DMA real-memory-copy firmware assertions.
   bit          dma_irq_check;               // Selects DMA external interrupt firmware assertions.
+  bit          gpio_irq_check;              // Selects GPIO external interrupt firmware assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
+  bit          gpio_irq_trace;              // Enables focused GPIO/INTC interrupt diagnostics.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
   int unsigned uart_tx_push_count;          // Number of bytes accepted into the UART TX FIFO.
@@ -198,6 +211,31 @@ module tb_wasp1;
                  u_wasp1.slave_haddr,
                  u_wasp1.slave_hwrite);
       end
+      if (gpio_irq_trace &&
+          (u_wasp1.gpio_irq || u_wasp1.external_irq ||
+           (u_wasp1.u_ahb_intc.pending_q != '0) ||
+           (u_wasp1.u_ahb_intc.req_valid_q &&
+            ((u_wasp1.u_ahb_intc.req_offset_q == INTC_CLAIM_OFFSET) ||
+             (u_wasp1.u_ahb_intc.req_offset_q == INTC_PENDING_OFFSET) ||
+             (u_wasp1.u_ahb_intc.req_offset_q == INTC_ENABLE_OFFSET))))) begin
+        $display("[%0t] tb_wasp1 GPIO_IRQ gpio_in0=%0b gpio_sync=0x%08h gpio_prev=0x%08h gpio_status=0x%08h gpio_en=0x%08h gpio_irq=%0b intc_pending=0x%0h intc_en=0x%0h best=%0d meip=%0b req=%0b write=%0b off=0x%08h rdata=0x%08h hwdata=0x%08h",
+                 $time,
+                 gpio_in[0],
+                 u_wasp1.u_ahb_gpio.in_sync_q,
+                 u_wasp1.u_ahb_gpio.in_prev_q,
+                 u_wasp1.u_ahb_gpio.irq_status_q,
+                 u_wasp1.u_ahb_gpio.irq_en_q,
+                 u_wasp1.gpio_irq,
+                 u_wasp1.u_ahb_intc.pending_q,
+                 u_wasp1.u_ahb_intc.enable_q,
+                 u_wasp1.u_ahb_intc.best_id,
+                 u_wasp1.u_ahb_intc.meip_o,
+                 u_wasp1.u_ahb_intc.req_valid_q,
+                 u_wasp1.u_ahb_intc.req_write_q,
+                 u_wasp1.u_ahb_intc.req_offset_q,
+                 u_wasp1.u_ahb_intc.hrdata_o,
+                 u_wasp1.slave_hwdata);
+      end
     end
   end
 
@@ -209,9 +247,11 @@ module tb_wasp1;
     otp_program_check = $test$plusargs("WASP1_OTP_PROGRAM_CHECK");
     dma_copy_check = $test$plusargs("WASP1_DMA_COPY_CHECK");
     dma_irq_check = $test$plusargs("WASP1_DMA_IRQ_CHECK");
+    gpio_irq_check = $test$plusargs("WASP1_GPIO_IRQ_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
+    gpio_irq_trace = $test$plusargs("WASP1_GPIO_IRQ_TRACE");
     otp_hex_path = "";
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
       #1ps;
@@ -743,6 +783,88 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic wait_for_gpio_irq_activity;
+    int unsigned timeout;
+    logic [31:0] ready_word;
+    logic [31:0] magic_word;
+    logic [31:0] mcause_word;
+    logic [31:0] claim_word;
+    logic [31:0] level_word;
+    logic [31:0] done_word;
+    begin
+      timeout = 0;
+      ready_word = '0;
+      while ((ready_word !== GPIO_IRQ_EXPECTED_READY) && timeout < 50000) begin
+        ready_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_READY_WORD_IDX];
+        if (ready_word !== GPIO_IRQ_EXPECTED_READY) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      if (ready_word !== GPIO_IRQ_EXPECTED_READY) begin
+        dump_sw_timeout_diagnostics();
+        $error("GPIO IRQ firmware did not arm interrupt path");
+        $fatal(1);
+      end
+
+      // The firmware has enabled GPIO bit 0 as a level-high INTC source.
+      gpio_in[0] = 1'b1;
+
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      while (((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
+              (done_word !== GPIO_IRQ_EXPECTED_DONE)) &&
+             timeout < 50000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_DONE_WORD_IDX];
+        if ((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
+            (done_word !== GPIO_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      mcause_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_CLAIM_WORD_IDX];
+      level_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_LEVEL_WORD_IDX];
+      if ((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
+          (done_word !== GPIO_IRQ_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("GPIO IRQ firmware did not complete: magic=0x%08h done=0x%08h mcause=0x%08h claim=0x%08h level=0x%08h",
+               magic_word, done_word, mcause_word, claim_word, level_word);
+        $fatal(1);
+      end
+      if (mcause_word !== GPIO_IRQ_EXPECTED_MCAUSE ||
+          u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q !==
+          GPIO_IRQ_EXPECTED_MCAUSE) begin
+        $error("GPIO IRQ mcause mismatch: mailbox=0x%08h csr=0x%08h expected=0x%08h",
+               mcause_word,
+               u_wasp1.u_tile.u_core.datapath_u.csr_u.mcause_q,
+               GPIO_IRQ_EXPECTED_MCAUSE);
+        $fatal(1);
+      end
+      if (claim_word !== GPIO_IRQ_EXPECTED_CLAIM) begin
+        $error("GPIO IRQ claim mismatch: got=0x%08h expected=0x%08h",
+               claim_word, GPIO_IRQ_EXPECTED_CLAIM);
+        $fatal(1);
+      end
+      if ((level_word & 32'h0000_0001) !== 32'h0000_0001) begin
+        $error("GPIO IRQ handler did not observe pin high: level=0x%08h", level_word);
+        $fatal(1);
+      end
+      if (u_wasp1.gpio_irq !== 1'b0 || u_wasp1.external_irq !== 1'b0 ||
+          u_wasp1.u_ahb_intc.meip_o !== 1'b0) begin
+        $error("GPIO external IRQ did not deassert: gpio_irq=%0b external_irq=%0b meip=%0b",
+               u_wasp1.gpio_irq, u_wasp1.external_irq, u_wasp1.u_ahb_intc.meip_o);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -815,6 +937,8 @@ module tb_wasp1;
         wait_for_dma_copy_activity();
       end else if (dma_irq_check) begin
         wait_for_dma_irq_activity();
+      end else if (gpio_irq_check) begin
+        wait_for_gpio_irq_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin

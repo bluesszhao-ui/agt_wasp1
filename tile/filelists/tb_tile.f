@@ -29,6 +29,7 @@
 ../dcache/rtl/dcache_data.sv
 ../dcache/rtl/dcache_refill.sv
 ../dcache/rtl/dcache_store.sv
+../dcache/rtl/dcache_uncached.sv
 ../dcache/rtl/dcache_ctrl.sv
 ../dcache/rtl/dcache.sv
 rtl/tile.sv

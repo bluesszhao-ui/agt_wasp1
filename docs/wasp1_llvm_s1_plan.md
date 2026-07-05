@@ -118,6 +118,7 @@ implemented:
   UART, GPIO, and OTP programming examples
   DMA real-memory-copy example
   DMA external interrupt example through INTC
+  GPIO external interrupt example through INTC
   timer interrupt example with C trap handler
   structural BSP self-check
   toolchain discovery and syntax/codegen/link smoke-test harness
@@ -128,13 +129,14 @@ implemented:
   SoC boot regression that consumes generated hello_uart OTP image
   SoC DMA copy regression that consumes generated dma_copy OTP image
   SoC DMA external interrupt regression that consumes generated dma_irq OTP image
+  SoC GPIO external interrupt regression that consumes generated gpio_irq OTP image
   SoC timer interrupt regression that consumes generated timer_irq OTP image
   SoC OTP programming regression that consumes generated otp_program OTP image
 
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  additional external interrupt firmware regressions for GPIO/UART
+  additional external interrupt firmware regressions for UART
 ```
 
 ## 5. Linker Layout
@@ -160,6 +162,7 @@ UART hello program
 timer interrupt program
 DMA copy program
 DMA external interrupt program
+GPIO external interrupt program
 OTP programming program
 ```
 
@@ -176,8 +179,8 @@ symbols, aggregate-header syntax, tool discovery, and BSP source syntax. It also
 attempts RV32I object generation, startup assembly, ELF linking, and optional
 binary/OTP image generation when a full RISC-V LLVM toolchain is installed.
 The current smoke flow builds `hello_uart_otp.hex`, `dma_copy_otp.hex`,
-`dma_irq_otp.hex`, `timer_irq_otp.hex`, and `otp_program_otp.hex`; the `wasp1`
-top-level regression consumes all five images.
+`gpio_irq_otp.hex`, `dma_irq_otp.hex`, `timer_irq_otp.hex`, and
+`otp_program_otp.hex`; the `wasp1` top-level regression consumes these images.
 
 On a workstation without RISC-V LLVM code generation support, unavailable
 compile/link steps are reported as `SKIP`. The `REQUIRE_RISCV_TOOLCHAIN=1` mode

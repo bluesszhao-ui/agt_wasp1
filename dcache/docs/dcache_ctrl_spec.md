@@ -28,6 +28,15 @@ core_if.target
   response error marks data access fault
 ```
 
+Cacheability input:
+
+```text
+req_cacheable_i
+  sampled with an accepted core request
+  1 routes legal requests through tag/data/refill/store cache policy
+  0 routes legal requests through the uncached sequencer with no allocation
+```
+
 Tag/data lookup:
 
 ```text
@@ -59,6 +68,19 @@ store_done_addr_i/store_done_size_i/store_done_wdata_i/store_done_wstrb_i/store_
   completes the write-through store transaction
 ```
 
+Uncached interface:
+
+```text
+uncached_start_valid_o/uncached_start_ready_i
+uncached_start_addr_o/uncached_start_write_o/uncached_start_size_o
+uncached_start_wdata_o/uncached_start_wstrb_o
+  starts one non-cacheable load or store transaction
+
+uncached_done_valid_i/uncached_done_ready_o
+uncached_done_rdata_i/uncached_done_error_i
+  completes the non-cacheable transaction
+```
+
 Tag/data update:
 
 ```text
@@ -76,6 +98,7 @@ data_store_valid_o/data_store_addr_o/data_store_wdata_o/data_store_wstrb_o
 
 ```text
 accept one core request at a time
+use req_cacheable_i to steer legal non-cacheable requests away from tag/data
 return load hits from data_word_i
 start exactly one refill for a load miss
 select the requested 32-bit word from the completed refill line
@@ -86,10 +109,11 @@ update cached data after successful store hit only
 avoid allocating a new cache line on store miss
 avoid updating cached data on store downstream error
 fault invalid core requests without starting refill/store work
+complete uncached loads/stores without tag/data refill or store-hit updates
 hold responses stable under core response backpressure
-hold refill/store starts stable under subordinate backpressure
+hold refill/store/uncached starts stable under subordinate backpressure
 abort active work when flush_i is asserted
-forward flush_i to refill and store sequencers
+forward flush_i to refill, store, and uncached sequencers
 ```
 
 Invalid core requests are:
@@ -117,6 +141,14 @@ Stores:
 hit:  write through, then update cached bytes if downstream write succeeds
 miss: write through only, no allocation
 error: propagate store error and do not update cached data
+```
+
+Uncached:
+
+```text
+load:  start one uncached read and return uncached_done_rdata_i
+store: start one uncached write and return zero data plus error status
+update: never pulse tag/data update outputs for uncached work
 ```
 
 ## 5. Target Behavior

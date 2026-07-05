@@ -17,6 +17,8 @@ module dcache_ctrl #(
 
   mem_req_rsp_if.target           core_if,               // Core data request/response port.
 
+  input  logic                    req_cacheable_i,       // Current core request may allocate/use cache arrays.
+
   output logic                    lookup_valid_o,        // Qualifies tag/data lookup for current request.
   output logic [ADDR_WIDTH-1:0]   lookup_addr_o,         // Address presented to tag/data lookup leaves.
   input  logic                    tag_hit_i,             // Tag lookup hit for lookup_addr_o.
@@ -49,6 +51,20 @@ module dcache_ctrl #(
   input  logic [DATA_WIDTH/8-1:0] store_done_wstrb_i,    // Completed store byte strobes.
   input  logic                    store_done_error_i,    // Completed store downstream error.
 
+  output logic                    uncached_start_valid_o,// Start a single uncached read/write transaction.
+  input  logic                    uncached_start_ready_i,// Uncached sequencer can accept a start.
+  output logic [ADDR_WIDTH-1:0]   uncached_start_addr_o, // Uncached byte address.
+  output logic                    uncached_start_write_o,// Uncached write indicator.
+  output logic [1:0]              uncached_start_size_o, // Uncached access size.
+  output logic [DATA_WIDTH-1:0]   uncached_start_wdata_o,// Uncached write data.
+  output logic [DATA_WIDTH/8-1:0] uncached_start_wstrb_o,// Uncached write strobes.
+  output logic                    uncached_flush_o,      // Flush forwarded to uncached sequencer.
+
+  input  logic                    uncached_done_valid_i, // Uncached transaction completed.
+  output logic                    uncached_done_ready_o, // Controller accepts uncached completion.
+  input  logic [DATA_WIDTH-1:0]   uncached_done_rdata_i, // Uncached read data.
+  input  logic                    uncached_done_error_i, // Uncached downstream error.
+
   output logic                    tag_refill_valid_o,    // Write tag/valid state for accepted refill.
   output logic [ADDR_WIDTH-1:0]   tag_refill_addr_o,     // Refilled line address for tag update.
   output logic                    tag_refill_error_o,    // Tag update should leave line invalid on error.
@@ -75,7 +91,9 @@ module dcache_ctrl #(
     CTRL_LOAD_REFILL_WAIT = 3'b010,
     CTRL_STORE_REQ        = 3'b011,
     CTRL_STORE_WAIT       = 3'b100,
-    CTRL_RESP             = 3'b101
+    CTRL_RESP             = 3'b101,
+    CTRL_UNCACHED_REQ     = 3'b110,
+    CTRL_UNCACHED_WAIT    = 3'b111
   } ctrl_state_e;
 
   ctrl_state_e          state_q;              // Core/refill/store control FSM state.
@@ -93,6 +111,8 @@ module dcache_ctrl #(
   logic                  refill_line_fire;    // Refill line accepted this cycle.
   logic                  store_start_fire;    // Store start accepted this cycle.
   logic                  store_done_fire;     // Store completion accepted this cycle.
+  logic                  uncached_start_fire; // Uncached start accepted this cycle.
+  logic                  uncached_done_fire;  // Uncached completion accepted this cycle.
   logic                  invalid_req;         // Current core request fails D-cache legality checks.
   logic                  misaligned_req;      // Current request violates natural alignment for its size.
   logic [DATA_WIDTH-1:0] refill_word;         // Requested word selected from refill line data.
@@ -104,6 +124,8 @@ module dcache_ctrl #(
   assign refill_line_fire = refill_line_valid_i && refill_line_ready_o;
   assign store_start_fire = store_start_valid_o && store_start_ready_i;
   assign store_done_fire = store_done_valid_i && store_done_ready_o;
+  assign uncached_start_fire = uncached_start_valid_o && uncached_start_ready_i;
+  assign uncached_done_fire = uncached_done_valid_i && uncached_done_ready_o;
 
   // The LSU normally suppresses misaligned requests, but the cache controller
   // still checks alignment so an invalid direct request cannot start bus work.
@@ -124,7 +146,8 @@ module dcache_ctrl #(
   assign core_if.rsp_rdata = rsp_data_q;
   assign core_if.rsp_err = rsp_err_q;
 
-  assign lookup_valid_o = core_if.req_valid && (state_q == CTRL_IDLE) && !flush_i;
+  assign lookup_valid_o = core_if.req_valid && req_cacheable_i &&
+                          (state_q == CTRL_IDLE) && !flush_i;
   assign lookup_addr_o = (state_q == CTRL_IDLE) ? core_if.req_addr : req_addr_q;
 
   assign refill_start_valid_o = (state_q == CTRL_LOAD_REFILL_REQ) && !flush_i;
@@ -139,6 +162,15 @@ module dcache_ctrl #(
   assign store_start_wstrb_o = req_wstrb_q;
   assign store_flush_o = flush_i;
   assign store_done_ready_o = (state_q == CTRL_STORE_WAIT) && !flush_i;
+
+  assign uncached_start_valid_o = (state_q == CTRL_UNCACHED_REQ) && !flush_i;
+  assign uncached_start_addr_o = req_addr_q;
+  assign uncached_start_write_o = req_write_q;
+  assign uncached_start_size_o = req_size_q;
+  assign uncached_start_wdata_o = req_wdata_q;
+  assign uncached_start_wstrb_o = req_wstrb_q;
+  assign uncached_flush_o = flush_i;
+  assign uncached_done_ready_o = (state_q == CTRL_UNCACHED_WAIT) && !flush_i;
 
   assign tag_refill_valid_o = refill_line_fire;
   assign tag_refill_addr_o = refill_line_addr_i;
@@ -191,11 +223,13 @@ module dcache_ctrl #(
             req_write_q <= core_if.req_write;
             req_wdata_q <= core_if.req_wdata;
             req_wstrb_q <= core_if.req_wstrb;
-            store_hit_q <= core_if.req_write && tag_hit_i;
+            store_hit_q <= core_if.req_write && req_cacheable_i && tag_hit_i;
             if (invalid_req) begin
               rsp_data_q <= '0;
               rsp_err_q <= 1'b1;
               state_q <= CTRL_RESP;
+            end else if (!req_cacheable_i) begin
+              state_q <= CTRL_UNCACHED_REQ;
             end else if (core_if.req_write) begin
               state_q <= CTRL_STORE_REQ;
             end else if (tag_hit_i) begin
@@ -228,6 +262,18 @@ module dcache_ctrl #(
           if (store_done_fire) begin
             rsp_data_q <= '0;
             rsp_err_q <= store_done_error_i;
+            state_q <= CTRL_RESP;
+          end
+        end
+        CTRL_UNCACHED_REQ: begin
+          if (uncached_start_fire) begin
+            state_q <= CTRL_UNCACHED_WAIT;
+          end
+        end
+        CTRL_UNCACHED_WAIT: begin
+          if (uncached_done_fire) begin
+            rsp_data_q <= uncached_done_rdata_i;
+            rsp_err_q <= uncached_done_error_i;
             state_q <= CTRL_RESP;
           end
         end

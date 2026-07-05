@@ -22,6 +22,7 @@ module tb_dcache_ctrl;
   logic [ADDR_WIDTH-1:0]   lookup_addr;         // DUT lookup address.
   logic                    tag_hit;             // Mock tag hit result.
   logic [DATA_WIDTH-1:0]   data_word;           // Mock data-array word result.
+  logic                    req_cacheable;       // Mock cacheability result for current request.
   logic                    refill_start_valid;  // DUT refill start request.
   logic                    refill_start_ready;  // Mock refill start ready.
   logic [ADDR_WIDTH-1:0]   refill_start_addr;   // DUT refill start address.
@@ -45,6 +46,18 @@ module tb_dcache_ctrl;
   logic [DATA_WIDTH-1:0]   store_done_wdata;    // Mock store completion data.
   logic [STRB_WIDTH-1:0]   store_done_wstrb;    // Mock store completion strobes.
   logic                    store_done_error;    // Mock store completion error.
+  logic                    uncached_start_valid;// DUT uncached transaction start request.
+  logic                    uncached_start_ready;// Mock uncached sequencer start ready.
+  logic [ADDR_WIDTH-1:0]   uncached_start_addr; // DUT uncached byte address.
+  logic                    uncached_start_write;// DUT uncached write indicator.
+  logic [1:0]              uncached_start_size; // DUT uncached access size.
+  logic [DATA_WIDTH-1:0]   uncached_start_wdata;// DUT uncached write data.
+  logic [STRB_WIDTH-1:0]   uncached_start_wstrb;// DUT uncached write strobes.
+  logic                    uncached_flush;      // DUT forwarded uncached flush.
+  logic                    uncached_done_valid; // Mock uncached completion valid.
+  logic                    uncached_done_ready; // DUT accepts uncached completion.
+  logic [DATA_WIDTH-1:0]   uncached_done_rdata; // Mock uncached read data.
+  logic                    uncached_done_error; // Mock uncached response error.
   logic                    tag_refill_valid;    // DUT tag refill update pulse.
   logic [ADDR_WIDTH-1:0]   tag_refill_addr;     // DUT tag refill update address.
   logic                    tag_refill_error;    // DUT tag refill error flag.
@@ -86,6 +99,7 @@ module tb_dcache_ctrl;
     .rst_ni(rst_n),
     .flush_i(flush),
     .core_if(core_if),
+    .req_cacheable_i(req_cacheable),
     .lookup_valid_o(lookup_valid),
     .lookup_addr_o(lookup_addr),
     .tag_hit_i(tag_hit),
@@ -113,6 +127,18 @@ module tb_dcache_ctrl;
     .store_done_wdata_i(store_done_wdata),
     .store_done_wstrb_i(store_done_wstrb),
     .store_done_error_i(store_done_error),
+    .uncached_start_valid_o(uncached_start_valid),
+    .uncached_start_ready_i(uncached_start_ready),
+    .uncached_start_addr_o(uncached_start_addr),
+    .uncached_start_write_o(uncached_start_write),
+    .uncached_start_size_o(uncached_start_size),
+    .uncached_start_wdata_o(uncached_start_wdata),
+    .uncached_start_wstrb_o(uncached_start_wstrb),
+    .uncached_flush_o(uncached_flush),
+    .uncached_done_valid_i(uncached_done_valid),
+    .uncached_done_ready_o(uncached_done_ready),
+    .uncached_done_rdata_i(uncached_done_rdata),
+    .uncached_done_error_i(uncached_done_error),
     .tag_refill_valid_o(tag_refill_valid),
     .tag_refill_addr_o(tag_refill_addr),
     .tag_refill_error_o(tag_refill_error),
@@ -201,6 +227,7 @@ module tb_dcache_ctrl;
     begin
       tag_hit = 1'b0;
       data_word = '0;
+      req_cacheable = 1'b1;
       refill_start_ready = 1'b0;
       refill_line_valid = 1'b0;
       refill_line_addr = '0;
@@ -213,6 +240,10 @@ module tb_dcache_ctrl;
       store_done_wdata = '0;
       store_done_wstrb = '0;
       store_done_error = 1'b0;
+      uncached_start_ready = 1'b0;
+      uncached_done_valid = 1'b0;
+      uncached_done_rdata = '0;
+      uncached_done_error = 1'b0;
     end
   endtask
 

@@ -119,6 +119,7 @@ fi
 syntax_sources="
   bsp/examples/hello_uart.c
   bsp/examples/gpio_blink.c
+  bsp/examples/gpio_irq.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
@@ -189,6 +190,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "link skipped because required objects were not produced"
+  fi
+
+  gpio_irq_obj="build/smoke/gpio_irq.o"
+  if [ -f "$gpio_irq_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link gpio_irq ELF" "$clang_bin" $ldflags $asm_objects "$gpio_irq_obj" $runtime_objects -o build/smoke/gpio_irq.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy gpio_irq binary" "$objcopy_bin" -O binary build/smoke/gpio_irq.elf build/smoke/gpio_irq.bin; then
+          run_capture "make gpio_irq OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/gpio_irq.bin \
+            --output-hex build/smoke/gpio_irq_otp.hex \
+            --output-bin build/smoke/gpio_irq_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for gpio_irq riscv32"
+    fi
+  else
+    require_or_skip "gpio_irq link skipped because required objects were not produced"
   fi
 
   dma_obj="build/smoke/dma_copy.o"

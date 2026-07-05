@@ -5,7 +5,7 @@
 `dcache_ctrl` implements the D-cache load/store hit/miss control FSM. It does
 not store tag bits, cache-line data, refill beat state, or downstream store
 transaction state; those are owned by `dcache_tag`, `dcache_data`,
-`dcache_refill`, and `dcache_store`.
+`dcache_refill`, `dcache_store`, and `dcache_uncached`.
 
 ## 2. Editable Block Diagram
 
@@ -17,10 +17,10 @@ clock domains:   SEQ clk=clk_i rst=rst_ni
 ```
 
 The diagram separates core request classification, tag/data inputs, control FSM
-state, refill control, store control, subordinate refill/store interfaces,
-response muxing, and core response output. Dense subordinate-completion
-feedback is described in the FSM text below rather than drawn as crossing
-long-wire bundles.
+state, refill control, store control, uncached control, subordinate
+refill/store/uncached interfaces, response muxing, and core response output.
+Dense subordinate-completion feedback is described in the FSM text below rather
+than drawn as crossing long-wire bundles.
 
 PNG state diagram:
 
@@ -38,17 +38,21 @@ CTRL_IDLE
     rsp_err_q = 1
     -> CTRL_RESP
 
-  core_if.req_valid && core_if.req_ready && load && tag_hit_i:
+  core_if.req_valid && core_if.req_ready && !invalid_req && !req_cacheable_i:
+    capture request
+    -> CTRL_UNCACHED_REQ
+
+  core_if.req_valid && core_if.req_ready && req_cacheable_i && load && tag_hit_i:
     capture request
     rsp_data_q = data_word_i
     rsp_err_q = 0
     -> CTRL_RESP
 
-  core_if.req_valid && core_if.req_ready && load && !tag_hit_i:
+  core_if.req_valid && core_if.req_ready && req_cacheable_i && load && !tag_hit_i:
     capture miss address
     -> CTRL_LOAD_REFILL_REQ
 
-  core_if.req_valid && core_if.req_ready && store:
+  core_if.req_valid && core_if.req_ready && req_cacheable_i && store:
     capture store fields and store_hit_q
     -> CTRL_STORE_REQ
 
@@ -77,6 +81,17 @@ CTRL_STORE_WAIT
     rsp_err_q = store_done_error_i
     -> CTRL_RESP
 
+CTRL_UNCACHED_REQ
+  uncached_start_valid_o && uncached_start_ready_i:
+    uncached transaction accepted by dcache_uncached
+    -> CTRL_UNCACHED_WAIT
+
+CTRL_UNCACHED_WAIT
+  uncached_done_valid_i && uncached_done_ready_o:
+    rsp_data_q = uncached_done_rdata_i
+    rsp_err_q = uncached_done_error_i
+    -> CTRL_RESP
+
 CTRL_RESP
   core_if.rsp_valid && core_if.rsp_ready:
     response accepted
@@ -84,8 +99,8 @@ CTRL_RESP
 ```
 
 `flush_i` has priority over normal FSM progress and returns the FSM to
-`CTRL_IDLE`. During flush, core responses, refill accepts, store accepts, and
-cache update pulses are suppressed.
+`CTRL_IDLE`. During flush, core responses, refill accepts, store accepts,
+uncached accepts, and cache update pulses are suppressed.
 
 ## 4. Datapath
 
@@ -107,8 +122,9 @@ logic remains synthesizable and parameter-safe.
 Core request ready is asserted only in `CTRL_IDLE`. Core response valid is held
 in `CTRL_RESP` until `core_if.rsp_ready` is high. Refill start valid is held in
 `CTRL_LOAD_REFILL_REQ` until `refill_start_ready_i` is high. Store start valid
-is held in `CTRL_STORE_REQ` until `store_start_ready_i` is high.
+is held in `CTRL_STORE_REQ` until `store_start_ready_i` is high. Uncached start
+valid is held in `CTRL_UNCACHED_REQ` until `uncached_start_ready_i` is high.
 
-Refill line ready and store done ready are asserted only in their matching wait
-states, which keeps update pulses one cycle wide and tied to accepted
-subordinate completions.
+Refill line ready, store done ready, and uncached done ready are asserted only
+in their matching wait states, which keeps update pulses one cycle wide and tied
+to accepted subordinate completions.

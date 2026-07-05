@@ -3,8 +3,8 @@
 ## 1. Goals
 
 Verify D-cache leaves and integrations module by module. Current milestones
-verify `dcache_tag`, `dcache_data`, `dcache_refill`, `dcache_store`, and
-`dcache_ctrl`.
+verify `dcache_tag`, `dcache_data`, `dcache_refill`, `dcache_store`,
+`dcache_uncached`, and `dcache_ctrl`.
 
 ## 2. Planned Coverage
 
@@ -17,6 +17,7 @@ load refill error
 store hit write-through and cache update
 store miss no-write-allocate
 store downstream error
+uncached MMIO/device bypass without allocation
 byte/half/word access sizes
 frontend/core response backpressure
 downstream request/response backpressure
@@ -82,7 +83,21 @@ deterministic-random access streams
 | Flush abort | Flush active store | No completion emitted |
 | Random stream | Random sizes/strobes/stalls/errors | Reference expectations match DUT |
 
-## 7. dcache_ctrl
+## 7. dcache_uncached
+
+`dcache_uncached` is covered first through integrated D-cache tests and should
+also receive a standalone TB if later behavior grows beyond a single
+request/response transaction.
+
+| Case | Purpose | Expected Result |
+| --- | --- | --- |
+| Uncached read | Verify one-request load passthrough | One downstream read, returned data matches response |
+| Repeated same address reads | Verify no stale cache hit | Second read issues a new downstream request |
+| Uncached write | Verify write passthrough | Address, size, data, and strobes match start fields |
+| Backpressure | Verify held request/completion | Valid/data remain stable under stalls |
+| Flush abort | Abort active uncached work | No stale completion emitted |
+
+## 8. dcache_ctrl
 
 `tb_dcache_ctrl` models tag/data/refill/store leaves and covers:
 
@@ -94,11 +109,12 @@ deterministic-random access streams
 | Store hit | Write through and update cache | Store starts, successful done pulses data update |
 | Store miss | Enforce no-write-allocate | Store starts, no tag/data allocation |
 | Store error | Avoid corrupting cached hit line | Core response error, no data update |
+| Uncached request steering | Legal non-cacheable request bypasses tag/data | Uncached start/done path returns response without update |
 | Invalid request | Reject illegal instruction/size/alignment | Error response, no subordinate work |
 | Flush abort | Abort active load/store work | No response or update emitted |
 | Random stream | Mixed load/store/invalid/stalls/errors | Reference expectations match DUT |
 
-## 8. Integrated dcache
+## 9. Integrated dcache
 
 `tb_dcache` uses real D-cache leaves and a downstream memory model to cover:
 
@@ -114,9 +130,10 @@ deterministic-random access streams
 | Refill error | Verify failed refill leaves line invalid | Later load refills again and recovers |
 | Invalidate | Verify top-level invalidate forwarding | Previously hit line misses after invalidate |
 | Flush abort | Verify load/store abort through real leaves | No response/update remains active |
+| Uncached MMIO bypass | Verify device reads/writes do not allocate | Repeated same-address MMIO reads issue repeated downstream requests and writes do not update cache |
 | Random stream | Stress repeated fill/hit/store paths | Reference model matches DUT |
 
-## 9. Time Base
+## 10. Time Base
 
 Testbenches use:
 

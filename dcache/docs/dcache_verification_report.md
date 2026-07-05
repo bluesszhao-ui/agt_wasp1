@@ -10,7 +10,7 @@ Result : PASS
 Simulation summary:
 
 ```text
-tb_dcache coverage: pass_count=505 load_miss=22 load_hit=34 store_hit=15 store_miss=1 store_update=14 conflict=1 invalidate=1 err=6 flush=2 backpressure=96 mem_req=106 mem_rsp=104 random=12
+tb_dcache coverage: pass_count=529 load_miss=22 load_hit=34 store_hit=15 store_miss=1 store_update=14 conflict=1 invalidate=1 err=6 flush=2 uncached=5 backpressure=99 mem_req=111 mem_rsp=109 random=12
 ```
 
 Lint summary:
@@ -34,7 +34,8 @@ Result : PASS
 | 1220ns-1420ns | Refill error and recovery refill | Failed line remains invalid; next load refills successfully | PASS |
 | 1420ns-1700ns | Invalidate after a filled line | Previously hit line misses and refills after invalidate | PASS |
 | 1700ns-1850ns | Flush active load miss and active store | Active work aborts without response/update | PASS |
-| 1850ns-7000ns | 12 deterministic-random fill/hit/store-hit streams | Reference memory/cache expectations match DUT | PASS |
+| 1850ns-2200ns | Uncached MMIO reads/writes | Repeated reads to the same INTC and OTP-register addresses both issue downstream requests and may return different data; write passes address/data/strobes without cache update | PASS |
+| 2200ns-8000ns | 12 deterministic-random fill/hit/store-hit streams | Reference memory/cache expectations match DUT | PASS |
 
 ## 3. Coverage Summary
 
@@ -49,6 +50,7 @@ Result : PASS
 | Invalidate forwarding | Covered |
 | Refill error and recovery | Covered |
 | Load/store flush abort paths | Covered |
+| Uncached MMIO load/store bypass | Covered |
 | Downstream request/response backpressure | Covered |
 | Core response backpressure | Covered |
 | Deterministic random integrated stream | Covered |

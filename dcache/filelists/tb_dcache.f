@@ -4,6 +4,7 @@ rtl/dcache_tag.sv
 rtl/dcache_data.sv
 rtl/dcache_refill.sv
 rtl/dcache_store.sv
+rtl/dcache_uncached.sv
 rtl/dcache_ctrl.sv
 rtl/dcache.sv
 tb/tb_dcache.sv

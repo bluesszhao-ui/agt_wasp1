@@ -34,6 +34,7 @@ module tb_dcache;
   integer invalidate_count;   // Invalidate checks.
   integer error_count;        // Error checks.
   integer flush_count;        // Flush abort checks.
+  integer uncached_count;     // Uncached MMIO bypass checks.
   integer backpressure_count; // Backpressure checks.
   integer mem_req_count;      // Downstream request checks.
   integer mem_rsp_count;      // Downstream response checks.
@@ -441,6 +442,50 @@ module tb_dcache;
     end
   endtask
 
+  task automatic uncached_load(
+    input string name,
+    input logic [ADDR_WIDTH-1:0] addr,
+    input logic [DATA_WIDTH-1:0] exp_data,
+    input int req_stalls,
+    input int rsp_stalls,
+    input int core_stalls,
+    input logic err
+  );
+    begin
+      issue_core_req({name, " core"}, addr, 1'b0, 2'd2, 1'b0, '0, '0);
+      accept_mem_read_req({name, " read"}, addr, req_stalls);
+      deliver_mem_rsp({name, " rsp"}, exp_data, err, rsp_stalls);
+      expect_core_rsp({name, " core rsp"}, exp_data, err, core_stalls);
+      uncached_count++;
+      if (err) begin
+        error_count++;
+      end
+    end
+  endtask
+
+  task automatic uncached_store(
+    input string name,
+    input logic [ADDR_WIDTH-1:0] addr,
+    input logic [1:0] size,
+    input logic [DATA_WIDTH-1:0] wdata,
+    input logic [STRB_WIDTH-1:0] wstrb,
+    input int req_stalls,
+    input int rsp_stalls,
+    input int core_stalls,
+    input logic err
+  );
+    begin
+      issue_core_req({name, " core"}, addr, 1'b1, size, 1'b0, wdata, wstrb);
+      accept_mem_write_req({name, " write"}, addr, size, wdata, wstrb, req_stalls);
+      deliver_mem_rsp({name, " rsp"}, '0, err, rsp_stalls);
+      expect_core_rsp({name, " core rsp"}, '0, err, core_stalls);
+      uncached_count++;
+      if (err) begin
+        error_count++;
+      end
+    end
+  endtask
+
   task automatic invalid_request(input string name, input logic [ADDR_WIDTH-1:0] addr, logic write, logic [1:0] size, logic instr);
     begin
       issue_core_req({name, " core"}, addr, write, size, instr, 32'hfeed_cafe, 4'b1111);
@@ -534,6 +579,7 @@ module tb_dcache;
     invalidate_count = 0;
     error_count = 0;
     flush_count = 0;
+    uncached_count = 0;
     backpressure_count = 0;
     mem_req_count = 0;
     mem_rsp_count = 0;
@@ -583,6 +629,12 @@ module tb_dcache;
     flush_load_abort();
     flush_store_abort();
 
+    uncached_load("uncached mmio first read", 32'h4003_0008, 32'h0000_0000, 0, 0, 0, 1'b0);
+    uncached_load("uncached mmio second read", 32'h4003_0008, 32'h0000_0004, 1, 1, 1, 1'b0);
+    uncached_load("uncached otp reg first read", 32'h0000_ff00, 32'h0000_0001, 0, 0, 0, 1'b0);
+    uncached_load("uncached otp reg second read", 32'h0000_ff00, 32'h0000_0002, 1, 0, 0, 1'b0);
+    uncached_store("uncached mmio write", 32'h4003_0004, 2'd2, 32'h0000_0010, 4'b1111, 0, 0, 0, 1'b0);
+
     for (int i = 0; i < 12; i++) begin
       logic [ADDR_WIDTH-1:0] addr;
       logic [DATA_WIDTH-1:0] wdata;
@@ -599,19 +651,19 @@ module tb_dcache;
     if (pass_count < 250 || load_miss_count < 20 || load_hit_count < 25 ||
         store_hit_count < 10 || store_miss_count < 1 || store_update_count < 10 ||
         conflict_count < 1 || invalidate_count < 1 || error_count < 6 ||
-        flush_count < 2 || backpressure_count < 20 || mem_req_count < 80 ||
+        flush_count < 2 || uncached_count < 5 || backpressure_count < 20 || mem_req_count < 85 ||
         mem_rsp_count < 75 || random_count < 12) begin
-      $fatal(1, "dcache coverage goal missed pass=%0d lm=%0d lh=%0d sh=%0d sm=%0d su=%0d conflict=%0d inv=%0d err=%0d flush=%0d bp=%0d mem_req=%0d mem_rsp=%0d random=%0d",
+      $fatal(1, "dcache coverage goal missed pass=%0d lm=%0d lh=%0d sh=%0d sm=%0d su=%0d conflict=%0d inv=%0d err=%0d flush=%0d uncached=%0d bp=%0d mem_req=%0d mem_rsp=%0d random=%0d",
              pass_count, load_miss_count, load_hit_count, store_hit_count,
              store_miss_count, store_update_count, conflict_count,
-             invalidate_count, error_count, flush_count, backpressure_count,
+             invalidate_count, error_count, flush_count, uncached_count, backpressure_count,
              mem_req_count, mem_rsp_count, random_count);
     end
 
-    $display("tb_dcache coverage: pass_count=%0d load_miss=%0d load_hit=%0d store_hit=%0d store_miss=%0d store_update=%0d conflict=%0d invalidate=%0d err=%0d flush=%0d backpressure=%0d mem_req=%0d mem_rsp=%0d random=%0d",
+    $display("tb_dcache coverage: pass_count=%0d load_miss=%0d load_hit=%0d store_hit=%0d store_miss=%0d store_update=%0d conflict=%0d invalidate=%0d err=%0d flush=%0d uncached=%0d backpressure=%0d mem_req=%0d mem_rsp=%0d random=%0d",
              pass_count, load_miss_count, load_hit_count, store_hit_count,
              store_miss_count, store_update_count, conflict_count,
-             invalidate_count, error_count, flush_count, backpressure_count,
+             invalidate_count, error_count, flush_count, uncached_count, backpressure_count,
              mem_req_count, mem_rsp_count, random_count);
     $display("tb_dcache PASS");
     $finish;
