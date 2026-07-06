@@ -18,8 +18,7 @@ make -C wasp1 sim-dma-irq
 make -C wasp1 sim-gpio-irq
 make -C wasp1 sim-timer-irq
 make -C wasp1 sim-rbb-smoke
-openocd -f wasp1/dv/openocd/wasp1_remote_bitbang.cfg -c shutdown
-riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
+make -C wasp1 sim-openocd-gdb-smoke
 ```
 
 ## 2. Results
@@ -41,8 +40,7 @@ riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
 | `tb_wasp1` GPIO IRQ firmware simulation | PASS |
 | `tb_wasp1` timer IRQ firmware simulation | PASS |
 | Remote-bitbang socket smoke | PASS |
-| OpenOCD process smoke | PASS |
-| GDB process smoke | PASS |
+| Automated OpenOCD/GDB process smoke | PASS |
 
 Simulation output:
 
@@ -70,7 +68,8 @@ tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/timer_irq_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 wasp1_rbb_smoke PASS
 OpenOCD: hart 0: XLEN=32, misa=0x40000100
-GDB: registers read, pc=0x00000000, detach PASS
+GDB: registers read, PC visible, detach PASS
+wasp1_openocd_gdb_smoke PASS
 ```
 
 ## 3. Time-Sequenced Case Table
@@ -84,8 +83,7 @@ GDB: registers read, pc=0x00000000, detach PASS
 | 95ns-105ns | Wait for debug status | Core debug status reports running or halted | PASS |
 | 105ns-3us | Bit-bang JTAG IDCODE, DTMCS, `dmcontrol.dmactive`, and `dmstatus` | JTAG pins reach integrated Debug Module; `dbg_dmactive_o=1` | PASS |
 | Remote-bitbang run | Launch `Vwasp1` socket harness and connect Python remote-bitbang client | TCP JTAG path returns IDCODE/DTMCS and DMI `dmstatus` success | PASS |
-| OpenOCD process run | Launch `Vwasp1 +rbb-keepalive` and connect OpenOCD remote_bitbang | TAP IDCODE, DTM, single hart, XLEN=32, and RV32I `misa` are detected | PASS |
-| GDB process run | Keep OpenOCD GDB server on `localhost:3333` and run `riscv64-elf-gdb` script | GDB connects, reset-halts, reads GPRs and PC, detaches cleanly | PASS |
+| OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, GDB reset-halt, register reads, PC read, and detach all complete without OpenOCD/GDB errors | PASS |
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
@@ -102,8 +100,12 @@ GDB: registers read, pc=0x00000000, detach PASS
 ## 4. Residual Risk
 
 This is an integration smoke test, not a full system software test. The
-OpenOCD/GDB process path is now verified for connect, halt, register read, PC
-read, and detach over remote-bitbang JTAG. The CPU-controlled OTP programming
+OpenOCD/GDB process path is now automated and verified for connect, halt,
+register read, PC read, and detach over remote-bitbang JTAG. Native GDB
+`stepi` still requires abstract memory, System Bus Access, or program buffer
+support, and monitor-level external stepping still needs more Debug Module
+resume/step hardening, so neither is a claimed top-level process pass item yet.
+The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
 The long boot firmware image now combines UART, GPIO, D-SRAM, DMA, timer, and

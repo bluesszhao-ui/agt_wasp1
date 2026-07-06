@@ -18,7 +18,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-timer-irq sim-rbb-build sim-rbb-smoke clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-timer-irq sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke clean
 
 all: lint
 
@@ -145,6 +145,17 @@ sim-rbb-smoke: sim-rbb-build
 	python3 dv/wasp1_rbb_smoke.py --sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
 		--port $(RBB_PORT) > logs/sim_rbb_smoke.log 2>&1
 	@cat logs/sim_rbb_smoke.log
+
+sim-openocd-gdb-smoke: sim-rbb-build
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p logs
+	python3 dv/wasp1_openocd_gdb_smoke.py \
+		--sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
+		--openocd-cfg dv/openocd/wasp1_remote_bitbang.cfg \
+		--gdb-script dv/gdb/wasp1_debug_smoke.gdb \
+		--otp-hex $(OTP_HEX) \
+		--rbb-port $(RBB_PORT) > logs/sim_openocd_gdb_smoke.log 2>&1
+	@cat logs/sim_openocd_gdb_smoke.log
 
 lint-ic:
 	@mkdir -p build logs

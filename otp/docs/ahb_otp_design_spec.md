@@ -33,6 +33,11 @@ For the default SoC map:
 
 `OTP_REG_WINDOW_SIZE` is 256 bytes.
 
+In simulation, `+WASP1_OTP_HEX=<path>` preloads the OTP data array through
+`$readmemh` after the erased-value initialization. The preload hook is guarded
+as simulation-only collateral so the IC and FPGA programming semantics remain
+unchanged.
+
 ## 4. Registers
 
 Offsets are relative to `OTP_REG_BASE`.

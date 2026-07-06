@@ -17,7 +17,7 @@ OpenOCD remote_bitbang adapter
 
 ## 2. Build and Run Remote-Bitbang Simulation
 
-Installed tool versions used for the 2026-07-03 smoke:
+Installed tool versions used for the 2026-07-06 smoke:
 
 ```text
 OpenOCD 0.12.0
@@ -37,10 +37,20 @@ make -C wasp1 sim-rbb-build
 Run the simulator:
 
 ```text
-wasp1/build/obj_wasp1_rbb/Vwasp1 +rbb-port=9824 +rbb-keepalive
+wasp1/build/obj_wasp1_rbb/Vwasp1 +rbb-port=9824 +rbb-keepalive +WASP1_OTP_HEX=llvm_s1/build/smoke/hello_uart_otp.hex
 ```
 
 The simulator listens on `127.0.0.1:9824`.
+
+The preferred one-command regression is:
+
+```text
+make -C wasp1 sim-openocd-gdb-smoke
+```
+
+This target builds the remote-bitbang harness, runs `llvm_s1 smoke` to create
+the generated OTP images, starts the simulator, starts OpenOCD, runs the GDB
+script, and then tears the child processes down.
 
 ## 3. Local Remote-Bitbang Smoke
 
@@ -72,7 +82,7 @@ The OpenOCD config expects:
 
 ```text
 remote_bitbang host localhost
-remote_bitbang port 9824
+remote_bitbang port 9824 by default, or Tcl variable `RBB_PORT`
 JTAG IR length 5
 expected IDCODE 0x100001cf
 RISC-V target type
@@ -87,15 +97,21 @@ riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
 ```
 
 The script connects to OpenOCD on `localhost:3333`, requests reset-halt, prints
-registers, detaches, and exits.
+registers, checks PC visibility, detaches, and exits.
 
 ## 6. Current Limitation
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
 are verified. The current debug implementation is still stage-1: GDB can
-connect, halt, read GPRs and PC, single-step through the internal DCSR.step
-path, and detach, but breakpoints, program buffer execution and abstract memory
-access are future milestones.
+connect, halt, read GPRs and PC, and detach.
+
+Native GDB `stepi` is intentionally not claimed yet. OpenOCD/GDB attempts to
+read target memory around the current PC before completing that command, and
+wasp1 does not yet implement program buffer execution, System Bus Access, or
+abstract memory access. OpenOCD monitor-level stepping also remains outside the
+external process smoke until the remaining resume/step interactions are hardened
+at the Debug Module boundary. Those features remain the next debug milestones
+along with breakpoints.
 
 Observed OpenOCD probe:
 
@@ -108,7 +124,7 @@ hart 0: XLEN=32, misa=0x40000100
 Observed GDB smoke:
 
 ```text
-0x00000000 in ?? ()
-pc             0x0  0x0
+0x000002d0 in ?? ()
+pc             0x2d0  0x2d0
 [Inferior 1 (Remote target) detached]
 ```

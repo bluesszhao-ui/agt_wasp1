@@ -50,8 +50,10 @@ serial input can trigger RX-available and RX-overrun interrupt handling through
 INTC, that GPIO input level interrupts can reach the same path through INTC,
 that a timer interrupt firmware image can enter and return from the C trap
 handler, that the
-SoC JTAG pins reach the integrated Debug Module, and that an external
-OpenOCD/GDB process can complete the stage-1 debug smoke.
+SoC JTAG pins reach the integrated Debug Module, and that an automated external
+OpenOCD/GDB process can complete the stage-1 debug smoke. Native GDB `stepi`
+and monitor-level external stepping remain gated by future abstract memory,
+program-buffer, and Debug Module resume/step hardening milestones.
 
 ## 4. Pass Criteria
 

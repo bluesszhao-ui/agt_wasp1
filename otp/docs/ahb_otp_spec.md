@@ -53,6 +53,11 @@ misaligned accesses, unsupported register sizes, and unknown registers.
 The module must support IC, Virtex-7 FPGA, and generic simulation targets. The
 OTP programming contract must not change across targets.
 
+For simulation bring-up, the module may accept `+WASP1_OTP_HEX=<path>` to
+preload the OTP data array with a generated firmware image. This is a
+simulation-only convenience and must not change the hardware programming
+contract.
+
 ## 7. Verification Requirements
 
 Verification must cover erased reads, legal programming, illegal bit raising,

@@ -65,6 +65,9 @@ module ahb_otp #(
   logic                  busy_q;
   logic                  done_q;
   logic                  error_q;
+`ifndef SYNTHESIS
+  string                 otp_hex_path;  // Simulation-only OTP preload image path.
+`endif
 
   assign hready_o = 1'b1;
   assign addr_offset = haddr_i - ADDR_WIDTH'(BASE_ADDR);
@@ -97,6 +100,11 @@ module ahb_otp #(
     for (int idx = 0; idx < DATA_WORDS; idx++) begin
       otp_mem_q[idx] = '1;
     end
+`ifndef SYNTHESIS
+    if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
+      $readmemh(otp_hex_path, otp_mem_q);
+    end
+`endif
   end
 
   function automatic logic is_known_reg(input logic [31:0] reg_offset);
