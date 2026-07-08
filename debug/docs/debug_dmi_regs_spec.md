@@ -3,7 +3,8 @@
 ## 1. Purpose
 
 `debug_dmi_regs` implements the first-stage RISC-V Debug Module register set
-required for hart discovery, halt/resume control, and basic abstract GPR access.
+required for hart discovery, halt/resume control, abstract GPR access, and
+halted-core abstract memory access.
 The target behavior is RISC-V External Debug Specification 0.13.x and eventual
 OpenOCD/GDB interoperability.
 
@@ -11,11 +12,12 @@ OpenOCD/GDB interoperability.
 
 | Address | Register | Access | Required behavior |
 | ---: | --- | --- | --- |
-| `0x04` | `data0` | R/W | One 32-bit abstract data register |
+| `0x04` | `data0` | R/W | 32-bit abstract data register 0, used as transfer data |
+| `0x05` | `data1` | R/W | 32-bit abstract data register 1, used as Access Memory address |
 | `0x10` | `dmcontrol` | R/W | DM activation, hart select, halt/resume, reset control |
 | `0x11` | `dmstatus` | R | Version/authentication and selected-hart state |
 | `0x12` | `hartinfo` | R | Zero: no hart-local data window or scratch registers |
-| `0x16` | `abstractcs` | R/W1C | One data register, executor busy, sticky `cmderr` |
+| `0x16` | `abstractcs` | R/W1C | Two data registers, executor busy, sticky `cmderr` |
 | `0x17` | `command` | R/W | Accepted command value and one-cycle executor pulse |
 
 Writes to defined read-only registers must succeed without changing state.
@@ -46,14 +48,14 @@ and have no side effect.
 
 ## 5. Abstract Command Requirements
 
-`abstractcs.datacount` is 1 and `progbufsize` is 0. A command write while the
+`abstractcs.datacount` is 2 and `progbufsize` is 0. A command write while the
 executor is idle records the command and pulses `command_valid_o` for one
-cycle. A command or data0 write while busy is ignored and sets sticky
+cycle. A command, data0, or data1 write while busy is ignored and sets sticky
 `cmderr=BUSY` if no earlier error exists.
 
 Executor errors set sticky `cmderr` only while it is zero. Software clears
 selected `cmderr` bits by writing ones to `abstractcs.cmderr`. Executor result
-writes update `data0` independently of DMI response backpressure.
+writes update `data0` or `data1` independently of DMI response backpressure.
 
 ## 6. DMI Transport Requirements
 

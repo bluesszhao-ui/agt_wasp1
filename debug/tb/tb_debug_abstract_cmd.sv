@@ -14,12 +14,15 @@ module tb_debug_abstract_cmd;
   logic        command_valid;
   logic [31:0] command;
   logic [31:0] data0;
+  logic [31:0] data1;
   logic [31:0] hart_dpc;
   logic        busy;
   logic        command_error_valid;
   logic [2:0]  command_error;
   logic        data0_we;
   logic [31:0] data0_wdata;
+  logic        data1_we;
+  logic [31:0] data1_wdata;
 
   // Mock debug_reg_access command and response channels.
   logic        reg_cmd_valid;
@@ -31,8 +34,20 @@ module tb_debug_abstract_cmd;
   logic        reg_rsp_ready;
   logic [31:0] reg_rsp_rdata;
   logic        reg_rsp_error;
+  logic        mem_cmd_valid;
+  logic        mem_cmd_ready;
+  logic        mem_cmd_write;
+  logic [31:0] mem_cmd_addr;
+  logic [1:0]  mem_cmd_size;
+  logic [31:0] mem_cmd_wdata;
+  logic [3:0]  mem_cmd_wstrb;
+  logic        mem_rsp_valid;
+  logic        mem_rsp_ready;
+  logic [31:0] mem_rsp_rdata;
+  logic        mem_rsp_error;
   logic        dcsr_step;
   logic        reg_flush;
+  logic        mem_flush;
 
   // Functional coverage counters summarized at PASS.
   int unsigned pass_count;
@@ -40,6 +55,8 @@ module tb_debug_abstract_cmd;
   int unsigned write_count;
   int unsigned csr_read_count;
   int unsigned csr_write_count;
+  int unsigned mem_read_count;
+  int unsigned mem_write_count;
   int unsigned noop_count;
   int unsigned unsupported_count;
   int unsigned halt_error_count;
@@ -59,12 +76,15 @@ module tb_debug_abstract_cmd;
     .command_valid_i(command_valid),
     .command_i(command),
     .data0_i(data0),
+    .data1_i(data1),
     .hart_dpc_i(hart_dpc),
     .busy_o(busy),
     .command_error_valid_o(command_error_valid),
     .command_error_o(command_error),
     .data0_we_o(data0_we),
     .data0_wdata_o(data0_wdata),
+    .data1_we_o(data1_we),
+    .data1_wdata_o(data1_wdata),
     .reg_cmd_valid_o(reg_cmd_valid),
     .reg_cmd_ready_i(reg_cmd_ready),
     .reg_cmd_write_o(reg_cmd_write),
@@ -74,8 +94,20 @@ module tb_debug_abstract_cmd;
     .reg_rsp_ready_o(reg_rsp_ready),
     .reg_rsp_rdata_i(reg_rsp_rdata),
     .reg_rsp_error_i(reg_rsp_error),
+    .mem_cmd_valid_o(mem_cmd_valid),
+    .mem_cmd_ready_i(mem_cmd_ready),
+    .mem_cmd_write_o(mem_cmd_write),
+    .mem_cmd_addr_o(mem_cmd_addr),
+    .mem_cmd_size_o(mem_cmd_size),
+    .mem_cmd_wdata_o(mem_cmd_wdata),
+    .mem_cmd_wstrb_o(mem_cmd_wstrb),
+    .mem_rsp_valid_i(mem_rsp_valid),
+    .mem_rsp_ready_o(mem_rsp_ready),
+    .mem_rsp_rdata_i(mem_rsp_rdata),
+    .mem_rsp_error_i(mem_rsp_error),
     .dcsr_step_o(dcsr_step),
-    .reg_flush_o(reg_flush)
+    .reg_flush_o(reg_flush),
+    .mem_flush_o(mem_flush)
   );
 
   // Project-default 100 MHz clock.
@@ -107,6 +139,22 @@ module tb_debug_abstract_cmd;
     end
   endfunction
 
+  function automatic logic [31:0] make_memory_command(
+    input logic [2:0] aamsize,
+    input logic postincrement,
+    input logic write_value
+  );
+    logic [31:0] value;
+    begin
+      value = '0;
+      value[31:24] = ABSTRACT_CMD_ACCESS_MEMORY;
+      value[22:20] = aamsize;
+      value[19] = postincrement;
+      value[16] = write_value;
+      make_memory_command = value;
+    end
+  endfunction
+
   // Advance one active edge and allow outputs to settle.
   task automatic step_clock;
     begin
@@ -123,20 +171,27 @@ module tb_debug_abstract_cmd;
       command_valid = 1'b0;
       command = '0;
       data0 = '0;
+      data1 = '0;
       hart_dpc = 32'h0000_0000;
       reg_cmd_ready = 1'b0;
       reg_rsp_valid = 1'b0;
       reg_rsp_rdata = '0;
       reg_rsp_error = 1'b0;
+      mem_cmd_ready = 1'b0;
+      mem_rsp_valid = 1'b0;
+      mem_rsp_rdata = '0;
+      mem_rsp_error = 1'b0;
     end
   endtask
 
   // Verify the externally visible idle contract.
   task automatic expect_idle(input string label);
     begin
-      if (busy || command_error_valid || data0_we || reg_cmd_valid || reg_rsp_ready) begin
-        $error("%s: busy=%0b err_valid=%0b data0_we=%0b reg_cmd=%0b reg_rsp_ready=%0b",
-               label, busy, command_error_valid, data0_we, reg_cmd_valid, reg_rsp_ready);
+      if (busy || command_error_valid || data0_we || data1_we ||
+          reg_cmd_valid || reg_rsp_ready || mem_cmd_valid || mem_rsp_ready) begin
+        $error("%s: idle mismatch busy=%0b err=%0b data0_we=%0b data1_we=%0b reg_cmd=%0b mem_cmd=%0b",
+               label, busy, command_error_valid, data0_we, data1_we,
+               reg_cmd_valid, mem_cmd_valid);
         $fatal(1);
       end
       pass_count++;
@@ -164,6 +219,22 @@ module tb_debug_abstract_cmd;
       @(negedge clk);
       command = command_value;
       data0 = data_value;
+      command_valid = 1'b1;
+      step_clock();
+      command_valid = 1'b0;
+    end
+  endtask
+
+  task automatic pulse_memory_command(
+    input logic [31:0] command_value,
+    input logic [31:0] data_value,
+    input logic [31:0] addr_value
+  );
+    begin
+      @(negedge clk);
+      command = command_value;
+      data0 = data_value;
+      data1 = addr_value;
       command_valid = 1'b1;
       step_clock();
       command_valid = 1'b0;
@@ -279,6 +350,106 @@ module tb_debug_abstract_cmd;
     end
   endtask
 
+  task automatic start_mem_transfer(
+    input logic        write_value,
+    input logic [2:0]  size_value,
+    input logic        postincrement,
+    input logic [31:0] addr_value,
+    input logic [31:0] data_value,
+    input logic [31:0] exp_wdata,
+    input logic [3:0]  exp_wstrb,
+    input string       label
+  );
+    logic [31:0] command_value;
+    begin
+      command_value = make_memory_command(size_value, postincrement, write_value);
+      pulse_memory_command(command_value, data_value, addr_value);
+      if (!busy || !mem_cmd_valid || (mem_cmd_write !== write_value) ||
+          (mem_cmd_addr !== addr_value) || (mem_cmd_wdata !== exp_wdata) ||
+          (mem_cmd_wstrb !== exp_wstrb) || reg_cmd_valid ||
+          command_error_valid || data0_we || data1_we) begin
+        $error("%s: decoded memory request mismatch", label);
+        $fatal(1);
+      end
+      if (write_value) mem_write_count++;
+      else mem_read_count++;
+      pass_count++;
+    end
+  endtask
+
+  task automatic accept_mem_command(input string label);
+    begin
+      @(negedge clk);
+      mem_cmd_ready = 1'b1;
+      step_clock();
+      mem_cmd_ready = 1'b0;
+      if (!busy || mem_cmd_valid || !mem_rsp_ready) begin
+        $error("%s: controller did not enter memory response wait", label);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
+  task automatic send_mem_response(
+    input logic [31:0] data_value,
+    input logic        error_value,
+    input logic        expected_write,
+    input logic        expected_postincrement,
+    input logic [31:0] expected_data0,
+    input logic [31:0] expected_data1,
+    input string       label
+  );
+    begin
+      @(negedge clk);
+      if (!mem_rsp_ready) begin
+        $error("%s: memory response unexpectedly not ready", label);
+        $fatal(1);
+      end
+      mem_rsp_valid = 1'b1;
+      mem_rsp_rdata = data_value;
+      mem_rsp_error = error_value;
+      step_clock();
+      mem_rsp_valid = 1'b0;
+
+      if (error_value) begin
+        if (!command_error_valid || (command_error != CMDERR_BUS) ||
+            data0_we || data1_we) begin
+          $error("%s: memory error mapping mismatch", label);
+          $fatal(1);
+        end
+        downstream_error_count++;
+      end else begin
+        if (command_error_valid) begin
+          $error("%s: unexpected memory command error", label);
+          $fatal(1);
+        end
+        if (!expected_write && (!data0_we || (data0_wdata !== expected_data0))) begin
+          $error("%s: memory read data0 mismatch got=0x%08x exp=0x%08x",
+                 label, data0_wdata, expected_data0);
+          $fatal(1);
+        end
+        if (expected_write && data0_we) begin
+          $error("%s: memory write should not update data0", label);
+          $fatal(1);
+        end
+        if (expected_postincrement) begin
+          if (!data1_we || (data1_wdata !== expected_data1)) begin
+            $error("%s: memory postincrement mismatch got=0x%08x exp=0x%08x",
+                   label, data1_wdata, expected_data1);
+            $fatal(1);
+          end
+        end else if (data1_we) begin
+          $error("%s: unexpected data1 update", label);
+          $fatal(1);
+        end
+      end
+      pass_count++;
+      step_clock();
+      expect_idle({label, " idle"});
+    end
+  endtask
+
   // Verify a complete supported read and write flow.
   task automatic check_normal_paths;
     begin
@@ -350,10 +521,6 @@ module tb_debug_abstract_cmd;
       expect_immediate_error(command_value, CMDERR_NOTSUP, "postincrement unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0, 16'h1003);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "postexec unsupported");
-      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h0300);
-      expect_immediate_error(command_value, CMDERR_NOTSUP, "CSR unsupported");
-      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_MISA);
-      expect_immediate_error(command_value, CMDERR_NOTSUP, "CSR write unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1020);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "non-GPR unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1004);
@@ -410,6 +577,30 @@ module tb_debug_abstract_cmd;
         $error("%s: DCSR write mismatch busy=%0b err=%0b data0_we=%0b reg_cmd=%0b rsp_ready=%0b step=%0b",
                label, busy, command_error_valid, data0_we, reg_cmd_valid,
                reg_rsp_ready, dcsr_step);
+        $fatal(1);
+      end
+      csr_write_count++;
+      pass_count++;
+      step_clock();
+      expect_idle({label, " idle"});
+    end
+  endtask
+
+  // Writes to optional/unimplemented CSRs complete as no-ops so OpenOCD does
+  // not disable all abstract CSR writes after probing trigger CSRs.
+  task automatic check_csr_write_noop(
+    input logic [15:0] csr_regno,
+    input string       label
+  );
+    logic [31:0] command_value;
+    begin
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, csr_regno);
+      pulse_command(command_value, 32'hFFFF_FFFF);
+      if (!busy || command_error_valid || data0_we || data1_we ||
+          reg_cmd_valid || reg_rsp_ready || mem_cmd_valid || mem_rsp_ready) begin
+        $error("%s: CSR no-op write mismatch busy=%0b err=%0b data0_we=%0b",
+               label, busy, command_error_valid, data0_we);
         $fatal(1);
       end
       csr_write_count++;
@@ -541,6 +732,42 @@ module tb_debug_abstract_cmd;
     end
   endtask
 
+  task automatic check_memory_paths;
+    begin
+      start_mem_transfer(1'b0, ABSTRACT_AAMSIZE_32, 1'b1,
+                         32'h2000_0100, 32'h0000_0000,
+                         32'h0000_0000, 4'b1111, "memory word read");
+      accept_mem_command("memory word read accepted");
+      send_mem_response(32'h89AB_CDEF, 1'b0, 1'b0, 1'b1,
+                        32'h89AB_CDEF, 32'h2000_0104,
+                        "memory word read complete");
+
+      start_mem_transfer(1'b1, ABSTRACT_AAMSIZE_8, 1'b0,
+                         32'h2000_0103, 32'h0000_005A,
+                         32'h5A00_0000, 4'b1000, "memory byte write");
+      accept_mem_command("memory byte write accepted");
+      send_mem_response(32'h0000_0000, 1'b0, 1'b1, 1'b0,
+                        32'h0000_0000, 32'h0000_0000,
+                        "memory byte write complete");
+
+      start_mem_transfer(1'b0, ABSTRACT_AAMSIZE_16, 1'b0,
+                         32'h2000_0102, 32'h0000_0000,
+                         32'h0000_0000, 4'b1100, "memory half read");
+      accept_mem_command("memory half read accepted");
+      send_mem_response(32'hCAFE_1234, 1'b0, 1'b0, 1'b0,
+                        32'h0000_CAFE, 32'h0000_0000,
+                        "memory half read complete");
+
+      start_mem_transfer(1'b0, ABSTRACT_AAMSIZE_32, 1'b0,
+                         32'hFFFF_FFFC, 32'h0000_0000,
+                         32'h0000_0000, 4'b1111, "memory bus error");
+      accept_mem_command("memory bus error accepted");
+      send_mem_response(32'h0000_0000, 1'b1, 1'b0, 1'b0,
+                        32'h0000_0000, 32'h0000_0000,
+                        "memory bus error complete");
+    end
+  endtask
+
   // Randomized valid GPR operations exercise timing and error combinations.
   task automatic check_random_commands(input int unsigned iterations);
     logic write_value;
@@ -585,6 +812,8 @@ module tb_debug_abstract_cmd;
     write_count = 0;
     csr_read_count = 0;
     csr_write_count = 0;
+    mem_read_count = 0;
+    mem_write_count = 0;
     noop_count = 0;
     unsupported_count = 0;
     halt_error_count = 0;
@@ -603,6 +832,8 @@ module tb_debug_abstract_cmd;
     check_normal_paths();
     $display("phase csr start=%0t", $time);
     check_csr_read(ABSTRACT_CSR_MISA, ABSTRACT_CSR_MISA_RV32I, "misa CSR read");
+    check_csr_read(ABSTRACT_CSR_MSTATUS, ABSTRACT_CSR_MSTATUS_RV32_M,
+                   "mstatus CSR read");
     check_csr_read(ABSTRACT_CSR_DCSR, ABSTRACT_CSR_DCSR_HALTED_M, "dcsr CSR read");
     hart_dpc = 32'h1000_0044;
     check_csr_read(ABSTRACT_CSR_DPC, 32'h1000_0044, "dpc CSR read");
@@ -614,6 +845,9 @@ module tb_debug_abstract_cmd;
     check_dcsr_write(ABSTRACT_CSR_DCSR_HALTED_M, 1'b0, "dcsr step clear");
     check_csr_read(ABSTRACT_CSR_DCSR, ABSTRACT_CSR_DCSR_HALTED_M,
                    "dcsr step clear read");
+    check_csr_write_noop(16'h07A0, "trigger CSR write no-op");
+    $display("phase memory start=%0t", $time);
+    check_memory_paths();
     $display("phase decode start=%0t", $time);
     check_decode_errors_and_noop();
     $display("phase abort start=%0t", $time);
@@ -625,11 +859,12 @@ module tb_debug_abstract_cmd;
     check_random_commands(20);
     $display("phase complete=%0t", $time);
 
-    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
-             pass_count, read_count, write_count, csr_read_count, csr_write_count, noop_count, unsupported_count,
-             halt_error_count, downstream_error_count, issue_hold_count,
-             wait_count, flush_count, busy_ignore_count, reset_abort_count,
-             random_count);
+    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d mem_read=%0d mem_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
+             pass_count, read_count, write_count, csr_read_count,
+             csr_write_count, mem_read_count, mem_write_count, noop_count,
+             unsupported_count, halt_error_count, downstream_error_count,
+             issue_hold_count, wait_count, flush_count, busy_ignore_count,
+             reset_abort_count, random_count);
     $display("tb_debug_abstract_cmd PASS");
     $finish;
   end

@@ -4,6 +4,7 @@ RTL_FILELIST := filelists/wasp1.f
 TB_WASP1_FILELIST := filelists/tb_wasp1.f
 WASP1_TOP := tb_wasp1
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
+GDB_OTP_HEX ?= dv/gdb/wasp1_debug_step_otp.hex
 OTP_PROGRAM_HEX ?= ../llvm_s1/build/smoke/otp_program_otp.hex
 DMA_COPY_HEX ?= ../llvm_s1/build/smoke/dma_copy_otp.hex
 DMA_IRQ_HEX ?= ../llvm_s1/build/smoke/dma_irq_otp.hex
@@ -153,7 +154,7 @@ sim-openocd-gdb-smoke: sim-rbb-build
 		--sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
 		--openocd-cfg dv/openocd/wasp1_remote_bitbang.cfg \
 		--gdb-script dv/gdb/wasp1_debug_smoke.gdb \
-		--otp-hex $(OTP_HEX) \
+		--otp-hex $(GDB_OTP_HEX) \
 		--rbb-port $(RBB_PORT) > logs/sim_openocd_gdb_smoke.log 2>&1
 	@cat logs/sim_openocd_gdb_smoke.log
 

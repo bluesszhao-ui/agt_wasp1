@@ -81,6 +81,10 @@ module tb_debug;
       core_debug.gpr_rsp_valid = 1'b0;
       core_debug.gpr_rsp_rdata = '0;
       core_debug.gpr_rsp_err = 1'b0;
+      core_debug.mem_req_ready = 1'b0;
+      core_debug.mem_rsp_valid = 1'b0;
+      core_debug.mem_rsp_rdata = '0;
+      core_debug.mem_rsp_err = 1'b0;
       hart_reset_event = 1'b0;
     end
   endtask
@@ -254,6 +258,7 @@ module tb_debug;
         $error("resume request did not retire after core running");
         $fatal(1);
       end
+      step_clock();
       dmi_read(DMI_ADDR_DMSTATUS, 32'h000F_0C82, 32'h000F_FFFF, "resumeack dmstatus");
       resume_count++;
       pass_count++;
@@ -273,7 +278,7 @@ module tb_debug;
       complete_gpr_access(1'b1, 5'd5, 32'hA5A5_1234, 32'h0000_0000, 1'b0,
                           "complete x5 write");
       wait_abstract_idle("x5 write idle");
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h0000_1F0F,
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_1F0F,
                "x5 write abstractcs clean");
       gpr_write_count++;
     end
@@ -352,6 +357,7 @@ module tb_debug;
       end
       core_debug.running = 1'b0;
       core_debug.halted = 1'b1;
+      step_clock();
       dmi_read(DMI_ADDR_DMSTATUS, 32'h000F_0382, 32'h000F_FFFF,
                "single-step halted resumeack dmstatus");
 
@@ -367,10 +373,10 @@ module tb_debug;
           3'd3, 1'b1, 1'b0, ABSTRACT_GPR_BASE + 16'd1);
       dmi_write(DMI_ADDR_COMMAND, bad_command, "unsupported aarsize command");
       repeat (3) step_clock();
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0201, 32'h0000_1F0F,
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0202, 32'h0000_1F0F,
                "unsupported command cmderr");
       dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0700, "clear cmderr");
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h0000_1F0F,
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_1F0F,
                "cmderr cleared");
       error_count++;
 

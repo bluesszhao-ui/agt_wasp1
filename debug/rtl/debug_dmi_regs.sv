@@ -15,6 +15,8 @@ module debug_dmi_regs (
   input  logic [2:0]        command_error_i,       // Executor error code written into abstractcs.cmderr.
   input  logic              data0_we_i,            // Executor writes a completed GPR result into data0.
   input  logic [31:0]       data0_wdata_i,         // Executor result data for data0.
+  input  logic              data1_we_i,            // Executor writes postincremented memory address into data1.
+  input  logic [31:0]       data1_wdata_i,         // Executor result data for data1.
   output logic              dmactive_o,            // Debug Module active state from dmcontrol.dmactive.
   output logic              ndmreset_o,            // Non-debug module reset request from dmcontrol.ndmreset.
   output logic              haltreq_o,             // Halt request for the implemented hart 0.
@@ -22,7 +24,8 @@ module debug_dmi_regs (
   output logic              ackhavereset_o,        // One-cycle pulse acknowledging the hart reset indication.
   output logic              command_valid_o,       // One-cycle pulse for an accepted abstract command write.
   output logic [31:0]       command_o,             // Most recently accepted abstract command word.
-  output logic [31:0]       data0_o                // Abstract data register shared with the command executor.
+  output logic [31:0]       data0_o,               // Abstract data register 0 shared with the executor.
+  output logic [31:0]       data1_o                // Abstract data register 1, used as Access Memory address.
 );
   import debug_dmi_pkg::*;
 
@@ -37,6 +40,7 @@ module debug_dmi_regs (
   // Abstract command state visible through command, abstractcs, and data0.
   logic [31:0] command_q;
   logic [31:0] data0_q;
+  logic [31:0] data1_q;
   logic [2:0]  cmderr_q;
 
   // A one-entry registered response makes DMI backpressure fully deterministic.
@@ -52,6 +56,8 @@ module debug_dmi_regs (
   logic [31:0] dmstatus_rdata;
   logic [31:0] abstractcs_rdata;
   logic [31:0] read_data;
+  logic        hart_halted_visible;
+  logic        hart_resumeack_visible;
 
   // The output requests are suppressed whenever the Debug Module is inactive
   // or software selected a hart number other than the implemented hart 0.
@@ -62,6 +68,9 @@ module debug_dmi_regs (
   assign resumereq_o = dmactive_q && selected_hart_exists && resumereq_q;
   assign command_o = command_q;
   assign data0_o = data0_q;
+  assign data1_o = data1_q;
+  assign hart_halted_visible = hart_halted_i && !resumereq_q;
+  assign hart_resumeack_visible = hart_resumeack_i && !resumereq_q;
 
   // The response slot can accept a request when empty or when its current
   // response is consumed on this edge, allowing bubble-free DMI transfers.
@@ -75,6 +84,7 @@ module debug_dmi_regs (
   always_comb begin
     unique case (dmi.req_addr)
       DMI_ADDR_DATA0,
+      DMI_ADDR_DATA1,
       DMI_ADDR_DMCONTROL,
       DMI_ADDR_DMSTATUS,
       DMI_ADDR_HARTINFO,
@@ -110,12 +120,12 @@ module debug_dmi_regs (
       if (selected_hart_exists) begin
         dmstatus_rdata[19] = hart_havereset_i;
         dmstatus_rdata[18] = hart_havereset_i;
-        dmstatus_rdata[17] = hart_resumeack_i;
-        dmstatus_rdata[16] = hart_resumeack_i;
+        dmstatus_rdata[17] = hart_resumeack_visible;
+        dmstatus_rdata[16] = hart_resumeack_visible;
         dmstatus_rdata[11] = hart_running_i;
         dmstatus_rdata[10] = hart_running_i;
-        dmstatus_rdata[9] = hart_halted_i;
-        dmstatus_rdata[8] = hart_halted_i;
+        dmstatus_rdata[9] = hart_halted_visible;
+        dmstatus_rdata[8] = hart_halted_visible;
       end else begin
         dmstatus_rdata[15] = 1'b1;
         dmstatus_rdata[14] = 1'b1;
@@ -129,7 +139,7 @@ module debug_dmi_regs (
     abstractcs_rdata = '0;
     abstractcs_rdata[12] = abstract_busy_i;
     abstractcs_rdata[10:8] = cmderr_q;
-    abstractcs_rdata[3:0] = 4'd1;
+    abstractcs_rdata[3:0] = 4'd2;
   end
 
   // Register read mux. hartinfo is zero because the initial hart integration
@@ -138,6 +148,7 @@ module debug_dmi_regs (
     read_data = '0;
     unique case (dmi.req_addr)
       DMI_ADDR_DATA0:      read_data = data0_q;
+      DMI_ADDR_DATA1:      read_data = data1_q;
       DMI_ADDR_DMCONTROL:  read_data = dmcontrol_rdata;
       DMI_ADDR_DMSTATUS:   read_data = dmstatus_rdata;
       DMI_ADDR_HARTINFO:   read_data = 32'h0000_0000;
@@ -159,6 +170,7 @@ module debug_dmi_regs (
       hartsel_q <= '0;
       command_q <= '0;
       data0_q <= '0;
+      data1_q <= '0;
       cmderr_q <= CMDERR_NONE;
       rsp_valid_q <= 1'b0;
       rsp_resp_q <= DMI_RESP_SUCCESS;
@@ -179,6 +191,9 @@ module debug_dmi_regs (
       // inactive DM rejects stale completion signals from a prior session.
       if (dmactive_q && data0_we_i) begin
         data0_q <= data0_wdata_i;
+      end
+      if (dmactive_q && data1_we_i) begin
+        data1_q <= data1_wdata_i;
       end
       if (dmactive_q && command_error_valid_i && (command_error_i != CMDERR_NONE) &&
           (cmderr_q == CMDERR_NONE)) begin
@@ -207,6 +222,7 @@ module debug_dmi_regs (
                 hartsel_q <= '0;
                 command_q <= '0;
                 data0_q <= '0;
+                data1_q <= '0;
                 cmderr_q <= CMDERR_NONE;
               end else if (!dmactive_q) begin
                 // v0.13 activation writes ignore all fields except dmactive.
@@ -232,6 +248,14 @@ module debug_dmi_regs (
                 if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
               end else if (dmactive_q) begin
                 data0_q <= dmi.req_data;
+              end
+            end
+
+            DMI_ADDR_DATA1: begin
+              if (dmactive_q && abstract_busy_i) begin
+                if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
+              end else if (dmactive_q) begin
+                data1_q <= dmi.req_data;
               end
             end
 

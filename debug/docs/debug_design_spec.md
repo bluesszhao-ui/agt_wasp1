@@ -13,7 +13,7 @@ debug_reg_access
 
 The wrapper adds no new architectural register state. Its local logic consists
 of explicit channel wiring, top-level output assignment, and an internal
-GPR-only `debug_if` instance used to satisfy leaf modport ownership.
+abstract-access `debug_if` instance used to satisfy leaf modport ownership.
 
 ## 2. Block Diagram
 

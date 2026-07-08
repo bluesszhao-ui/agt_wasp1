@@ -5,9 +5,10 @@
 `debug` is the stage-1 single-hart Debug Module integration boundary. It targets
 RISC-V External Debug Specification 0.13.x behavior sufficient for hart
 discovery, halt/resume control, and RV32 integer GPR abstract access.
-It also exposes the minimal `misa`, `dcsr`, and core-captured `dpc` abstract
-CSR probes required for OpenOCD/GDB discovery, register-packet reads, and
-single-step setup.
+It also exposes physical Access Memory through the halted core plus the
+`misa`, `mstatus`, `dcsr`, and core-captured `dpc` abstract CSR probes required
+for OpenOCD/GDB discovery, register-packet reads, memory disassembly around PC,
+and native `stepi` setup.
 
 The JTAG TAP/DTM transport is integrated with this Debug Module by the
 `debug_jtag` wrapper. This module intentionally remains the ready/valid DMI
@@ -19,7 +20,7 @@ Debug Module register/control boundary.
 | --- | --- | --- |
 | `clk_i`, `rst_ni` | input | Shared Debug Module clock and active-low reset |
 | `debug_dmi_if.dm dmi` | target | DMI request/response register access channel |
-| `debug_if.dm core_debug` | initiator/control | Core halt/resume and halted-core GPR access channel |
+| `debug_if.dm core_debug` | initiator/control | Core halt/resume plus halted-core GPR and memory access channel |
 | `hart_reset_event_i` | input | One-cycle hart reset observation for sticky `dmstatus.havereset` |
 | `dmactive_o` | output | Mirrors active Debug Module state |
 | `ndmreset_o` | output | Non-debug reset request from `dmcontrol.ndmreset` |
@@ -31,11 +32,12 @@ Debug Module register/control boundary.
 
 | Function | Requirement |
 | --- | --- |
-| DMI registers | Implement `data0`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, and `command` |
+| DMI registers | Implement `data0`, `data1`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, and `command` |
 | Hart control | Convert `haltreq/resumereq` register fields into core Debug Mode requests |
 | Hart status | Report halted, running, resumeack, havereset, and nonexistent hart status |
-| Abstract commands | Support RV32 integer Access Register commands for x0-x31, read-only `misa`, core-captured `dpc`, and `dcsr.step` read/write |
+| Abstract commands | Support RV32 integer Access Register commands for x0-x31, OpenOCD CSR probes, and physical Access Memory byte/half/word commands |
 | GPR transport | Sequence one core GPR request and one response per abstract transfer |
+| Memory transport | Sequence one halted-core memory request and one response per Access Memory command |
 | Single-step | Convert `dcsr.step=1` plus `dmcontrol.resumereq` into `core_debug.step_req` |
 | Error reporting | Preserve leaf-module `cmderr` mapping and DMI `FAILED` response behavior |
 
@@ -45,9 +47,8 @@ The following are intentionally outside this module:
 
 ```text
 program buffer
-abstract memory access
 debug ROM
-general CSR access beyond `misa`, `dcsr.step`, and `dpc`
+architectural CSR side effects beyond `dcsr.step`
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 

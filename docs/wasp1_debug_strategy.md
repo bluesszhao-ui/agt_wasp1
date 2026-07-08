@@ -29,8 +29,9 @@ debug
 | ---: | --- |
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
 | 2 | abstract command, DPC readback, DCSR.step single-step |
-| 3 | system bus or program buffer memory access, breakpoints, robust GDB workflow |
-| 4 | FT2232H external debugger hardware, OpenOCD FTDI config, FPGA/board bring-up |
+| 3 | physical Access Memory through halted core and native GDB `stepi` smoke |
+| 4 | breakpoints, longer debugger stress, optional system bus or program-buffer memory access |
+| 5 | FT2232H external debugger hardware, OpenOCD FTDI config, FPGA/board bring-up |
 
 ## 4. Core Interaction
 

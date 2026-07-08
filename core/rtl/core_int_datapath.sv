@@ -141,6 +141,11 @@ module core_int_datapath (
   logic        lsu_active_fault;  // LSU fault qualified by a load/store op.
   logic        lsu_mem_op;        // Current EX slot is an aligned LSU candidate.
   logic        lsu_req_valid_raw; // LSU helper request before outstanding gating.
+  logic [31:0] lsu_req_addr;      // LSU helper byte address before debug muxing.
+  logic        lsu_req_write;     // LSU helper write qualifier before debug muxing.
+  logic [1:0]  lsu_req_size;      // LSU helper size before debug muxing.
+  logic [31:0] lsu_req_wdata;     // LSU helper write data before debug muxing.
+  logic [3:0]  lsu_req_wstrb;     // LSU helper byte strobes before debug muxing.
   logic        lsu_req_outstanding_q;// Data request accepted, waiting response.
   logic        lsu_req_fire;      // Data request handshake completed.
   logic        lsu_rsp_fire;      // Data response handshake completed.
@@ -194,7 +199,15 @@ module core_int_datapath (
   logic        debug_gpr_rsp_valid_q;// Registered GPR response valid.
   logic [31:0] debug_gpr_rsp_rdata_q;// Registered GPR read response payload.
   logic        debug_gpr_rsp_err_q; // Registered GPR response error.
+  logic        debug_mem_req_fire;  // Halted debug memory request accepted by dmem.
+  logic        debug_mem_rsp_fire;  // Dmem response belongs to debug memory request.
+  logic        debug_mem_req_active;// Debug memory channel currently drives dmem.
+  logic        debug_mem_rsp_valid_q;// Registered debug memory response valid.
+  logic [31:0] debug_mem_rsp_rdata_q;// Registered debug memory response payload.
+  logic        debug_mem_rsp_err_q; // Registered debug memory response error.
+  logic        debug_mem_req_outstanding_q;// Debug memory request waits for dmem rsp.
   logic        debug_busy;         // Debug GPR response is pending or being created.
+  logic        debug_resume_redirect;// Resume/step redirects frontend to captured DPC.
   logic [31:0] debug_next_pc_q;    // Resume PC candidate updated by accepted fetches/retire.
   logic [31:0] debug_dpc_q;        // DPC value captured while the hart is halted.
   logic [31:0] debug_retire_next_pc;// Next PC implied by the retiring instruction.
@@ -205,9 +218,12 @@ module core_int_datapath (
 
   assign lsu_mem_op = ex_valid && (dec_load || dec_store) &&
                       !ex_fetch_fault && !dec_illegal;
-  assign lsu_req_fire = dmem_req_valid_o && dmem_req_ready_i;
-  assign dmem_rsp_ready_o = lsu_req_outstanding_q || lsu_req_fire;
-  assign lsu_rsp_fire = dmem_rsp_valid_i && dmem_rsp_ready_o;
+  assign lsu_req_fire = lsu_req_valid_raw && !lsu_req_outstanding_q &&
+                        !debug_mem_req_active && dmem_req_ready_i;
+  assign dmem_rsp_ready_o = lsu_req_outstanding_q || lsu_req_fire ||
+                            debug_mem_req_outstanding_q || debug_mem_req_fire;
+  assign lsu_rsp_fire = dmem_rsp_valid_i &&
+                        (lsu_req_outstanding_q || lsu_req_fire);
   assign lsu_complete = !lsu_mem_op || lsu_misaligned || lsu_rsp_fire;
   assign lsu_wait_stall = lsu_mem_op && !lsu_misaligned && !lsu_rsp_fire;
   assign retire_valid = ex_valid && lsu_complete;
@@ -216,7 +232,18 @@ module core_int_datapath (
                               core_debug.gpr_req_ready;
   assign debug_gpr_write_fire = debug_gpr_req_fire &&
                                 core_debug.gpr_req_write;
-  assign debug_busy = debug_gpr_rsp_valid_q || debug_gpr_req_fire;
+  assign debug_mem_req_active = debug_halted && core_debug.mem_req_valid &&
+                                !debug_mem_rsp_valid_q &&
+                                !debug_mem_req_outstanding_q;
+  assign debug_mem_req_fire = debug_mem_req_active && dmem_req_ready_i;
+  assign debug_mem_rsp_fire = dmem_rsp_valid_i &&
+                              (debug_mem_req_outstanding_q ||
+                               debug_mem_req_fire);
+  assign debug_busy = debug_gpr_rsp_valid_q || debug_gpr_req_fire ||
+                      debug_mem_rsp_valid_q || debug_mem_req_active ||
+                      debug_mem_req_outstanding_q;
+  assign debug_resume_redirect = debug_halted && core_debug.resume_req &&
+                                 !core_debug.halt_req && !debug_busy;
   assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall ||
                             debug_stop_fetch;
   assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall ||
@@ -246,6 +273,10 @@ module core_int_datapath (
   assign core_debug.gpr_rsp_valid = debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_rdata = debug_gpr_rsp_rdata_q;
   assign core_debug.gpr_rsp_err = debug_gpr_rsp_err_q;
+  assign core_debug.mem_req_ready = debug_mem_req_active && dmem_req_ready_i;
+  assign core_debug.mem_rsp_valid = debug_mem_rsp_valid_q;
+  assign core_debug.mem_rsp_rdata = debug_mem_rsp_rdata_q;
+  assign core_debug.mem_rsp_err = debug_mem_rsp_err_q;
   assign regfile_raddr1 = debug_halted ? core_debug.gpr_req_addr : dec_rs1;
   assign regfile_we = debug_gpr_write_fire ? 1'b1 : rf_we;
   assign regfile_waddr = debug_gpr_write_fire ? core_debug.gpr_req_addr :
@@ -274,8 +305,35 @@ module core_int_datapath (
         debug_next_pc_q <= debug_retire_next_pc;
       end
 
-      if (debug_halted) begin
+      // Capture DPC both while halted and on the edge that enters Debug Mode.
+      // OpenOCD may read DPC immediately after dmstatus.allhalted becomes set.
+      if (debug_halted || (debug_stop_fetch && debug_pipe_idle && !debug_busy)) begin
         debug_dpc_q <= debug_next_pc_q;
+      end
+    end
+  end
+
+  // The halted-memory debug channel returns one registered response per
+  // accepted request. Requests reuse the normal D-cache/core AHB path only
+  // while the pipeline is drained and Debug Mode is active.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      debug_mem_req_outstanding_q <= 1'b0;
+      debug_mem_rsp_valid_q <= 1'b0;
+      debug_mem_rsp_rdata_q <= 32'h0000_0000;
+      debug_mem_rsp_err_q <= 1'b0;
+    end else begin
+      if (debug_mem_rsp_valid_q && core_debug.mem_rsp_ready) begin
+        debug_mem_rsp_valid_q <= 1'b0;
+      end
+
+      if (debug_mem_rsp_fire) begin
+        debug_mem_req_outstanding_q <= 1'b0;
+        debug_mem_rsp_valid_q <= 1'b1;
+        debug_mem_rsp_rdata_q <= dmem_rsp_rdata_i;
+        debug_mem_rsp_err_q <= dmem_rsp_err_i;
+      end else if (debug_mem_req_fire) begin
+        debug_mem_req_outstanding_q <= 1'b1;
       end
     end
   end
@@ -478,17 +536,28 @@ module core_int_datapath (
     .rsp_rdata_i(dmem_rsp_rdata_i),
     .rsp_err_i(dmem_rsp_err_i && lsu_rsp_fire),
     .req_valid_o(lsu_req_valid_raw),
-    .req_addr_o(dmem_req_addr_o),
-    .req_write_o(dmem_req_write_o),
-    .req_size_o(dmem_req_size_o),
-    .req_wdata_o(dmem_req_wdata_o),
-    .req_wstrb_o(dmem_req_wstrb_o),
+    .req_addr_o(lsu_req_addr),
+    .req_write_o(lsu_req_write),
+    .req_size_o(lsu_req_size),
+    .req_wdata_o(lsu_req_wdata),
+    .req_wstrb_o(lsu_req_wstrb),
     .load_data_o(lsu_load_data),
     .misaligned_o(lsu_misaligned),
     .fault_o(lsu_fault)
   );
 
-  assign dmem_req_valid_o = lsu_req_valid_raw && !lsu_req_outstanding_q;
+  assign dmem_req_valid_o = debug_mem_req_active ||
+                            (lsu_req_valid_raw && !lsu_req_outstanding_q);
+  assign dmem_req_addr_o = debug_mem_req_active ? core_debug.mem_req_addr :
+                                                  lsu_req_addr;
+  assign dmem_req_write_o = debug_mem_req_active ? core_debug.mem_req_write :
+                                                   lsu_req_write;
+  assign dmem_req_size_o = debug_mem_req_active ? core_debug.mem_req_size :
+                                                  lsu_req_size;
+  assign dmem_req_wdata_o = debug_mem_req_active ? core_debug.mem_req_wdata :
+                                                   lsu_req_wdata;
+  assign dmem_req_wstrb_o = debug_mem_req_active ? core_debug.mem_req_wstrb :
+                                                   lsu_req_wstrb;
 
   assign csr_wdata = dec_csr_cmd[2] ? dec_imm : rs1_data;
 
@@ -555,8 +624,10 @@ module core_int_datapath (
   assign lsu_active_fault = lsu_mem_op && lsu_fault;
   assign redirect_valid = retire_valid && branch_taken && !ex_fetch_fault &&
                           !dec_illegal && !lsu_active_fault;
-  assign pipe_redirect_valid = trap_redirect || redirect_valid;
-  assign pipe_redirect_pc = trap_redirect ? trap_redirect_pc : branch_target;
+  assign pipe_redirect_valid = trap_redirect || redirect_valid ||
+                               debug_resume_redirect;
+  assign pipe_redirect_pc = trap_redirect ? trap_redirect_pc :
+                            (redirect_valid ? branch_target : debug_dpc_q);
 
   // Select writeback source for the instruction classes integrated in this
   // milestone. Unsupported classes are allowed through decode for observability

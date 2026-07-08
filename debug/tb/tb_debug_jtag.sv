@@ -126,6 +126,10 @@ module tb_debug_jtag;
       core_debug.gpr_rsp_valid = 1'b0;
       core_debug.gpr_rsp_rdata = '0;
       core_debug.gpr_rsp_err = 1'b0;
+      core_debug.mem_req_ready = 1'b0;
+      core_debug.mem_rsp_valid = 1'b0;
+      core_debug.mem_rsp_rdata = '0;
+      core_debug.mem_rsp_err = 1'b0;
       hart_reset_event = 1'b0;
     end
   endtask
@@ -396,7 +400,7 @@ module tb_debug_jtag;
                                        ABSTRACT_GPR_BASE + 16'd5),
                    "abstract GPR write x5 over JTAG");
     complete_gpr_access(1'b1, 5'd5, 32'h1357_2468, 32'h0, 1'b0, "JTAG GPR write");
-    jtag_dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h0000_1F0F,
+    jtag_dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_1F0F,
                   "abstractcs clean after JTAG write");
     gpr_write_count++;
 

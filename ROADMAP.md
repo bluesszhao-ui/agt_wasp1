@@ -76,7 +76,7 @@ PASS       Current verification target passes
 ## Near-Term Plan
 
 ```text
-1. Extend debug beyond smoke: abstract memory access and Debug Module step hardening for native GDB `stepi`, then breakpoints
+1. Extend debug beyond native GDB `stepi`: breakpoints, longer debugger stress, and optional program-buffer/SBA support
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 3. Add longer software stress regressions
 ```

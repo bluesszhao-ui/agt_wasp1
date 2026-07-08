@@ -109,7 +109,7 @@ The debug implementation is staged:
 | --- | --- |
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
 | 2 | abstract command, DPC readback, DCSR.step single-step |
-| 3 | memory access, progbuf, breakpoints, full GDB flow validation |
+| 3 | halted-core Access Memory, native GDB `stepi`, breakpoint planning |
 
 ## 7. Design Flow
 

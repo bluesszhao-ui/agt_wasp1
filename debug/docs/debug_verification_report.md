@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-07-03 |
+| Date | 2026-07-07 |
 | Tool | Verilator 5.046 |
 | Generic lint | PASS: `make -C debug lint` |
 | IC lint | PASS: `make -C debug lint-ic` |
@@ -65,7 +65,7 @@ debug_jtag_verification_report.md
 
 ## 5. Residual Scope
 
-OpenOCD/GDB end-to-end smoke is covered by the wasp1 top-level verification
-report. Program buffer, abstract memory access, debug ROM, general
-CSR access beyond the debugger probe set, and multi-hart behavior beyond
-nonexistent-hart reporting remain future work.
+OpenOCD/GDB end-to-end smoke, including native GDB `stepi` over remote-bitbang,
+is covered by the wasp1 top-level verification report. Program buffer, System
+Bus Access, debug ROM, architectural CSR side effects beyond debugger probes,
+and multi-hart behavior beyond nonexistent-hart reporting remain future work.

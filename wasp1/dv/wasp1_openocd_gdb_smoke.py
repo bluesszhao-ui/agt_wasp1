@@ -173,6 +173,8 @@ def main() -> int:
             raise AssertionError("OpenOCD reported an error")
         if "Error in sourced command file" in gdb_text or "remote failure" in gdb_text:
             raise AssertionError("GDB reported a command or remote failure")
+        if "wasp1_gdb_stepi_pass" not in gdb_text:
+            raise AssertionError("GDB did not complete native stepi")
         if "Inferior 1" not in gdb_text and "detached" not in gdb_text.lower():
             raise AssertionError("GDB did not detach cleanly")
     finally:

@@ -102,16 +102,14 @@ registers, checks PC visibility, detaches, and exits.
 ## 6. Current Limitation
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
-are verified. The current debug implementation is still stage-1: GDB can
-connect, halt, read GPRs and PC, and detach.
+are verified. The current debug implementation can connect, halt, read GPRs and
+PC, disassemble through Access Memory, execute native `stepi`, and detach.
 
-Native GDB `stepi` is intentionally not claimed yet. OpenOCD/GDB attempts to
-read target memory around the current PC before completing that command, and
-wasp1 does not yet implement program buffer execution, System Bus Access, or
-abstract memory access. OpenOCD monitor-level stepping also remains outside the
-external process smoke until the remaining resume/step interactions are hardened
-at the Debug Module boundary. Those features remain the next debug milestones
-along with breakpoints.
+Native GDB `stepi` is now part of the automated process smoke. The checked
+script reads the current PC, disassembles the instruction through physical
+Access Memory, executes `stepi`, rereads PC, and fails if PC did not change.
+Program buffer execution, System Bus Access, and breakpoint workflows remain
+later debug milestones.
 
 Observed OpenOCD probe:
 

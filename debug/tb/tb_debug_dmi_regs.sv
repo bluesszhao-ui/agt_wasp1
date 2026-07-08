@@ -23,6 +23,8 @@ module tb_debug_dmi_regs;
   logic [2:0]  command_error;
   logic        data0_we;
   logic [31:0] data0_wdata;
+  logic        data1_we;
+  logic [31:0] data1_wdata;
 
   // Debug Module control and abstract-command outputs checked by the scoreboard.
   logic        dmactive;
@@ -33,6 +35,7 @@ module tb_debug_dmi_regs;
   logic        command_valid;
   logic [31:0] command;
   logic [31:0] data0;
+  logic [31:0] data1;
 
   // Explicit coverage counters document which behavior classes were observed.
   int unsigned pass_count;
@@ -61,6 +64,8 @@ module tb_debug_dmi_regs;
     .command_error_i(command_error),
     .data0_we_i(data0_we),
     .data0_wdata_i(data0_wdata),
+    .data1_we_i(data1_we),
+    .data1_wdata_i(data1_wdata),
     .dmactive_o(dmactive),
     .ndmreset_o(ndmreset),
     .haltreq_o(haltreq),
@@ -68,7 +73,8 @@ module tb_debug_dmi_regs;
     .ackhavereset_o(ackhavereset),
     .command_valid_o(command_valid),
     .command_o(command),
-    .data0_o(data0)
+    .data0_o(data0),
+    .data1_o(data1)
   );
 
   // The project-wide verification clock is 100 MHz.
@@ -97,6 +103,8 @@ module tb_debug_dmi_regs;
       command_error = CMDERR_NONE;
       data0_we = 1'b0;
       data0_wdata = '0;
+      data1_we = 1'b0;
+      data1_wdata = '0;
     end
   endtask
 
@@ -115,7 +123,8 @@ module tb_debug_dmi_regs;
       @(posedge clk);
       #1ns;
       if (dmactive || ndmreset || haltreq || resumereq || command_valid ||
-          ackhavereset || (command !== '0) || (data0 !== '0) || dmi.rsp_valid) begin
+          ackhavereset || (command !== '0) || (data0 !== '0) ||
+          (data1 !== '0) || dmi.rsp_valid) begin
         $error("reset state mismatch");
         $fatal(1);
       end
@@ -270,9 +279,11 @@ module tb_debug_dmi_regs;
     int unsigned before_command;
     begin
       dmi_read(DMI_ADDR_HARTINFO, 32'h0000_0000, 32'hFFFF_FFFF, "hartinfo minimal image");
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h1F00_1F0F, "abstractcs reset image");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h1F00_1F0F, "abstractcs reset image");
       dmi_write(DMI_ADDR_DATA0, 32'h1234_5678, "data0 dmi write");
       dmi_read(DMI_ADDR_DATA0, 32'h1234_5678, 32'hFFFF_FFFF, "data0 dmi read");
+      dmi_write(DMI_ADDR_DATA1, 32'h2000_0010, "data1 dmi write");
+      dmi_read(DMI_ADDR_DATA1, 32'h2000_0010, 32'hFFFF_FFFF, "data1 dmi read");
 
       data0_we = 1'b1;
       data0_wdata = 32'hCAFE_BABE;
@@ -280,20 +291,28 @@ module tb_debug_dmi_regs;
       #1ns;
       data0_we = 1'b0;
       dmi_read(DMI_ADDR_DATA0, 32'hCAFE_BABE, 32'hFFFF_FFFF, "data0 executor update");
+      data1_we = 1'b1;
+      data1_wdata = 32'h2000_0014;
+      @(posedge clk);
+      #1ns;
+      data1_we = 1'b0;
+      dmi_read(DMI_ADDR_DATA1, 32'h2000_0014, 32'hFFFF_FFFF, "data1 executor update");
 
       abstract_busy = 1'b1;
       dmi_write(DMI_ADDR_DATA0, 32'hDEAD_BEEF, "data0 ignored while busy");
+      dmi_write(DMI_ADDR_DATA1, 32'hDEAD_BEEF, "data1 ignored while busy");
       dmi_read(DMI_ADDR_DATA0, 32'hCAFE_BABE, 32'hFFFF_FFFF, "busy data0 preserved");
+      dmi_read(DMI_ADDR_DATA1, 32'h2000_0014, 32'hFFFF_FFFF, "busy data1 preserved");
       before_command = command_pulse_count;
       dmi_write(DMI_ADDR_COMMAND, 32'h0022_1001, "command rejected while busy");
       if (command_pulse_count != before_command) begin
         $error("busy command generated command pulse");
         $fatal(1);
       end
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_1101, 32'h0000_1F0F, "busy cmderr");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_1102, 32'h0000_1F0F, "busy cmderr");
       dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0100, "clear busy cmderr");
       abstract_busy = 1'b0;
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h0000_1F0F, "cmderr cleared");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_1F0F, "cmderr cleared");
 
       before_command = command_pulse_count;
       dmi_write(DMI_ADDR_COMMAND, 32'h0022_1001, "accepted abstract command");
@@ -307,7 +326,7 @@ module tb_debug_dmi_regs;
       @(posedge clk);
       #1ns;
       command_error_valid = 1'b0;
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0201, 32'h0000_070F, "executor cmderr");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0202, 32'h0000_070F, "executor cmderr");
       dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0200, "clear executor cmderr");
       busy_count += 2;
       pulse_count++;
@@ -399,25 +418,29 @@ module tb_debug_dmi_regs;
   task automatic check_dmactive_clear;
     begin
       dmi_write(DMI_ADDR_DMCONTROL, 32'h0000_0000, "clear dmactive");
-      if (dmactive || ndmreset || haltreq || resumereq || (command !== '0) || (data0 !== '0)) begin
+      if (dmactive || ndmreset || haltreq || resumereq || (command !== '0) ||
+          (data0 !== '0) || (data1 !== '0)) begin
         $error("dmactive clear did not reset Debug Module state");
         $fatal(1);
       end
       data0_we = 1'b1;
       data0_wdata = 32'hFFFF_FFFF;
+      data1_we = 1'b1;
+      data1_wdata = 32'hFFFF_FFFF;
       command_error_valid = 1'b1;
       command_error = CMDERR_OTHER;
       @(posedge clk);
       #1ns;
       data0_we = 1'b0;
+      data1_we = 1'b0;
       command_error_valid = 1'b0;
-      if (data0 !== '0) begin
+      if ((data0 !== '0) || (data1 !== '0)) begin
         $error("inactive DM accepted a stale executor data write");
         $fatal(1);
       end
       dmi_read(DMI_ADDR_DMCONTROL, 32'h0000_0000, 32'hFFFF_FFFF, "inactive dmcontrol");
       dmi_read(DMI_ADDR_DMSTATUS, 32'h0000_0082, 32'h000F_FFFF, "inactive dmstatus identity");
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0001, 32'h0000_070F, "inactive executor error ignored");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_070F, "inactive executor error ignored");
       pass_count++;
     end
   endtask

@@ -101,10 +101,8 @@ wasp1_openocd_gdb_smoke PASS
 
 This is an integration smoke test, not a full system software test. The
 OpenOCD/GDB process path is now automated and verified for connect, halt,
-register read, PC read, and detach over remote-bitbang JTAG. Native GDB
-`stepi` still requires abstract memory, System Bus Access, or program buffer
-support, and monitor-level external stepping still needs more Debug Module
-resume/step hardening, so neither is a claimed top-level process pass item yet.
+register read, PC read, PC disassembly through Access Memory, native GDB
+`stepi` with PC-change assertion, and detach over remote-bitbang JTAG.
 The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
@@ -116,5 +114,4 @@ The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
 interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes richer debug
-operations such as breakpoints and abstract memory access, plus longer software
-stress regressions.
+operations such as breakpoints and longer debugger/software stress regressions.

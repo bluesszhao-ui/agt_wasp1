@@ -27,6 +27,21 @@ interface debug_if #(
   logic [XLEN-1:0] gpr_rsp_rdata;  // Read result; zero/ignored for writes.
   logic            gpr_rsp_err;    // Core rejected or faulted the GPR operation.
 
+  // Ready/valid memory request from the Debug Module through the halted core.
+  logic            mem_req_valid;  // Request fields are valid and held until ready.
+  logic            mem_req_ready;  // Halted core can issue the memory request.
+  logic            mem_req_write;  // One selects write; zero selects read.
+  logic [XLEN-1:0] mem_req_addr;   // Byte address for the debug memory transfer.
+  logic [1:0]      mem_req_size;   // Byte/halfword/word size using wasp1 mem_size_e.
+  logic [XLEN-1:0] mem_req_wdata;  // Write payload already aligned to byte lanes.
+  logic [3:0]      mem_req_wstrb;  // Byte enables for write transfers.
+
+  // Ready/valid memory response from the halted core back to the Debug Module.
+  logic            mem_rsp_valid;  // Memory response data/error are valid until ready.
+  logic            mem_rsp_ready;  // Debug Module can consume the memory response.
+  logic [XLEN-1:0] mem_rsp_rdata;  // Raw 32-bit memory response data.
+  logic            mem_rsp_err;    // Memory path reported an access/bus error.
+
   // Hart-control-only DM view for the independently owned halt controller.
   modport dm_ctrl (
     input  clk,
@@ -39,7 +54,7 @@ interface debug_if #(
     output step_req
   );
 
-  // GPR-only DM view prevents register-access logic from driving hart control.
+  // Abstract-access DM view prevents command logic from driving hart control.
   modport dm_gpr (
     input  clk,
     input  rst_n,
@@ -47,11 +62,22 @@ interface debug_if #(
     input  gpr_rsp_valid,
     input  gpr_rsp_rdata,
     input  gpr_rsp_err,
+    input  mem_req_ready,
+    input  mem_rsp_valid,
+    input  mem_rsp_rdata,
+    input  mem_rsp_err,
     output gpr_req_valid,
     output gpr_req_write,
     output gpr_req_addr,
     output gpr_req_wdata,
-    output gpr_rsp_ready
+    output gpr_rsp_ready,
+    output mem_req_valid,
+    output mem_req_write,
+    output mem_req_addr,
+    output mem_req_size,
+    output mem_req_wdata,
+    output mem_req_wstrb,
+    output mem_rsp_ready
   );
 
   modport dm (
@@ -64,6 +90,10 @@ interface debug_if #(
     input  gpr_rsp_valid,
     input  gpr_rsp_rdata,
     input  gpr_rsp_err,
+    input  mem_req_ready,
+    input  mem_rsp_valid,
+    input  mem_rsp_rdata,
+    input  mem_rsp_err,
     output halt_req,
     output resume_req,
     output step_req,
@@ -71,7 +101,14 @@ interface debug_if #(
     output gpr_req_write,
     output gpr_req_addr,
     output gpr_req_wdata,
-    output gpr_rsp_ready
+    output gpr_rsp_ready,
+    output mem_req_valid,
+    output mem_req_write,
+    output mem_req_addr,
+    output mem_req_size,
+    output mem_req_wdata,
+    output mem_req_wstrb,
+    output mem_rsp_ready
   );
 
   modport core (
@@ -85,13 +122,24 @@ interface debug_if #(
     input  gpr_req_addr,
     input  gpr_req_wdata,
     input  gpr_rsp_ready,
+    input  mem_req_valid,
+    input  mem_req_write,
+    input  mem_req_addr,
+    input  mem_req_size,
+    input  mem_req_wdata,
+    input  mem_req_wstrb,
+    input  mem_rsp_ready,
     output halted,
     output running,
     output dpc,
     output gpr_req_ready,
     output gpr_rsp_valid,
     output gpr_rsp_rdata,
-    output gpr_rsp_err
+    output gpr_rsp_err,
+    output mem_req_ready,
+    output mem_rsp_valid,
+    output mem_rsp_rdata,
+    output mem_rsp_err
   );
 
   modport monitor (
@@ -111,6 +159,17 @@ interface debug_if #(
     input gpr_rsp_valid,
     input gpr_rsp_ready,
     input gpr_rsp_rdata,
-    input gpr_rsp_err
+    input gpr_rsp_err,
+    input mem_req_valid,
+    input mem_req_ready,
+    input mem_req_write,
+    input mem_req_addr,
+    input mem_req_size,
+    input mem_req_wdata,
+    input mem_req_wstrb,
+    input mem_rsp_valid,
+    input mem_rsp_ready,
+    input mem_rsp_rdata,
+    input mem_rsp_err
   );
 endinterface
