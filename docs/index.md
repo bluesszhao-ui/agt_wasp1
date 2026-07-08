@@ -22,8 +22,10 @@
 | `wasp1_otp_boot_strategy.md` | OTP boot and programming model |
 | `wasp1_llvm_s1_plan.md` | LLVM/BSP/toolchain plan and stage-1 BSP status |
 | `../ftdi_debugger/docs/ftdi_debugger_spec.md` | FT2232H external debugger requirements |
+| `../ftdi_debugger/docs/ftdi_debugger_pinout.md` | FTDI debugger stage-1 pinout and schematic constraints |
 | `../ftdi_debugger/docs/ftdi_debugger_design_plan.md` | FTDI debugger hardware design plan |
 | `../ftdi_debugger/docs/ftdi_debugger_verification_plan.md` | FTDI debugger board bring-up and verification plan |
+| `../ftdi_debugger/docs/ftdi_debugger_verification_report.md` | FTDI debugger collateral check report |
 | `../llvm_s1/toolchain/docs/wasp1_toolchain_setup.md` | LLVM toolchain discovery, local build, and strict smoke-test setup |
 
 ## Module Documentation
@@ -52,7 +54,7 @@ Current module docs:
 | `wdg` | AHB watchdog spec, design spec, verification plan, verification report |
 | `i2c` | AHB I2C master spec, design spec, verification plan, verification report |
 | `wasp1` | SoC top spec, design spec, verification plan, verification report |
-| `ftdi_debugger` | external FTDI debugger spec, design plan, verification plan, and OpenOCD reference config |
+| `ftdi_debugger` | external FTDI debugger spec, pinout, design plan, verification plan/report, static collateral checker, and OpenOCD reference config |
 
 Current implemented block specs:
 

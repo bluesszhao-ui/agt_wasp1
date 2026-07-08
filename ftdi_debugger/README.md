@@ -20,6 +20,12 @@ Target interface: VREF-sensed level-shifted JTAG, optional SRST/TRST
 Primary software: OpenOCD ftdi driver plus wasp1 target config
 ```
 
-Current status: requirements and bring-up plan only; PCB/schematic files are a
-later hardware milestone.
+Current status: stage-1 requirements, reference pinout, OpenOCD FTDI config,
+and static collateral checks are present. PCB/schematic files are a later
+hardware milestone.
 
+Run the documentation/config consistency check with:
+
+```text
+make -C ftdi_debugger lint
+```

@@ -21,21 +21,28 @@ GDB
 ```
 
 The debugger must support the existing OpenOCD/GDB smoke flow already verified
-with the Verilator remote-bitbang harness.
+with the Verilator remote-bitbang harness, including register reads, native
+`stepi`, and one hardware breakpoint through `hbreak`.
 
 ## 3. Hardware Baseline
 
 | Item | Requirement |
 | --- | --- |
 | USB bridge | FT2232H preferred |
-| JTAG channel | FT2232H channel A in MPSSE mode |
-| UART channel | FT2232H channel B reserved for UART console / OTP programming |
+| JTAG channel | FT2232H Channel A in MPSSE mode |
+| UART channel | FT2232H Channel B reserved for UART console / OTP programming |
 | JTAG pins | TCK, TMS, TDI, TDO |
 | Reset pins | Optional nTRST and nSRST routed as controllable GPIO |
 | Target voltage | Sense target VREF and level-shift JTAG/UART accordingly |
 | Protection | ESD protection on external connector pins |
 | Connector | One wasp1 target header carrying JTAG, reset, UART, VREF, and GND |
 | Indicators | USB power, target VREF present, optional JTAG activity |
+
+The stage-1 pinout and schematic-input constraints are frozen in:
+
+```text
+ftdi_debugger/docs/ftdi_debugger_pinout.md
+```
 
 ## 4. FT2232H Reference Pin Use
 
@@ -69,6 +76,15 @@ target create wasp1.cpu riscv -chain-position wasp1.cpu
 FTDI EEPROM programming may set product strings and serial numbers, but the
 debug flow must not require a private protocol.
 
+The checked-in reference config is:
+
+```text
+ftdi_debugger/openocd/wasp1_ft2232h_reference.cfg
+```
+
+It uses FT2232H VID/PID `0x0403:0x6010`, Channel A, `layout_init 0x0038
+0x003b`, nTRST bit `0x0010`, and nSRST bit `0x0020`.
+
 ## 6. Non-Goals
 
 The stage-1 debugger does not need:
@@ -79,5 +95,5 @@ SWD support
 trace capture
 high-speed streaming trace
 boundary scan tooling beyond the wasp1 JTAG chain
+custom OpenOCD target driver
 ```
-

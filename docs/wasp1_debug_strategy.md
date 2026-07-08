@@ -15,11 +15,11 @@ debug
   jtag_tap
   riscv_dtm
   riscv_dm
-  debug_rom
   debug_halt_ctrl
   debug_reg_access
   debug_mem_access
   debug_abstract_cmd
+  debug_trigger
   debug_progbuf
 ```
 
@@ -30,8 +30,9 @@ debug
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
 | 2 | abstract command, DPC readback, DCSR.step single-step |
 | 3 | physical Access Memory through halted core and native GDB `stepi` smoke |
-| 4 | breakpoints, longer debugger stress, optional system bus or program-buffer memory access |
-| 5 | FT2232H external debugger hardware, OpenOCD FTDI config, FPGA/board bring-up |
+| 4 | one execute-address hardware breakpoint through Debug Spec trigger CSRs |
+| 5 | FT2232H external debugger pinout/OpenOCD config, schematic/PCB, FPGA/board bring-up |
+| 6 | longer debugger stress, multiple triggers, optional system bus or program-buffer memory access |
 
 ## 4. Core Interaction
 
@@ -43,6 +44,7 @@ resume request
 halted status
 register access path
 memory access path
+execute-address trigger entry path
 debug exception or debug entry behavior
 ```
 
@@ -58,9 +60,14 @@ halt the hart
 read and write GPRs
 resume the hart
 single-step one instruction through DCSR.step
+read memory through halted-core Access Memory
+hit one hardware breakpoint through hbreak
 ```
 
-Memory access and breakpoint validation are later-stage targets.
+Physical Access Memory, native `stepi`, and one hardware breakpoint are now
+part of the automated remote-bitbang OpenOCD/GDB smoke. Multiple triggers, data
+triggers, System Bus Access, and program-buffer execution remain later-stage
+targets.
 
 ## 6. External FTDI Debugger
 
@@ -82,3 +89,10 @@ other OpenOCD-compatible JTAG adapters
 ```
 
 The FTDI-specific collateral is tracked under `ftdi_debugger/`.
+
+The current FTDI collateral includes the stage-1 FT2232H pinout, a reference
+OpenOCD FTDI configuration, and a static checker:
+
+```text
+make -C ftdi_debugger lint
+```

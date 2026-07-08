@@ -16,8 +16,9 @@ behavior.
 | JTAG idle levels | Scope TCK/TMS/TDI/TDO/TRST/SRST | Idle levels match schematic and OpenOCD reset config |
 | TAP scan | Run OpenOCD target probe | IDCODE `0x100001cf` is detected |
 | DTM/DM discovery | Run OpenOCD RISC-V examine | hart 0, XLEN=32, and `misa=0x40000100` are detected |
-| GDB attach | Run wasp1 GDB smoke | GDB reads GPRs and PC, then detaches |
+| GDB attach | Run wasp1 GDB smoke | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, then detaches |
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
+| Collateral check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, and docs remain mutually consistent |
 
 ## 3. Time-Sequenced Case Table Template
 
@@ -26,8 +27,9 @@ behavior.
 | 0s-5s | Plug debugger into host with target disconnected | USB enumerates; target drivers remain high-Z | TBD |
 | 5s-15s | Power target and connect VREF | level shifters enable; reset pins idle high | TBD |
 | 15s-30s | Start OpenOCD | TAP/DTM/hart detected | TBD |
-| 30s-60s | Run GDB smoke | register packet and PC read pass | TBD |
+| 30s-60s | Run GDB smoke | register packet, PC read, `stepi`, and `hbreak` pass | TBD |
 | 60s-90s | Open UART channel | console or OTP programming transaction passes | TBD |
+| offline | Run collateral checker | config and documentation checks pass | PASS before hardware |
 
 ## 4. Required Evidence
 
@@ -41,5 +43,5 @@ OpenOCD log
 GDB smoke log
 UART smoke log
 scope captures for JTAG reset/shift timing
+collateral checker log
 ```
-
