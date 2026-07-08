@@ -175,6 +175,8 @@ def main() -> int:
             raise AssertionError("GDB reported a command or remote failure")
         if "wasp1_gdb_stepi_pass" not in gdb_text:
             raise AssertionError("GDB did not complete native stepi")
+        if "wasp1_gdb_hbreak_pass" not in gdb_text:
+            raise AssertionError("GDB did not complete hardware breakpoint")
         if "Inferior 1" not in gdb_text and "detached" not in gdb_text.lower():
             raise AssertionError("GDB did not detach cleanly")
     finally:

@@ -16,6 +16,7 @@ module tb_debug_abstract_cmd;
   logic [31:0] data0;
   logic [31:0] data1;
   logic [31:0] hart_dpc;
+  logic [2:0]  hart_dcsr_cause;
   logic        busy;
   logic        command_error_valid;
   logic [2:0]  command_error;
@@ -46,6 +47,8 @@ module tb_debug_abstract_cmd;
   logic [31:0] mem_rsp_rdata;
   logic        mem_rsp_error;
   logic        dcsr_step;
+  logic        trigger_execute_valid;
+  logic [31:0] trigger_execute_addr;
   logic        reg_flush;
   logic        mem_flush;
 
@@ -55,6 +58,7 @@ module tb_debug_abstract_cmd;
   int unsigned write_count;
   int unsigned csr_read_count;
   int unsigned csr_write_count;
+  int unsigned trigger_count;
   int unsigned mem_read_count;
   int unsigned mem_write_count;
   int unsigned noop_count;
@@ -78,6 +82,7 @@ module tb_debug_abstract_cmd;
     .data0_i(data0),
     .data1_i(data1),
     .hart_dpc_i(hart_dpc),
+    .hart_dcsr_cause_i(hart_dcsr_cause),
     .busy_o(busy),
     .command_error_valid_o(command_error_valid),
     .command_error_o(command_error),
@@ -106,6 +111,8 @@ module tb_debug_abstract_cmd;
     .mem_rsp_rdata_i(mem_rsp_rdata),
     .mem_rsp_error_i(mem_rsp_error),
     .dcsr_step_o(dcsr_step),
+    .trigger_execute_valid_o(trigger_execute_valid),
+    .trigger_execute_addr_o(trigger_execute_addr),
     .reg_flush_o(reg_flush),
     .mem_flush_o(mem_flush)
   );
@@ -173,6 +180,7 @@ module tb_debug_abstract_cmd;
       data0 = '0;
       data1 = '0;
       hart_dpc = 32'h0000_0000;
+      hart_dcsr_cause = ABSTRACT_DCSR_CAUSE_HALTREQ;
       reg_cmd_ready = 1'b0;
       reg_rsp_valid = 1'b0;
       reg_rsp_rdata = '0;
@@ -610,6 +618,102 @@ module tb_debug_abstract_cmd;
     end
   endtask
 
+  // Exercise the single mcontrol trigger image used by OpenOCD hardware
+  // breakpoints. Writes are WARL-filtered before driving the core comparator.
+  task automatic check_trigger_csrs;
+    logic [31:0] command_value;
+    logic [31:0] valid_tdata1;
+    logic [31:0] bad_action_tdata1;
+    logic [31:0] bad_type_tdata1;
+    begin
+      valid_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL |
+                     ABSTRACT_MCONTROL_ACTION_DEBUG |
+                     ABSTRACT_MCONTROL_M |
+                     ABSTRACT_MCONTROL_EXECUTE;
+      bad_action_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL |
+                          32'h0000_2000 |
+                          ABSTRACT_MCONTROL_M |
+                          ABSTRACT_MCONTROL_EXECUTE;
+      bad_type_tdata1 = 32'hF000_0000 |
+                        ABSTRACT_MCONTROL_ACTION_DEBUG |
+                        ABSTRACT_MCONTROL_M |
+                        ABSTRACT_MCONTROL_EXECUTE;
+
+      check_csr_read(ABSTRACT_CSR_TSELECT, 32'h0000_0000,
+                     "tselect single trigger read");
+      check_csr_read(ABSTRACT_CSR_TDATA1, ABSTRACT_TDATA1_TYPE_MCONTROL,
+                     "tdata1 reset mcontrol read");
+      check_csr_read(ABSTRACT_CSR_TINFO, ABSTRACT_TINFO_MCONTROL_ONLY,
+                     "tinfo mcontrol support read");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA2);
+      pulse_command(command_value, 32'h0000_0040);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || (trigger_execute_addr !== 32'h0000_0040)) begin
+        $error("tdata2 write mismatch addr=0x%08x", trigger_execute_addr);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("tdata2 write idle");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA1);
+      pulse_command(command_value, valid_tdata1);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || !trigger_execute_valid ||
+          (trigger_execute_addr !== 32'h0000_0040)) begin
+        $error("valid tdata1 write mismatch valid=%0b addr=0x%08x",
+               trigger_execute_valid, trigger_execute_addr);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("valid tdata1 write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, valid_tdata1,
+                     "valid tdata1 readback");
+      check_csr_read(ABSTRACT_CSR_TDATA2, 32'h0000_0040,
+                     "tdata2 readback");
+
+      pulse_command(command_value, bad_action_tdata1);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || trigger_execute_valid) begin
+        $error("bad-action tdata1 should disable trigger valid=%0b",
+               trigger_execute_valid);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("bad-action tdata1 write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1,
+                     ABSTRACT_TDATA1_TYPE_MCONTROL |
+                     ABSTRACT_MCONTROL_M |
+                     ABSTRACT_MCONTROL_EXECUTE,
+                     "bad-action tdata1 readback");
+
+      pulse_command(command_value, bad_type_tdata1);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || trigger_execute_valid) begin
+        $error("bad-type tdata1 should return disabled mcontrol");
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("bad-type tdata1 write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, ABSTRACT_TDATA1_TYPE_MCONTROL,
+                     "bad-type tdata1 readback");
+    end
+  endtask
+
   // Verify halted-state loss in ISSUE and WAIT maps to halt/resume error.
   task automatic check_hart_abort;
     begin
@@ -812,6 +916,7 @@ module tb_debug_abstract_cmd;
     write_count = 0;
     csr_read_count = 0;
     csr_write_count = 0;
+    trigger_count = 0;
     mem_read_count = 0;
     mem_write_count = 0;
     noop_count = 0;
@@ -845,7 +950,14 @@ module tb_debug_abstract_cmd;
     check_dcsr_write(ABSTRACT_CSR_DCSR_HALTED_M, 1'b0, "dcsr step clear");
     check_csr_read(ABSTRACT_CSR_DCSR, ABSTRACT_CSR_DCSR_HALTED_M,
                    "dcsr step clear read");
-    check_csr_write_noop(16'h07A0, "trigger CSR write no-op");
+    hart_dcsr_cause = ABSTRACT_DCSR_CAUSE_TRIGGER;
+    check_csr_read(ABSTRACT_CSR_DCSR,
+                   ABSTRACT_CSR_DCSR_BASE_RV32_M |
+                   ({29'h0000_0000, ABSTRACT_DCSR_CAUSE_TRIGGER} << 6),
+                   "dcsr trigger cause read");
+    hart_dcsr_cause = ABSTRACT_DCSR_CAUSE_HALTREQ;
+    check_csr_write_noop(ABSTRACT_CSR_TSELECT, "tselect write no-op");
+    check_trigger_csrs();
     $display("phase memory start=%0t", $time);
     check_memory_paths();
     $display("phase decode start=%0t", $time);
@@ -859,9 +971,9 @@ module tb_debug_abstract_cmd;
     check_random_commands(20);
     $display("phase complete=%0t", $time);
 
-    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d mem_read=%0d mem_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
+    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d trigger=%0d mem_read=%0d mem_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
              pass_count, read_count, write_count, csr_read_count,
-             csr_write_count, mem_read_count, mem_write_count, noop_count,
+             csr_write_count, trigger_count, mem_read_count, mem_write_count, noop_count,
              unsupported_count, halt_error_count, downstream_error_count,
              issue_hold_count, wait_count, flush_count, busy_ignore_count,
              reset_abort_count, random_count);

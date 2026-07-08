@@ -208,8 +208,11 @@ module core_int_datapath (
   logic        debug_mem_req_outstanding_q;// Debug memory request waits for dmem rsp.
   logic        debug_busy;         // Debug GPR response is pending or being created.
   logic        debug_resume_redirect;// Resume/step redirects frontend to captured DPC.
+  logic        debug_trigger_halt;  // Execute-address trigger requests Debug Mode entry.
+  logic [31:0] debug_trigger_pc;    // Matched trigger PC captured into DPC.
   logic [31:0] debug_next_pc_q;    // Resume PC candidate updated by accepted fetches/retire.
   logic [31:0] debug_dpc_q;        // DPC value captured while the hart is halted.
+  logic [2:0]  debug_dcsr_cause_q; // DCSR cause for the latest Debug Mode entry.
   logic [31:0] debug_retire_next_pc;// Next PC implied by the retiring instruction.
   logic [4:0]  regfile_raddr1;     // Read port 1 address after debug muxing.
   logic        regfile_we;         // Register file write enable after debug muxing.
@@ -244,6 +247,12 @@ module core_int_datapath (
                       debug_mem_req_outstanding_q;
   assign debug_resume_redirect = debug_halted && core_debug.resume_req &&
                                  !core_debug.halt_req && !debug_busy;
+  assign debug_trigger_pc = id_pc;
+  assign debug_trigger_halt = id_valid && core_debug.trigger_execute_valid &&
+                              (id_pc == core_debug.trigger_execute_addr) &&
+                              !debug_halted && !core_debug.halt_req &&
+                              !debug_freeze_pipe && !lsu_req_outstanding_q &&
+                              (!ex_valid || retire_valid);
   assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall ||
                             debug_stop_fetch;
   assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall ||
@@ -255,6 +264,7 @@ module core_int_datapath (
     .clk_i(clk_i),
     .rst_ni(rst_ni),
     .halt_req_i(core_debug.halt_req),
+    .trigger_req_i(debug_trigger_halt),
     .resume_req_i(core_debug.resume_req),
     .step_req_i(core_debug.step_req),
     .pipe_idle_i(debug_pipe_idle),
@@ -269,6 +279,7 @@ module core_int_datapath (
   assign core_debug.halted = debug_halted;
   assign core_debug.running = debug_running;
   assign core_debug.dpc = debug_dpc_q;
+  assign core_debug.dcsr_cause = debug_dcsr_cause_q;
   assign core_debug.gpr_req_ready = debug_halted && !debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_valid = debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_rdata = debug_gpr_rsp_rdata_q;
@@ -295,14 +306,24 @@ module core_int_datapath (
     if (!rst_ni) begin
       debug_next_pc_q <= 32'h0000_0000;
       debug_dpc_q <= 32'h0000_0000;
+      debug_dcsr_cause_q <= 3'd3;
     end else begin
-      if (instr_valid_i && instr_ready_o && !id_valid && !ex_valid &&
+      if (debug_trigger_halt) begin
+        debug_next_pc_q <= debug_trigger_pc;
+        debug_dcsr_cause_q <= 3'd2;
+      end else if (instr_valid_i && instr_ready_o && !id_valid && !ex_valid &&
           !lsu_req_outstanding_q) begin
         debug_next_pc_q <= instr_pc_i;
       end
 
-      if (retire_valid) begin
+      if (!debug_trigger_halt && retire_valid) begin
         debug_next_pc_q <= debug_retire_next_pc;
+      end
+
+      if (debug_halted && core_debug.step_req && !debug_busy) begin
+        debug_dcsr_cause_q <= 3'd4;
+      end else if (!debug_halted && core_debug.halt_req) begin
+        debug_dcsr_cause_q <= 3'd3;
       end
 
       // Capture DPC both while halted and on the edge that enters Debug Mode.
@@ -625,9 +646,11 @@ module core_int_datapath (
   assign redirect_valid = retire_valid && branch_taken && !ex_fetch_fault &&
                           !dec_illegal && !lsu_active_fault;
   assign pipe_redirect_valid = trap_redirect || redirect_valid ||
-                               debug_resume_redirect;
+                               debug_resume_redirect || debug_trigger_halt;
   assign pipe_redirect_pc = trap_redirect ? trap_redirect_pc :
-                            (redirect_valid ? branch_target : debug_dpc_q);
+                            (redirect_valid ? branch_target :
+                             (debug_trigger_halt ? debug_trigger_pc :
+                                                   debug_dpc_q));
 
   // Select writeback source for the instruction classes integrated in this
   // milestone. Unsupported classes are allowed through decode for observability

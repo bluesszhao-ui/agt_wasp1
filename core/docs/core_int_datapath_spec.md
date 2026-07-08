@@ -39,9 +39,10 @@ ECALL/EBREAK/illegal/CSR-fault trap redirect
 MRET redirect
 machine timer/external interrupt trap inputs
 load-use hazard stall and execute bubble
-Debug Mode halt-pending drain, halted status, resume, and single-step re-halt
+Debug Mode halt-pending drain, halted status, resume, single-step re-halt, and execute trigger halt
 halted-core GPR read/write access through `debug_if.core`
 halted Debug PC capture through `debug_if.core.dpc`
+DCSR cause reporting through `debug_if.core.dcsr_cause`
 ```
 
 ## 3. Unsupported Instruction Scope
@@ -123,4 +124,6 @@ capture on halt entry, and redirect target forwarding.
 
 Debug verification must cover halt entry after the pipeline drains, frontend
 ready suppression while halted, halted GPR read/write/readback, x0 debug access,
-DPC resume-PC capture, and resume back to running state.
+DPC resume-PC capture, DCSR cause reporting for halt/step/trigger, execute
+trigger entry before the matched instruction retires, and resume back to
+running state.

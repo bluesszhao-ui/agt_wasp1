@@ -15,5 +15,15 @@ if $pc == $wasp1_pc_before
   quit 1
 end
 printf "wasp1_gdb_stepi_pass\n"
+hbreak *0x4
+continue
+info registers dcsr
+info registers pc
+if $pc != 0x4
+  echo wasp1_gdb_hbreak_wrong_pc\n
+  quit 1
+end
+printf "wasp1_gdb_hbreak_pass\n"
+delete breakpoints
 detach
 quit

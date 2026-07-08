@@ -97,19 +97,23 @@ riscv64-elf-gdb -x wasp1/dv/gdb/wasp1_debug_smoke.gdb
 ```
 
 The script connects to OpenOCD on `localhost:3333`, requests reset-halt, prints
-registers, checks PC visibility, detaches, and exits.
+registers, checks PC visibility, executes one native `stepi`, sets one hardware
+breakpoint with `hbreak *0x4`, continues until the breakpoint hits, detaches,
+and exits.
 
-## 6. Current Limitation
+## 6. Current Status
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
 are verified. The current debug implementation can connect, halt, read GPRs and
-PC, disassemble through Access Memory, execute native `stepi`, and detach.
+PC, disassemble through Access Memory, execute native `stepi`, use one
+OpenOCD/GDB hardware breakpoint, and detach.
 
 Native GDB `stepi` is now part of the automated process smoke. The checked
 script reads the current PC, disassembles the instruction through physical
 Access Memory, executes `stepi`, rereads PC, and fails if PC did not change.
-Program buffer execution, System Bus Access, and breakpoint workflows remain
-later debug milestones.
+The same script then installs `hbreak *0x4`, continues, and fails unless GDB
+stops with PC equal to `0x4`. Program buffer execution, System Bus Access, and
+multiple/data trigger workflows remain later debug milestones.
 
 Observed OpenOCD probe:
 
@@ -117,12 +121,17 @@ Observed OpenOCD probe:
 JTAG tap: wasp1.cpu tap/device found: 0x100001cf
 Examined RISC-V core; found 1 harts
 hart 0: XLEN=32, misa=0x40000100
+[wasp1.cpu] Found 1 triggers
 ```
 
 Observed GDB smoke:
 
 ```text
-0x000002d0 in ?? ()
-pc             0x2d0  0x2d0
+wasp1_gdb_stepi_pass
+Hardware assisted breakpoint 1 at 0x4
+Breakpoint 1, 0x00000004 in ?? ()
+dcsr           0x40000083
+pc             0x4  0x4
+wasp1_gdb_hbreak_pass
 [Inferior 1 (Remote target) detached]
 ```

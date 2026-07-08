@@ -13,6 +13,9 @@ interface debug_if #(
   logic            halted;         // Core reports that it is halted in Debug Mode.
   logic            running;        // Core reports normal instruction execution.
   logic [XLEN-1:0] dpc;            // Debug PC captured by the core when it enters Debug Mode.
+  logic [2:0]      dcsr_cause;     // Core-reported DCSR cause for the latest Debug Mode entry.
+  logic            trigger_execute_valid; // Debug Module enables one execute-address trigger.
+  logic [XLEN-1:0] trigger_execute_addr;  // Execute-address trigger compare value.
 
   // Ready/valid GPR access request from Debug Module to the halted core.
   logic            gpr_req_valid;  // Request fields are valid and held until ready.
@@ -49,9 +52,12 @@ interface debug_if #(
     input  halted,
     input  running,
     input  dpc,
+    input  dcsr_cause,
     output halt_req,
     output resume_req,
-    output step_req
+    output step_req,
+    output trigger_execute_valid,
+    output trigger_execute_addr
   );
 
   // Abstract-access DM view prevents command logic from driving hart control.
@@ -86,6 +92,7 @@ interface debug_if #(
     input  halted,
     input  running,
     input  dpc,
+    input  dcsr_cause,
     input  gpr_req_ready,
     input  gpr_rsp_valid,
     input  gpr_rsp_rdata,
@@ -97,6 +104,8 @@ interface debug_if #(
     output halt_req,
     output resume_req,
     output step_req,
+    output trigger_execute_valid,
+    output trigger_execute_addr,
     output gpr_req_valid,
     output gpr_req_write,
     output gpr_req_addr,
@@ -117,6 +126,8 @@ interface debug_if #(
     input  halt_req,
     input  resume_req,
     input  step_req,
+    input  trigger_execute_valid,
+    input  trigger_execute_addr,
     input  gpr_req_valid,
     input  gpr_req_write,
     input  gpr_req_addr,
@@ -132,6 +143,7 @@ interface debug_if #(
     output halted,
     output running,
     output dpc,
+    output dcsr_cause,
     output gpr_req_ready,
     output gpr_rsp_valid,
     output gpr_rsp_rdata,
@@ -148,9 +160,12 @@ interface debug_if #(
     input halt_req,
     input resume_req,
     input step_req,
+    input trigger_execute_valid,
+    input trigger_execute_addr,
     input halted,
     input running,
     input dpc,
+    input dcsr_cause,
     input gpr_req_valid,
     input gpr_req_ready,
     input gpr_req_write,

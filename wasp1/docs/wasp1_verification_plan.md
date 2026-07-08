@@ -29,7 +29,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | JTAG debug smoke | Check SoC-level Debug Module access | Bit-bang JTAG to read IDCODE/DTMCS, write `dmcontrol.dmactive`, and read `dmstatus`. |
 | Remote-bitbang smoke | Check OpenOCD-facing socket bridge | Build `Vwasp1` remote-bitbang harness and use a Python client to exercise IDCODE/DTMCS/DMI over TCP. |
 | OpenOCD smoke | Check external debugger server compatibility | Run OpenOCD remote_bitbang against `Vwasp1` and require TAP, DTM, hart, XLEN, and `misa` discovery. |
-| GDB smoke | Check external GDB register access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs and PC, detach, and exit. |
+| GDB smoke | Check external GDB debug access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs/PC, execute native `stepi`, hit one hardware breakpoint, detach, and exit. |
 | Idle peripheral stability | Check inactive peripherals stay benign | Run additional cycles and ensure WDG reset and I2C OE remain deasserted. |
 
 ## 3. Coverage Intent
@@ -52,8 +52,9 @@ that a timer interrupt firmware image can enter and return from the C trap
 handler, that the
 SoC JTAG pins reach the integrated Debug Module, and that an automated external
 OpenOCD/GDB process can complete the debug smoke, including halt, register
-read, PC memory disassembly through Access Memory, and native GDB `stepi`.
-Monitor-level breakpoint workflows remain gated by later breakpoint support.
+read, PC memory disassembly through Access Memory, native GDB `stepi`, and one
+hardware breakpoint through the single execute-address trigger. Multi-trigger
+and data/load/store breakpoint workflows remain later scope.
 
 ## 4. Pass Criteria
 

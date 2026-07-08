@@ -43,13 +43,36 @@ package debug_dmi_pkg;
   // Minimal read-only CSR values exposed for OpenOCD/GDB discovery.
   localparam logic [15:0] ABSTRACT_CSR_MSTATUS = 16'h0300;
   localparam logic [15:0] ABSTRACT_CSR_MISA = 16'h0301;
+  localparam logic [15:0] ABSTRACT_CSR_TSELECT = 16'h07A0;
+  localparam logic [15:0] ABSTRACT_CSR_TDATA1 = 16'h07A1;
+  localparam logic [15:0] ABSTRACT_CSR_TDATA2 = 16'h07A2;
+  localparam logic [15:0] ABSTRACT_CSR_TDATA3 = 16'h07A3;
+  localparam logic [15:0] ABSTRACT_CSR_TINFO = 16'h07A4;
+  localparam logic [15:0] ABSTRACT_CSR_TCONTROL = 16'h07A5;
   localparam logic [15:0] ABSTRACT_CSR_DCSR = 16'h07B0;
   localparam logic [15:0] ABSTRACT_CSR_DPC = 16'h07B1;
   localparam logic [31:0] ABSTRACT_CSR_MSTATUS_RV32_M = 32'h0000_0000;
   localparam logic [31:0] ABSTRACT_CSR_MISA_RV32I = 32'h4000_0100;
+  localparam logic [31:0] ABSTRACT_CSR_DCSR_BASE_RV32_M = 32'h4000_0003;
   localparam logic [31:0] ABSTRACT_CSR_DCSR_HALTED_M = 32'h4000_00C3;
   localparam logic [31:0] ABSTRACT_CSR_DCSR_STEP_MASK = 32'h0000_0004;
+  localparam logic [2:0]  ABSTRACT_DCSR_CAUSE_TRIGGER = 3'd2;
+  localparam logic [2:0]  ABSTRACT_DCSR_CAUSE_HALTREQ = 3'd3;
+  localparam logic [2:0]  ABSTRACT_DCSR_CAUSE_STEP = 3'd4;
   localparam logic [31:0] ABSTRACT_CSR_DPC_RESET = 32'h0000_0000;
+  localparam logic [31:0] ABSTRACT_TINFO_MCONTROL_ONLY = 32'h0000_0004;
+  localparam logic [31:0] ABSTRACT_TDATA1_TYPE_MASK = 32'hF000_0000;
+  localparam logic [31:0] ABSTRACT_TDATA1_TYPE_MCONTROL = 32'h2000_0000;
+  localparam logic [31:0] ABSTRACT_TDATA1_DMODE = 32'h0800_0000;
+  localparam logic [31:0] ABSTRACT_MCONTROL_ACTION_MASK = 32'h0000_F000;
+  localparam logic [31:0] ABSTRACT_MCONTROL_ACTION_DEBUG = 32'h0000_1000;
+  localparam logic [31:0] ABSTRACT_MCONTROL_MATCH_MASK = 32'h0000_0780;
+  localparam logic [31:0] ABSTRACT_MCONTROL_M = 32'h0000_0040;
+  localparam logic [31:0] ABSTRACT_MCONTROL_EXECUTE = 32'h0000_0004;
+  localparam logic [31:0] ABSTRACT_MCONTROL_LEGAL_MASK =
+      ABSTRACT_TDATA1_TYPE_MASK | ABSTRACT_TDATA1_DMODE |
+      ABSTRACT_MCONTROL_ACTION_MASK | ABSTRACT_MCONTROL_MATCH_MASK |
+      ABSTRACT_MCONTROL_M | ABSTRACT_MCONTROL_EXECUTE;
   localparam logic [15:0] ABSTRACT_GPR_BASE = 16'h1000;
   localparam logic [15:0] ABSTRACT_GPR_LAST = 16'h101F;
 endpackage

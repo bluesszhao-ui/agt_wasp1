@@ -4,7 +4,7 @@
 
 `core_debug_ctrl` is a small sequential FSM that controls the core-side Debug
 Mode hooks. It has no programmer-visible CSRs; it only coordinates pipeline
-drain/freeze and Debug Module status.
+drain/freeze, decoded trigger entry requests, and Debug Module status.
 
 ## 2. Editable Diagram
 
@@ -29,13 +29,13 @@ IF   pale blue
 Legend: IF=interface, COMB=combinational logic, SEQ=clocked state
 
  IF debug request/status pins
- halt_req_i/resume_req_i/step_req_i
+ halt_req_i/trigger_req_i/resume_req_i/step_req_i
  pipe_idle_i/retire_valid_i/debug_busy_i
         |
         v
  +--------------------------------+
  | COMB next-state and priority   |
- | halt > resume/step             |
+ | halt/trigger > resume/step     |
  | busy blocks resume/step        |
  +---------------+----------------+
                  |
@@ -78,8 +78,8 @@ Transitions:
 
 ```text
 DBG_RUNNING:
-  halt_req_i && pipe_idle_i && !debug_busy_i -> DBG_HALTED
-  halt_req_i                                -> DBG_HALT_PENDING
+  (halt_req_i || trigger_req_i) && pipe_idle_i && !debug_busy_i -> DBG_HALTED
+  halt_req_i || trigger_req_i                                  -> DBG_HALT_PENDING
 
 DBG_HALT_PENDING:
   !halt_req_i && resume_req_i               -> DBG_RUNNING
@@ -91,16 +91,16 @@ DBG_HALTED:
   !halt_req_i && resume_req_i && !debug_busy_i -> DBG_RUNNING
 
 DBG_STEP_RUNNING:
-  halt_req_i || retire_valid_i:
+  halt_req_i || trigger_req_i || retire_valid_i:
     pipe_idle_i                             -> DBG_HALTED
     otherwise                               -> DBG_HALT_PENDING
 ```
 
 ## 6. Output Logic
 
-`stop_fetch_o` is asserted combinationally when `halt_req_i` is visible, even
-before the FSM samples the request. This prevents an extra instruction from
-being accepted behind a debug halt request.
+`stop_fetch_o` is asserted combinationally when `halt_req_i` or `trigger_req_i`
+is visible, even before the FSM samples the request. This prevents an extra
+instruction from being accepted behind a debug halt or trigger entry request.
 
 `freeze_pipe_o` is asserted only in `DBG_HALTED`. During `DBG_HALT_PENDING`,
 fetch is stopped but decode/execute are allowed to drain normally.

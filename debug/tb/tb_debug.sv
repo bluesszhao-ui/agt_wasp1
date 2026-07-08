@@ -77,6 +77,7 @@ module tb_debug;
       core_debug.halted = 1'b0;
       core_debug.running = 1'b1;
       core_debug.dpc = 32'h0000_0000;
+      core_debug.dcsr_cause = ABSTRACT_DCSR_CAUSE_HALTREQ;
       core_debug.gpr_req_ready = 1'b0;
       core_debug.gpr_rsp_valid = 1'b0;
       core_debug.gpr_rsp_rdata = '0;

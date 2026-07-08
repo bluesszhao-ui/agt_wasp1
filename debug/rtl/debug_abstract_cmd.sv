@@ -13,6 +13,7 @@ module debug_abstract_cmd (
   input  logic [31:0] data0_i,               // Current abstract data0 write payload.
   input  logic [31:0] data1_i,               // Current abstract data1 address payload.
   input  logic [31:0] hart_dpc_i,            // Core-captured Debug PC returned for CSR dpc reads.
+  input  logic [2:0]  hart_dcsr_cause_i,     // Core-reported DCSR cause for the current halt.
   output logic        busy_o,                // Abstract command is decoding or executing.
   output logic        command_error_valid_o, // One-cycle pulse for a nonzero cmderr result.
   output logic [2:0]  command_error_o,       // cmderr encoding from debug_dmi_pkg.
@@ -41,6 +42,8 @@ module debug_abstract_cmd (
   input  logic [31:0] mem_rsp_rdata_i,       // Raw 32-bit memory read data.
   input  logic        mem_rsp_error_i,       // Memory path reported access/bus error.
   output logic        dcsr_step_o,           // Latched DCSR.step bit used by resume single-step.
+  output logic        trigger_execute_valid_o,// Execute-address trigger enable toward the core.
+  output logic [31:0] trigger_execute_addr_o,// Execute-address trigger compare value.
   output logic        reg_flush_o,           // Abort/drain downstream GPR work on DM/hart loss.
   output logic        mem_flush_o            // Abort/drain downstream memory work on DM/hart loss.
 );
@@ -81,6 +84,7 @@ module debug_abstract_cmd (
   logic        command_access_mem_supported;
   logic        command_encoding_supported;
   logic [31:0] command_csr_rdata;
+  logic [31:0] command_csr_warl_tdata1;
   logic [1:0]  command_mem_size2;
   logic [31:0] command_mem_wdata;
   logic [3:0]  command_mem_wstrb;
@@ -105,6 +109,8 @@ module debug_abstract_cmd (
   logic [31:0] data1_update_q;
   logic [2:0]  completion_error_q;
   logic        dcsr_step_q;
+  logic [31:0] trigger_tdata1_q;
+  logic [31:0] trigger_tdata2_q;
 
   logic reg_cmd_fire;
   logic reg_rsp_fire;
@@ -159,8 +165,15 @@ module debug_abstract_cmd (
     unique case (command_regno)
       ABSTRACT_CSR_MSTATUS: command_csr_rdata = ABSTRACT_CSR_MSTATUS_RV32_M;
       ABSTRACT_CSR_MISA: command_csr_rdata = ABSTRACT_CSR_MISA_RV32I;
+      ABSTRACT_CSR_TSELECT: command_csr_rdata = 32'h0000_0000;
+      ABSTRACT_CSR_TDATA1: command_csr_rdata = trigger_tdata1_q;
+      ABSTRACT_CSR_TDATA2: command_csr_rdata = trigger_tdata2_q;
+      ABSTRACT_CSR_TDATA3: command_csr_rdata = 32'h0000_0000;
+      ABSTRACT_CSR_TINFO: command_csr_rdata = ABSTRACT_TINFO_MCONTROL_ONLY;
+      ABSTRACT_CSR_TCONTROL: command_csr_rdata = 32'h0000_0000;
       ABSTRACT_CSR_DCSR: command_csr_rdata =
-          ABSTRACT_CSR_DCSR_HALTED_M |
+          ABSTRACT_CSR_DCSR_BASE_RV32_M |
+          ({29'h0000_0000, hart_dcsr_cause_i} << 6) |
           (dcsr_step_q ? ABSTRACT_CSR_DCSR_STEP_MASK : 32'h0000_0000);
       ABSTRACT_CSR_DPC:  command_csr_rdata = hart_dpc_i;
       // OpenOCD probes several optional CSRs. Returning zero for unimplemented
@@ -168,6 +181,28 @@ module debug_abstract_cmd (
       // programmer-visible core CSR behavior.
       default:           command_csr_rdata = '0;
     endcase
+  end
+
+  // The single trigger is an RV32 mcontrol execute-address trigger. Unsupported
+  // fields are WARL-zeroed, action accepts only Debug Mode, and unsupported
+  // type writes fall back to a disabled mcontrol image so one trigger remains
+  // discoverable through tdata1/tinfo.
+  always_comb begin
+    command_csr_warl_tdata1 =
+        ABSTRACT_TDATA1_TYPE_MCONTROL |
+        (data0_i & (ABSTRACT_TDATA1_DMODE |
+                    ABSTRACT_MCONTROL_ACTION_MASK |
+                    ABSTRACT_MCONTROL_MATCH_MASK |
+                    ABSTRACT_MCONTROL_M |
+                    ABSTRACT_MCONTROL_EXECUTE));
+
+    if ((data0_i & ABSTRACT_TDATA1_TYPE_MASK) != ABSTRACT_TDATA1_TYPE_MCONTROL) begin
+      command_csr_warl_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL;
+    end
+
+    if ((data0_i & ABSTRACT_MCONTROL_ACTION_MASK) != ABSTRACT_MCONTROL_ACTION_DEBUG) begin
+      command_csr_warl_tdata1 &= ~ABSTRACT_MCONTROL_ACTION_MASK;
+    end
   end
 
   always_comb begin
@@ -239,6 +274,15 @@ module debug_abstract_cmd (
   assign mem_cmd_wstrb_o = mem_wstrb_q;
   assign mem_rsp_ready_o = (state_q == ABSTRACT_WAIT) && op_is_mem_q;
   assign dcsr_step_o = dcsr_step_q;
+  assign trigger_execute_valid_o =
+      ((trigger_tdata1_q & ABSTRACT_TDATA1_TYPE_MASK) ==
+       ABSTRACT_TDATA1_TYPE_MCONTROL) &&
+      ((trigger_tdata1_q & ABSTRACT_MCONTROL_ACTION_MASK) ==
+       ABSTRACT_MCONTROL_ACTION_DEBUG) &&
+      ((trigger_tdata1_q & ABSTRACT_MCONTROL_MATCH_MASK) == 32'h0000_0000) &&
+      ((trigger_tdata1_q & ABSTRACT_MCONTROL_M) != 32'h0000_0000) &&
+      ((trigger_tdata1_q & ABSTRACT_MCONTROL_EXECUTE) != 32'h0000_0000);
+  assign trigger_execute_addr_o = trigger_tdata2_q;
 
   // Losing DM activation or halted state aborts the downstream transaction.
   assign reg_flush_o = !dmactive_i ||
@@ -325,6 +369,8 @@ module debug_abstract_cmd (
       data1_update_q <= '0;
       completion_error_q <= CMDERR_NONE;
       dcsr_step_q <= 1'b0;
+      trigger_tdata1_q <= ABSTRACT_TDATA1_TYPE_MCONTROL;
+      trigger_tdata2_q <= 32'h0000_0000;
     end else begin
       state_q <= state_d;
 
@@ -333,6 +379,8 @@ module debug_abstract_cmd (
         data1_update_valid_q <= 1'b0;
         completion_error_q <= CMDERR_NONE;
         dcsr_step_q <= 1'b0;
+        trigger_tdata1_q <= ABSTRACT_TDATA1_TYPE_MCONTROL;
+        trigger_tdata2_q <= 32'h0000_0000;
       end else if ((state_q == ABSTRACT_IDLE) && command_valid_i) begin
         op_is_reg_q <= (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
                        command_transfer && !command_csr_supported;
@@ -362,6 +410,12 @@ module debug_abstract_cmd (
           if (command_csr_write_supported &&
               (command_regno == ABSTRACT_CSR_DCSR)) begin
             dcsr_step_q <= (data0_i & ABSTRACT_CSR_DCSR_STEP_MASK) != 32'h0000_0000;
+          end else if (command_csr_write_supported &&
+                       (command_regno == ABSTRACT_CSR_TDATA1)) begin
+            trigger_tdata1_q <= command_csr_warl_tdata1;
+          end else if (command_csr_write_supported &&
+                       (command_regno == ABSTRACT_CSR_TDATA2)) begin
+            trigger_tdata2_q <= data0_i;
           end
         end else begin
           completion_error_q <= CMDERR_NONE;

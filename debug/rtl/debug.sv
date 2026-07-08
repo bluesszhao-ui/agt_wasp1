@@ -63,6 +63,8 @@ module debug (
   logic [31:0] mem_rsp_rdata;        // Halted core memory response data.
   logic        mem_rsp_error;        // Halted core memory response error.
   logic        mem_flush;            // Abort/drain memory command on DM/hart loss.
+  logic        trigger_execute_valid; // Abstract trigger CSR enables execute compare.
+  logic [31:0] trigger_execute_addr;  // Abstract trigger CSR execute compare address.
 
   debug_if gpr_debug (
     .clk(clk_i),
@@ -99,6 +101,8 @@ module debug (
   assign core_debug.mem_req_wdata = mem_cmd_wdata;
   assign core_debug.mem_req_wstrb = mem_cmd_wstrb;
   assign core_debug.mem_rsp_ready = mem_rsp_ready;
+  assign core_debug.trigger_execute_valid = trigger_execute_valid;
+  assign core_debug.trigger_execute_addr = trigger_execute_addr;
 
   debug_dmi_regs u_debug_dmi_regs (
     .clk_i(clk_i),
@@ -154,6 +158,7 @@ module debug (
     .data0_i(data0),
     .data1_i(data1),
     .hart_dpc_i(core_debug.dpc),
+    .hart_dcsr_cause_i(core_debug.dcsr_cause),
     .busy_o(abstract_busy),
     .command_error_valid_o(command_error_valid),
     .command_error_o(command_error),
@@ -182,6 +187,8 @@ module debug (
     .mem_rsp_rdata_i(mem_rsp_rdata),
     .mem_rsp_error_i(mem_rsp_error),
     .dcsr_step_o(dcsr_step),
+    .trigger_execute_valid_o(trigger_execute_valid),
+    .trigger_execute_addr_o(trigger_execute_addr),
     .reg_flush_o(reg_flush),
     .mem_flush_o(mem_flush)
   );

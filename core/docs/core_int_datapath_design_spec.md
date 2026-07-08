@@ -125,6 +125,7 @@ debug_halted      -> enables halted GPR request ready
 debug_running     -> exported through debug_if.core
 debug_next_pc_q   -> tracks the next PC implied by fetch/retire
 debug_dpc_q       -> exported through debug_if.core as captured DPC
+debug_dcsr_cause_q -> exported through debug_if.core as DCSR cause
 ```
 
 The pipeline drains rather than being frozen immediately:
@@ -145,6 +146,13 @@ halted state:
 
 resume:
   leaves halted state after any pending GPR response is consumed
+
+execute trigger:
+  compares the ID-stage PC with core_debug.trigger_execute_addr
+  requires core_debug.trigger_execute_valid and a drainable older EX/LSU state
+  redirects fetch back to the matched PC
+  updates debug_next_pc_q/debug_dcsr_cause_q before Debug Mode capture
+  prevents the matched instruction from retiring before halt
 ```
 
 The halted GPR path intentionally reuses register-file port 1 and the single
@@ -158,11 +166,20 @@ first accepted fetch before retirement -> seed debug_next_pc_q with instr_pc_i
 normal retiring instruction             -> debug_next_pc_q = ex_pc + 4
 taken branch/JAL/JALR retire            -> debug_next_pc_q = branch target
 trap or MRET redirect retire            -> debug_next_pc_q = trap/MRET target
+execute trigger match                    -> debug_next_pc_q = matched ID PC
 halted Debug Mode                       -> debug_dpc_q captures debug_next_pc_q
 ```
 
 The captured value is a resume PC, not a history trace PC. The Debug Module
 returns it through the abstract `dpc` CSR read path used by OpenOCD/GDB.
+
+DCSR cause state is kept beside DPC state:
+
+```text
+halt_req_i accepted   -> cause=3, halt request
+step resume requested -> cause=4, step
+execute trigger match -> cause=2, trigger
+```
 
 ## 5. Sequential State Diagram
 

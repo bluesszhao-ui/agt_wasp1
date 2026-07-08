@@ -404,6 +404,8 @@ module tb_tile;
       core_debug.halt_req = 1'b0;
       core_debug.resume_req = 1'b0;
       core_debug.step_req = 1'b0;
+      core_debug.trigger_execute_valid = 1'b0;
+      core_debug.trigger_execute_addr = 32'h0000_0000;
       core_debug.gpr_req_valid = 1'b0;
       core_debug.gpr_req_write = 1'b0;
       core_debug.gpr_req_addr = 5'd0;

@@ -68,6 +68,7 @@ module tb_core_int_datapath;
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
   integer debug_count;         // Debug halt/resume and GPR access coverage.
+  integer trigger_count;       // Execute-address debug trigger coverage.
   logic [31:0] exp_fetch_pc;   // Scoreboard expected frontend stream PC.
   logic        mem_zero_wait;   // Select zero-wait or registered response model.
   logic        mem_req_ready_en;// Allows directed request-ready backpressure.
@@ -722,6 +723,54 @@ module tb_core_int_datapath;
     end
   endtask
 
+  // Enable one execute-address trigger at the next frontend PC and verify the
+  // matched instruction is redirected into Debug Mode before retirement.
+  task automatic debug_trigger_breakpoint(input string name);
+    logic [31:0] match_pc;
+    begin
+      match_pc = exp_fetch_pc;
+      @(negedge clk);
+      core_debug.trigger_execute_addr = match_pc;
+      core_debug.trigger_execute_valid = 1'b1;
+
+      drive_instr(enc_i(12'd7, 5'd0, 3'b000, 5'd13));
+      #1;
+      if (!redirect_valid || (redirect_pc !== match_pc) || instr_ready ||
+          commit_valid) begin
+        $fatal(1, "%s trigger redirect mismatch redir=%0b pc=%08x ready=%0b commit=%0b exp=%08x",
+               name, redirect_valid, redirect_pc, instr_ready, commit_valid,
+               match_pc);
+      end
+      exp_fetch_pc = match_pc;
+      @(negedge clk);
+      instr_valid = 1'b0;
+
+      for (int unsigned tries = 0; tries < 10; tries++) begin
+        @(posedge clk);
+        #1;
+        if (commit_valid) begin
+          $fatal(1, "%s trigger allowed matched instruction to retire rd=%0d data=%08x",
+                 name, commit_rd, commit_data);
+        end
+        if (core_debug.halted) begin
+          if (core_debug.running || instr_ready ||
+              (core_debug.dpc !== match_pc) ||
+              (core_debug.dcsr_cause !== 3'd2)) begin
+            $fatal(1, "%s trigger halt mismatch running=%0b ready=%0b dpc=%08x cause=%0d exp_pc=%08x",
+                   name, core_debug.running, instr_ready, core_debug.dpc,
+                   core_debug.dcsr_cause, match_pc);
+          end
+          core_debug.trigger_execute_valid = 1'b0;
+          pass_count++;
+          debug_count++;
+          trigger_count++;
+          return;
+        end
+      end
+      $fatal(1, "%s did not halt on trigger", name);
+    end
+  endtask
+
   initial begin
     pass_count = 0;
     commit_count = 0;
@@ -743,6 +792,7 @@ module tb_core_int_datapath;
     suppress_count = 0;
     pc_count = 0;
     debug_count = 0;
+    trigger_count = 0;
 
     exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
@@ -758,6 +808,8 @@ module tb_core_int_datapath;
     core_debug.halt_req = 1'b0;
     core_debug.resume_req = 1'b0;
     core_debug.step_req = 1'b0;
+    core_debug.trigger_execute_valid = 1'b0;
+    core_debug.trigger_execute_addr = 32'h0000_0000;
     core_debug.gpr_req_valid = 1'b0;
     core_debug.gpr_req_write = 1'b0;
     core_debug.gpr_req_addr = 5'd0;
@@ -1021,6 +1073,12 @@ module tb_core_int_datapath;
     debug_write_gpr("debug write x0 ignored", 5'd0, 32'hFFFF_FFFF);
     debug_read_gpr("debug read x0", 5'd0, 32'h0000_0000);
     debug_resume("debug resume");
+    debug_trigger_breakpoint("debug execute trigger");
+    debug_resume("debug trigger resume");
+    drive_instr(enc_i(12'd7, 5'd0, 3'b000, 5'd13));
+    drive_instr(32'h0000_0013);
+    expect_commit("post-trigger addi x13", 5'd13, 32'd7);
+    alu_i_count++;
 
     if (commit_count < 8 || alu_i_count < 3 || alu_r_count < 2 ||
         upper_count < 2 || link_count < 3 || branch_count < 2 ||
@@ -1028,16 +1086,16 @@ module tb_core_int_datapath;
         lsu_fault_count < 1 || dmem_wait_count < 2 || dmem_bp_count < 1 ||
         csr_count < 9 || trap_count < 4 ||
         irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
-        pc_count < 57 || debug_count < 9) begin
+        pc_count < 59 || debug_count < 11 || trigger_count < 1) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d",
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d trigger=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
              load_count, store_count, lsu_fault_count, dmem_wait_count,
              dmem_bp_count, csr_count, trap_count, irq_count, hazard_count,
-             suppress_count, pc_count, debug_count);
+             suppress_count, pc_count, debug_count, trigger_count);
     $display("tb_core_int_datapath PASS");
     $finish;
   end

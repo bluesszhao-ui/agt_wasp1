@@ -12,6 +12,7 @@ module core_debug_ctrl (
   input  logic rst_ni,            // Active-low asynchronous reset.
 
   input  logic halt_req_i,        // Debug Module requests entry to Debug Mode.
+  input  logic trigger_req_i,     // Core trigger requests entry to Debug Mode.
   input  logic resume_req_i,      // Debug Module requests exit from Debug Mode.
   input  logic step_req_i,        // Debug Module requests one retired instruction.
   input  logic pipe_idle_i,       // Pipeline and LSU are fully drained.
@@ -34,7 +35,7 @@ module core_debug_ctrl (
   debug_state_e state_d; // Next Debug Mode control state.
 
   // Next-state priority:
-  // 1. halt request wins over resume/step;
+  // 1. halt or trigger requests win over resume/step;
   // 2. pending halt completes only after pipeline and debug response drain;
   // 3. halted resume waits until no GPR response is outstanding;
   // 4. single-step returns to halt-pending after one retirement.
@@ -43,7 +44,7 @@ module core_debug_ctrl (
 
     unique case (state_q)
       DBG_RUNNING: begin
-        if (halt_req_i) begin
+        if (halt_req_i || trigger_req_i) begin
           state_d = (pipe_idle_i && !debug_busy_i) ? DBG_HALTED :
                                                    DBG_HALT_PENDING;
         end
@@ -68,7 +69,7 @@ module core_debug_ctrl (
       end
 
       DBG_STEP_RUNNING: begin
-        if (halt_req_i || retire_valid_i) begin
+        if (halt_req_i || trigger_req_i || retire_valid_i) begin
           state_d = pipe_idle_i ? DBG_HALTED : DBG_HALT_PENDING;
         end
       end
@@ -89,9 +90,9 @@ module core_debug_ctrl (
     end
   end
 
-  // Fetch is stopped as soon as a halt request is visible, even before the FSM
-  // samples it, so no extra instruction is accepted behind a debug halt.
-  assign stop_fetch_o = halt_req_i || (state_q == DBG_HALT_PENDING) ||
+  // Fetch is stopped as soon as a halt/trigger request is visible, even before
+  // the FSM samples it, so no extra instruction is accepted behind debug entry.
+  assign stop_fetch_o = halt_req_i || trigger_req_i || (state_q == DBG_HALT_PENDING) ||
                         (state_q == DBG_HALTED);
   assign freeze_pipe_o = (state_q == DBG_HALTED);
   assign halted_o = (state_q == DBG_HALTED);

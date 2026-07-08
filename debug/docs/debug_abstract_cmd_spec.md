@@ -8,7 +8,8 @@ accesses, and provides the CSR probes needed by OpenOCD/GDB. The implementation
 supports RV32 integer GPR Access Register commands, physical Access Memory
 byte/half/word transfers through the halted core, local reads of `misa`,
 `mstatus`, `dcsr`, and the core-captured `dpc`, plus writes to the `dcsr.step`
-bit used for single-step.
+bit used for single-step. It also implements one RV32 `mcontrol`
+execute-address trigger for OpenOCD/GDB hardware breakpoints.
 
 ## 2. Supported Access Register Command
 
@@ -20,8 +21,8 @@ bit used for single-step.
 | `aarpostincrement[19]` | zero |
 | `postexec[18]` | zero; no program buffer yet |
 | `transfer[17]` | zero for no-op or one for GPR/CSR transfer |
-| `write[16]` | zero reads; one writes GPR or the supported `dcsr.step` bit |
-| `regno[15:0]` | `0x1000..0x101F` for x0-x31, read-only `0x0301` `misa`, read-only `0x0300` `mstatus`, read/write-step `0x07B0` `dcsr`, read-only `0x07B1` `dpc`, or OpenOCD probe CSRs |
+| `write[16]` | zero reads; one writes GPR, `dcsr.step`, or supported trigger CSRs |
+| `regno[15:0]` | `0x1000..0x101F` for x0-x31, read-only `0x0301` `misa`, read-only `0x0300` `mstatus`, read/write-step `0x07B0` `dcsr`, read-only `0x07B1` `dpc`, trigger CSRs `0x07A0..0x07A5`, or OpenOCD probe CSRs |
 
 A command with `transfer=0`, supported command type, and no unsupported option
 is a successful no-op; size, register number, and write direction are ignored.
@@ -30,16 +31,32 @@ command, including this transfer-disabled no-op.
 
 CSR reads complete locally for the supported probe set. Unimplemented CSR
 probes complete as zero so OpenOCD does not disable abstract CSR access after
-probing optional trigger or status CSRs. CSR writes complete as no-ops except
-for `dcsr.step`.
+probing optional status CSRs. CSR writes complete as no-ops except for
+`dcsr.step`, `tdata1`, and `tdata2`.
 
 ```text
 misa      -> 0x40000100, RV32 + I extension
 mstatus   -> 0x00000000, machine mode baseline with no writable status bits yet
-dcsr read -> 0x400000C3 with bit 2 reflecting the latched step bit
+dcsr read -> 0x40000003 | hart_dcsr_cause_i<<6, with bit 2 reflecting step
 dcsr write-> updates only bit 2, DCSR.step; other written bits are ignored
 dpc       -> hart_dpc_i, the core-captured Debug PC/resume PC
 ```
+
+The trigger CSR behavior is intentionally minimal and WARL-filtered:
+
+```text
+tselect  -> always reads 0; writes are ignored, exposing trigger 0 only
+tinfo    -> 0x00000004, advertising RV32 mcontrol support
+tdata1   -> RV32 mcontrol type=2; legal fields are dmode, action, match, m, execute
+tdata2   -> execute-address compare value
+tdata3   -> zero
+tcontrol -> zero
+```
+
+The only enabled trigger mode is `mcontrol` execute-address equality in M-mode
+with `action=1` (enter Debug Mode). Unsupported `type` writes return a disabled
+`mcontrol` image, and unsupported actions are cleared so the core comparator is
+not enabled.
 
 ## 3. Supported Access Memory Command
 
