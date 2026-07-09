@@ -1,6 +1,6 @@
 # ftdi_debugger Hardware
 
-This directory is reserved for the final FTDI debugger hardware collateral:
+This directory holds the FTDI debugger hardware collateral:
 
 ```text
 schematic source
@@ -12,7 +12,16 @@ assembly notes
 bring-up notes
 ```
 
-No schematic or PCB source is checked in yet.
+The first checked-in Rev A schematic-input package is:
+
+```text
+schematic/wasp1_ft2232h_debugger_revA_schematic.md
+netlist/wasp1_ft2232h_debugger_revA_nets.csv
+bom/wasp1_ft2232h_debugger_revA_bom.csv
+```
+
+This is not yet a PCB release. It is the reviewable source of truth for drawing
+the formal EDA schematic and then the board layout.
 
 The first schematic revision must follow:
 

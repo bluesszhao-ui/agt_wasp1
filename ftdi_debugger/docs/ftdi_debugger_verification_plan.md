@@ -18,7 +18,7 @@ behavior.
 | DTM/DM discovery | Run OpenOCD RISC-V examine | hart 0, XLEN=32, and `misa=0x40000100` are detected |
 | GDB attach | Run wasp1 GDB smoke | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, then detaches |
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
-| Collateral check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, and docs remain mutually consistent |
+| Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A schematic input, netlist, BOM, and docs remain mutually consistent |
 
 ## 3. Time-Sequenced Case Table Template
 
@@ -29,7 +29,7 @@ behavior.
 | 15s-30s | Start OpenOCD | TAP/DTM/hart detected | TBD |
 | 30s-60s | Run GDB smoke | register packet, PC read, `stepi`, and `hbreak` pass | TBD |
 | 60s-90s | Open UART channel | console or OTP programming transaction passes | TBD |
-| offline | Run collateral checker | config and documentation checks pass | PASS before hardware |
+| offline | Run collateral checker | config, documentation, Rev A netlist, and BOM checks pass | PASS before hardware |
 
 ## 4. Required Evidence
 
@@ -39,6 +39,7 @@ The final hardware milestone should archive:
 schematic PDF
 PCB layout/gerbers
 BOM
+Rev A schematic-input lint log
 OpenOCD log
 GDB smoke log
 UART smoke log

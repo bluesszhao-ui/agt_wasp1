@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import csv
 import re
 import sys
 
@@ -99,11 +100,78 @@ def check_spec_and_plan() -> None:
     print("PASS spec and plans")
 
 
+def read_csv_rel(path: str) -> list[dict[str, str]]:
+    with (ROOT / path).open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def find_row(rows: list[dict[str, str]], key: str, value: str) -> dict[str, str]:
+    for row in rows:
+        if row.get(key) == value:
+            return row
+    raise AssertionError(f"csv: missing row with {key}={value!r}")
+
+
+def check_hardware_package() -> None:
+    schematic = read_rel("hw/schematic/wasp1_ft2232h_debugger_revA_schematic.md")
+    nets = read_csv_rel("hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv")
+    bom = read_csv_rel("hw/bom/wasp1_ft2232h_debugger_revA_bom.csv")
+
+    for token in [
+        "USB and local power",
+        "FT2232H core",
+        "VREF and level shifting",
+        "Target connector and indicators",
+        "ADBUS0",
+        "ADBUS5",
+        "BDBUS0",
+        "BDBUS1",
+        "ftdi layout_init 0x0038 0x003b",
+        "VREF_VALID",
+    ]:
+        require_token(schematic, token, "hardware schematic input")
+
+    required_nets = {
+        "FT_A_TCK": ("U1 ADBUS0", "U4 A1", "0x0001"),
+        "FT_A_TDI": ("U1 ADBUS1", "U4 A2", "0x0002"),
+        "FT_A_TDO": ("U5 A1", "U1 ADBUS2", "0x0004"),
+        "FT_A_TMS": ("U1 ADBUS3", "U4 A3", "0x0008"),
+        "FT_A_NTRST": ("U1 ADBUS4", "U4 A4", "0x0010"),
+        "FT_A_NSRST": ("U1 ADBUS5", "U4 A5", "0x0020"),
+        "FT_B_TXD": ("U1 BDBUS0", "U4 A6", "Channel B"),
+        "FT_B_RXD": ("U5 A2", "U1 BDBUS1", "Channel B"),
+        "VREF_VALID": ("U3 output", "U4 OE/U5 OE", "valid VREF"),
+    }
+    for net, (source, destination, token) in required_nets.items():
+        row = find_row(nets, "net", net)
+        if row.get("source") != source or row.get("destination") != destination:
+            raise AssertionError(
+                f"netlist: {net} expected {source}->{destination}, "
+                f"observed {row.get('source')}->{row.get('destination')}"
+            )
+        require_token(row.get("requirement", ""), token, f"netlist {net}")
+
+    for refdes in ["J1", "U1", "Y1", "U2", "U3", "U4", "U5", "J2"]:
+        find_row(bom, "refdes", refdes)
+    require_token(
+        find_row(bom, "refdes", "U1").get("preferred_part_or_class", ""),
+        "FT2232H",
+        "bom U1",
+    )
+    require_token(
+        find_row(bom, "refdes", "J2").get("notes", ""),
+        "VREF/JTAG/reset/UART/GND",
+        "bom J2",
+    )
+    print("PASS hardware package")
+
+
 def main() -> int:
     try:
         check_openocd_cfg()
         check_pinout_doc()
         check_spec_and_plan()
+        check_hardware_package()
     except AssertionError as exc:
         print(f"FAIL {exc}", file=sys.stderr)
         return 1

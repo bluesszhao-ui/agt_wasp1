@@ -1,0 +1,16 @@
+refdes,quantity,function,preferred_part_or_class,notes
+J1,1,USB connector,USB-C receptacle USB2-only,Device-side CC pulldowns required
+F1,1,USB power protection,resettable fuse or current limiter,Protects VBUS input
+ESD1,1,USB ESD array,low-capacitance USB2 ESD protector,Place close to J1
+U1,1,USB bridge,FT2232HL or FT2232H-family equivalent,Channel A MPSSE JTAG and Channel B UART
+Y1,1,reference clock,12 MHz crystal or oscillator,Follow FTDI clocking guidance
+U2,1,optional EEPROM,93LC56B or 93C56 class,May be DNI if default VID/PID is acceptable
+U3,1,VREF valid detector,low-power comparator or supervisor,Asserts VREF_VALID only inside supported VREF range
+U4,1,debugger-to-target level shifter,8-bit dual-supply direction-fixed translator,OE gated by VREF_VALID
+U5,1,target-to-debugger level shifter,2-bit dual-supply direction-fixed translator,OE gated by VREF_VALID
+J2,1,target connector,keyed 2x7 header,Carries VREF/JTAG/reset/UART/GND
+D1,1,USB power LED,green LED plus resistor,Indicates local 3.3 V rail
+D2,1,VREF LED,amber LED plus resistor,Indicates valid target VREF
+RCC1/RCC2,2,USB-C CC pulldown,5.1 kOhm 1%,Advertises USB device role
+RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,series damping,22 to 47 ohm resistor footprint,Place near U4 target-facing outputs
+TP1/TP2/TP3,3,test points,compact SMT test point,TCK TDO and VREF_VALID debug access

@@ -31,6 +31,14 @@ Step 1 has a stage-1 reference output:
 ftdi_debugger/docs/ftdi_debugger_pinout.md
 ```
 
+Steps 2 and 3 now have a Rev A schematic-input package:
+
+```text
+ftdi_debugger/hw/schematic/wasp1_ft2232h_debugger_revA_schematic.md
+ftdi_debugger/hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv
+ftdi_debugger/hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
+```
+
 The reference OpenOCD output for step 4 is:
 
 ```text
@@ -77,3 +85,10 @@ one OpenOCD/GDB hardware breakpoint at 0x4
 
 The FTDI debugger bring-up should reuse that exact GDB script before adding
 board-specific stress tests.
+
+## 5. Current Hardware Package Status
+
+The Rev A hardware package freezes the intended FT2232H channel split, target
+header, VREF-valid level-shifter enable policy, initial BOM classes, and
+netlist-level signal ownership. Formal EDA schematic capture, PCB layout,
+gerbers, assembly files, and physical bring-up remain later hardware steps.

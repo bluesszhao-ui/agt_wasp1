@@ -21,8 +21,9 @@ Primary software: OpenOCD ftdi driver plus wasp1 target config
 ```
 
 Current status: stage-1 requirements, reference pinout, OpenOCD FTDI config,
-and static collateral checks are present. PCB/schematic files are a later
-hardware milestone.
+Rev A schematic-input/netlist/BOM package, and static collateral checks are
+present. Formal EDA schematic capture, PCB layout, and board bring-up are later
+hardware milestones.
 
 Run the documentation/config consistency check with:
 

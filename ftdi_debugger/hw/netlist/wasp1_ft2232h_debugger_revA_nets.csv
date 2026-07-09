@@ -1,0 +1,35 @@
+page,net,source,destination,requirement
+USB,VCC_USB,J1 VBUS,F1 input,USB bus power enters through resettable protection
+USB,USB_DP,J1 D+,ESD1 and U1 USBDP,USB D+ protected before FT2232H
+USB,USB_DM,J1 D-,ESD1 and U1 USBDM,USB D- protected before FT2232H
+USB,CC1,J1 CC1,RCC1 to GND,USB-C device pulldown
+USB,CC2,J1 CC2,RCC2 to GND,USB-C device pulldown
+POWER,VCC_3V3,U6 output,U1 VCCIOA/U1 VCCIOB/U4 A-side/U5 A-side,local debugger IO rail
+POWER,GND,board ground,J1/J2/U1/U4/U5 common reference,common return
+CLOCK,FT_CLK12,Y1,U1 XI/XO,12 MHz FT2232H reference
+EEPROM,EECS,U1 EECS,U2 CS,optional FTDI EEPROM chip select
+EEPROM,EESK,U1 EESK,U2 SK,optional FTDI EEPROM clock
+EEPROM,EEDATA,U1 EEDATA,U2 DI/DO,optional FTDI EEPROM data
+VREF,VREF,J2 pin 1,U3 input/U4 B-side/U5 B-side,target IO reference only
+VREF,VREF_VALID,U3 output,U4 OE/U5 OE,target-facing drivers enabled only with valid VREF
+JTAG,FT_A_TCK,U1 ADBUS0,U4 A1,OpenOCD bit 0x0001 TCK source
+JTAG,TCK,U4 B1,J2 pin 3,target TCK with series damping footprint
+JTAG,FT_A_TDI,U1 ADBUS1,U4 A2,OpenOCD bit 0x0002 TDI source
+JTAG,TDI,U4 B2,J2 pin 7,target TDI with series damping footprint
+JTAG,TDO,J2 pin 8,U5 B1,target TDO input path
+JTAG,FT_A_TDO,U5 A1,U1 ADBUS2,OpenOCD bit 0x0004 TDO input
+JTAG,FT_A_TMS,U1 ADBUS3,U4 A3,OpenOCD bit 0x0008 TMS source
+JTAG,TMS,U4 B3,J2 pin 5,target TMS with series damping footprint
+JTAG,FT_A_NTRST,U1 ADBUS4,U4 A4,OpenOCD bit 0x0010 nTRST source
+JTAG,nTRST,U4 B4,J2 pin 9,target TAP reset active low
+JTAG,FT_A_NSRST,U1 ADBUS5,U4 A5,OpenOCD bit 0x0020 nSRST source
+JTAG,nSRST,U4 B5,J2 pin 10,target system reset active low
+UART,FT_B_TXD,U1 BDBUS0,U4 A6,FT2232H Channel B UART TX
+UART,UART_RXD,U4 B6,J2 pin 12,target UART RXD
+UART,UART_TXD,J2 pin 11,U5 B2,target UART TXD
+UART,FT_B_RXD,U5 A2,U1 BDBUS1,FT2232H Channel B UART RX
+INDICATOR,LED_USB,VCC_3V3,D1/RLED1,USB/local power indicator
+INDICATOR,LED_VREF,VREF_VALID,D2/RLED2,target VREF valid indicator
+TEST,TP_TCK,TCK,TP1,JTAG clock measurement point
+TEST,TP_TDO,TDO,TP2,JTAG data-out measurement point
+TEST,TP_VREF_VALID,VREF_VALID,TP3,level-shifter enable measurement point

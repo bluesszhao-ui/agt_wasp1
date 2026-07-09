@@ -2,11 +2,12 @@
 
 ## 1. Result
 
-Status: PASS for stage-1 collateral consistency.
+Status: PASS for stage-1 collateral and Rev A hardware-package consistency.
 
 This is a pre-hardware verification report. It verifies documentation and
-OpenOCD configuration consistency before schematic/PCB work starts. Electrical
-and board-level checks remain TBD until hardware exists.
+OpenOCD configuration consistency before formal EDA schematic/PCB work starts.
+It now also checks the Rev A schematic-input, netlist, and BOM package.
+Electrical and board-level checks remain TBD until hardware exists.
 
 ## 2. Command
 
@@ -21,6 +22,7 @@ make -C ftdi_debugger lint
 | 0s-1s | Parse `openocd/wasp1_ft2232h_reference.cfg` | FTDI driver, VID/PID, Channel A, layout masks, JTAG TAP ID, and RISC-V target stanza are present | PASS |
 | 1s-2s | Parse `docs/ftdi_debugger_pinout.md` | ADBUS/BDBUS mapping, VREF range, OpenOCD masks, IDCODE, `stepi`, and `hbreak` expectations are documented | PASS |
 | 2s-3s | Parse spec, design plan, and verification plan | FT2232H channel split, OpenOCD config, GDB bring-up, USB/JTAG/UART checks are documented | PASS |
+| 3s-4s | Parse Rev A schematic-input, netlist, and BOM files | ADBUS/BDBUS nets, VREF-valid gating, FT2232H, level shifters, target connector, and OpenOCD bit masks are mutually consistent | PASS |
 
 ## 4. Coverage Summary
 
@@ -28,6 +30,7 @@ make -C ftdi_debugger lint
 PASS openocd reference cfg
 PASS pinout document
 PASS spec and plans
+PASS hardware package
 RESULT PASS ftdi_debugger collateral check
 ```
 
@@ -43,6 +46,9 @@ OpenOCD layout_init 0x0038 0x003b
 nTRST/nSRST masks
 wasp1 TAP expected ID 0x100001cf
 GDB stepi and hbreak smoke expectations
+Rev A schematic-input page plan
+Rev A netlist-level FT2232H/JTAG/UART/VREF mapping
+Rev A BOM key components
 ```
 
 ## 5. Residual Scope
@@ -52,7 +58,7 @@ The following remain for the hardware milestone:
 ```text
 schematic ERC
 PCB DRC
-BOM review
+BOM manufacturer/footprint review
 USB enumeration on a real board
 VREF gating measurement
 JTAG waveform/scope checks

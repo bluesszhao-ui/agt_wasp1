@@ -70,7 +70,7 @@ PASS       Current verification target passes
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
 | `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/mixed-IRQ-DMA/DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
-| `ftdi_debugger` | SPEC | FT2232H external hardware debugger requirements, reference pinout, OpenOCD FTDI config, and collateral checker are captured; schematic, PCB, and FPGA/board bring-up remain |
+| `ftdi_debugger` | SPEC | FT2232H external hardware debugger requirements, reference pinout, OpenOCD FTDI config, Rev A schematic-input/netlist/BOM package, and collateral checker are captured; formal EDA schematic, PCB, and FPGA/board bring-up remain |
 | full system software | TODO | Machine timer, UART TX-empty, UART RX/overrun, DMA external interrupt, GPIO external interrupt, long generated-image boot, mixed IRQ/DMA smokes, and first OpenOCD/GDB stress pass; longer software/debugger regressions remain |
 
 ## Near-Term Plan
