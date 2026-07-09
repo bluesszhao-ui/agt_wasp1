@@ -52,6 +52,15 @@ This target builds the remote-bitbang harness, runs `llvm_s1 smoke` to create
 the generated OTP images, starts the simulator, starts OpenOCD, runs the GDB
 script, and then tears the child processes down.
 
+The longer debugger stress regression is:
+
+```text
+make -C wasp1 sim-openocd-gdb-stress
+```
+
+It uses the same simulator/OpenOCD harness with a different GDB script and log
+prefix.
+
 ## 3. Local Remote-Bitbang Smoke
 
 The repository includes a Python smoke client that uses the same socket
@@ -101,6 +110,10 @@ registers, checks PC visibility, executes one native `stepi`, sets one hardware
 breakpoint with `hbreak *0x4`, continues until the breakpoint hits, detaches,
 and exits.
 
+The stress script additionally writes and reads one GPR through GDB, checks one
+known `stepi` PC transition on the two-instruction OTP loop, deletes/reinstalls
+hardware breakpoints, and hits both `hbreak *0x0` and `hbreak *0x4`.
+
 ## 6. Current Status
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
@@ -133,5 +146,18 @@ Breakpoint 1, 0x00000004 in ?? ()
 dcsr           0x40000083
 pc             0x4  0x4
 wasp1_gdb_hbreak_pass
+[Inferior 1 (Remote target) detached]
+```
+
+Observed GDB stress:
+
+```text
+t0             0x12345678
+wasp1_gdb_reg_write_read_pass
+wasp1_gdb_stress_stepi_pass
+Hardware assisted breakpoint 1 at 0x0
+wasp1_gdb_stress_hbreak0_pass
+Hardware assisted breakpoint 2 at 0x4
+wasp1_gdb_stress_hbreak4_pass
 [Inferior 1 (Remote target) detached]
 ```

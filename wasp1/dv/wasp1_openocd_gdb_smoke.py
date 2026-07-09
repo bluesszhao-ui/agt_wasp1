@@ -95,6 +95,14 @@ def main() -> int:
     parser.add_argument("--openocd", default="openocd")
     parser.add_argument("--gdb", default="riscv64-elf-gdb")
     parser.add_argument("--logs-dir", default="logs")
+    parser.add_argument("--log-prefix", default="sim_openocd_gdb")
+    parser.add_argument(
+        "--expect-token",
+        action="append",
+        default=[],
+        help="Required token in the GDB log; may be passed multiple times",
+    )
+    parser.add_argument("--pass-label", default="wasp1_openocd_gdb_smoke")
     args = parser.parse_args()
 
     repo_module_dir = Path.cwd()
@@ -105,9 +113,9 @@ def main() -> int:
     if args.otp_hex:
         sim_cmd.append(f"+WASP1_OTP_HEX={args.otp_hex}")
 
-    sim_log = logs_dir / "sim_openocd_gdb_sim.log"
-    openocd_log = logs_dir / "sim_openocd_gdb_openocd.log"
-    gdb_log = logs_dir / "sim_openocd_gdb_gdb.log"
+    sim_log = logs_dir / f"{args.log_prefix}_sim.log"
+    openocd_log = logs_dir / f"{args.log_prefix}_openocd.log"
+    gdb_log = logs_dir / f"{args.log_prefix}_gdb.log"
 
     with sim_log.open("w", encoding="utf-8") as sim_out:
         sim_proc = subprocess.Popen(
@@ -173,10 +181,13 @@ def main() -> int:
             raise AssertionError("OpenOCD reported an error")
         if "Error in sourced command file" in gdb_text or "remote failure" in gdb_text:
             raise AssertionError("GDB reported a command or remote failure")
-        if "wasp1_gdb_stepi_pass" not in gdb_text:
-            raise AssertionError("GDB did not complete native stepi")
-        if "wasp1_gdb_hbreak_pass" not in gdb_text:
-            raise AssertionError("GDB did not complete hardware breakpoint")
+        expected_tokens = args.expect_token or [
+            "wasp1_gdb_stepi_pass",
+            "wasp1_gdb_hbreak_pass",
+        ]
+        for token in expected_tokens:
+            if token not in gdb_text:
+                raise AssertionError(f"GDB log missing required token {token!r}")
         if "Inferior 1" not in gdb_text and "detached" not in gdb_text.lower():
             raise AssertionError("GDB did not detach cleanly")
     finally:
@@ -184,7 +195,7 @@ def main() -> int:
             terminate_process(openocd_proc)
         terminate_process(sim_proc)
 
-    print("wasp1_openocd_gdb_smoke PASS")
+    print(f"{args.pass_label} PASS")
     return 0
 
 

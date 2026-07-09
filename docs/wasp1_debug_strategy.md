@@ -65,9 +65,10 @@ hit one hardware breakpoint through hbreak
 ```
 
 Physical Access Memory, native `stepi`, and one hardware breakpoint are now
-part of the automated remote-bitbang OpenOCD/GDB smoke. Multiple triggers, data
-triggers, System Bus Access, and program-buffer execution remain later-stage
-targets.
+part of the automated remote-bitbang OpenOCD/GDB smoke. A first stress target
+also covers GPR write/read and breakpoint delete/reinstall at two OTP
+addresses. Multiple simultaneous triggers, data triggers, System Bus Access,
+and program-buffer execution remain later-stage targets.
 
 ## 6. External FTDI Debugger
 

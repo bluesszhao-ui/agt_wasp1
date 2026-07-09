@@ -19,6 +19,7 @@ make -C wasp1 sim-gpio-irq
 make -C wasp1 sim-timer-irq
 make -C wasp1 sim-rbb-smoke
 make -C wasp1 sim-openocd-gdb-smoke
+make -C wasp1 sim-openocd-gdb-stress
 ```
 
 ## 2. Results
@@ -41,6 +42,7 @@ make -C wasp1 sim-openocd-gdb-smoke
 | `tb_wasp1` timer IRQ firmware simulation | PASS |
 | Remote-bitbang socket smoke | PASS |
 | Automated OpenOCD/GDB process smoke | PASS |
+| Automated OpenOCD/GDB stress | PASS |
 
 Simulation output:
 
@@ -71,6 +73,8 @@ OpenOCD: hart 0: XLEN=32, misa=0x40000100
 OpenOCD: [wasp1.cpu] Found 1 triggers
 GDB: registers read, PC visible, stepi PASS, hbreak PASS, detach PASS
 wasp1_openocd_gdb_smoke PASS
+GDB stress: register write/read PASS, stepi PASS, hbreak 0x0 PASS, hbreak 0x4 PASS
+wasp1_openocd_gdb_stress PASS
 ```
 
 ## 3. Time-Sequenced Case Table
@@ -85,6 +89,7 @@ wasp1_openocd_gdb_smoke PASS
 | 105ns-3us | Bit-bang JTAG IDCODE, DTMCS, `dmcontrol.dmactive`, and `dmstatus` | JTAG pins reach integrated Debug Module; `dbg_dmactive_o=1` | PASS |
 | Remote-bitbang run | Launch `Vwasp1` socket harness and connect Python remote-bitbang client | TCP JTAG path returns IDCODE/DTMCS and DMI `dmstatus` success | PASS |
 | OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, one trigger discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
+| OpenOCD/GDB stress run | Reuse the remote-bitbang process harness with `wasp1_debug_stress.gdb` | GDB writes/reads `t0=0x12345678`, single-steps from `0x4` to `0x0`, deletes/reinstalls breakpoints, and hits hardware breakpoints at `0x0` and `0x4` | PASS |
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
@@ -104,7 +109,8 @@ This is an integration smoke test, not a full system software test. The
 OpenOCD/GDB process path is now automated and verified for connect, halt,
 register read, PC read, PC disassembly through Access Memory, native GDB
 `stepi` with PC-change assertion, one hardware breakpoint through `hbreak`, and
-detach over remote-bitbang JTAG.
+detach over remote-bitbang JTAG. A longer GDB stress target now also covers GPR
+write/read and hardware breakpoint delete/reinstall at two OTP addresses.
 The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
@@ -116,5 +122,5 @@ The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
 interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes richer debug
-operations such as multiple breakpoints, data/load/store triggers, and longer
-debugger/software stress regressions.
+operations such as multiple simultaneous breakpoints, data/load/store triggers,
+and longer software/debugger stress regressions.
