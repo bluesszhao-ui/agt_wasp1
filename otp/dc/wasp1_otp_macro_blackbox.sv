@@ -5,6 +5,7 @@
 // Use this stub when an ASIC synthesis run must bind executable program storage
 // to an OTP/NVM compiler macro. The AHB wrapper above this boundary owns the
 // software-visible unlock, lock, status, and illegal 0->1 programming checks.
+/* verilator lint_off UNDRIVEN */
 (* blackbox *)
 module wasp1_otp_macro #(
   parameter int DATA_WIDTH = 32,
@@ -20,3 +21,4 @@ module wasp1_otp_macro #(
   output logic [DATA_WIDTH-1:0] prog_read_data_o  // Existing word for legality checks.
 );
 endmodule
+/* verilator lint_on UNDRIVEN */

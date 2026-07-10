@@ -18,6 +18,10 @@ wave/*
 *.wlf
 *.log
 
+# Local Python tool cache
+__pycache__/
+*.pyc
+
 # Local LLVM source/build/install payloads are large third-party artifacts.
 llvm_s1/toolchain/llvm-project/
 llvm_s1/toolchain/install/*

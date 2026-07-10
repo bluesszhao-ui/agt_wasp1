@@ -20,7 +20,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-cache-metrics sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
 
 all: lint
 
@@ -158,6 +158,11 @@ sim-cache-metrics:
 		--csv logs/cache_metrics.csv \
 		--markdown logs/cache_metrics.md > logs/cache_metrics.log 2>&1
 	@cat logs/cache_metrics.log
+
+synth-collateral-check:
+	@mkdir -p logs
+	python3 dv/check_synth_collateral.py > logs/synth_collateral_check.log 2>&1
+	@cat logs/synth_collateral_check.log
 
 sim-rbb-build:
 	@mkdir -p build logs

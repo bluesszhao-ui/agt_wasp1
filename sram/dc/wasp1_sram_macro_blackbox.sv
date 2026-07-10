@@ -6,6 +6,7 @@
 // bind the wrapper to a foundry SRAM compiler macro. The final technology
 // adapter may keep this exact logical port list or wrap the vendor-specific
 // macro below this boundary.
+/* verilator lint_off UNDRIVEN */
 (* blackbox *)
 module wasp1_sram_macro #(
   parameter int DATA_WIDTH = 32,
@@ -20,3 +21,4 @@ module wasp1_sram_macro #(
   output logic [DATA_WIDTH-1:0]       rdata_o   // Read data.
 );
 endmodule
+/* verilator lint_on UNDRIVEN */
