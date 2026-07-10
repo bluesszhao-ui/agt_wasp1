@@ -21,6 +21,7 @@
 | `wasp1_debug_strategy.md` | RISC-V debug/OpenOCD/GDB strategy |
 | `wasp1_otp_boot_strategy.md` | OTP boot and programming model |
 | `wasp1_llvm_s1_plan.md` | LLVM/BSP/toolchain plan and stage-1 BSP status |
+| `../wasp1/docs/wasp1_cache_metrics.md` | Top-level C firmware cache hit-rate and runtime-efficiency metrics |
 | `../ftdi_debugger/docs/ftdi_debugger_spec.md` | FT2232H external debugger requirements |
 | `../ftdi_debugger/docs/ftdi_debugger_pinout.md` | FTDI debugger stage-1 pinout and schematic constraints |
 | `../ftdi_debugger/docs/ftdi_debugger_design_plan.md` | FTDI debugger hardware design plan |

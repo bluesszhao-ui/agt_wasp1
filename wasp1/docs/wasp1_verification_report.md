@@ -21,6 +21,7 @@ make -C wasp1 sim-timer-irq
 make -C wasp1 sim-rbb-smoke
 make -C wasp1 sim-openocd-gdb-smoke
 make -C wasp1 sim-openocd-gdb-stress
+make -C wasp1 sim-cache-metrics
 ```
 
 ## 2. Results
@@ -45,6 +46,7 @@ make -C wasp1 sim-openocd-gdb-stress
 | Remote-bitbang socket smoke | PASS |
 | Automated OpenOCD/GDB process smoke | PASS |
 | Automated OpenOCD/GDB stress | PASS |
+| Cache/runtime metrics sweep | PASS |
 
 Simulation output:
 
@@ -79,6 +81,7 @@ GDB: registers read, PC visible, stepi PASS, hbreak PASS, detach PASS
 wasp1_openocd_gdb_smoke PASS
 GDB stress: register write/read PASS, stepi PASS, hbreak 0x0 PASS, hbreak 0x4 PASS
 wasp1_openocd_gdb_stress PASS
+WASP1_CACHE_METRICS_ROW label=system_stress cycles=73727 retired=9027 ipc=0.122 cpi=8.167 ic_hit_pct=87.2 dc_hit_pct=92.7
 ```
 
 ## 3. Time-Sequenced Case Table
@@ -94,6 +97,7 @@ wasp1_openocd_gdb_stress PASS
 | Remote-bitbang run | Launch `Vwasp1` socket harness and connect Python remote-bitbang client | TCP JTAG path returns IDCODE/DTMCS and DMI `dmstatus` success | PASS |
 | OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, one trigger discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
 | OpenOCD/GDB stress run | Reuse the remote-bitbang process harness with `wasp1_debug_stress.gdb` | GDB writes/reads `t0=0x12345678`, single-steps from `0x4` to `0x0`, deletes/reinstalls breakpoints, and hits hardware breakpoints at `0x0` and `0x4` | PASS |
+| Cache metrics sweep | Build `tb_wasp1` once and run each generated C OTP image with `+WASP1_METRICS` | `logs/cache_metrics.csv` and `logs/cache_metrics.md` contain one metrics row per firmware image with cycles, retired count, IPC/CPI, and I/D cache hit rates | PASS |
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
@@ -124,6 +128,8 @@ OTP readback activity in one generated-image run.
 The system stress firmware image repeats D-SRAM, DMA, timer, GPIO, UART, and
 OTP-read activity over six polling rounds and checks accumulated status and
 checksum mailboxes at the top level.
+The cache metrics sweep now records current I-cache/D-cache hit rates and
+cycles/retired/IPC/CPI for all generated C firmware images.
 The mixed IRQ/DMA firmware image now combines DMA master activity with two INTC
 external sources and verifies DMA-before-GPIO priority order in software.
 The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external

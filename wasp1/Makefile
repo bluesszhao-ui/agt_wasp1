@@ -20,7 +20,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-cache-metrics sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
 
 all: lint
 
@@ -144,6 +144,20 @@ sim-timer-irq:
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(TIMER_IRQ_HEX) \
 		+WASP1_TIMER_IRQ_CHECK $(SIM_ARGS) > logs/tb_wasp1_timer_irq.log 2>&1
 	@cat logs/tb_wasp1_timer_irq.log
+
+sim-cache-metrics:
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP)_metrics \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_cache_metrics_build.log 2>&1
+	python3 dv/wasp1_cache_metrics.py \
+		--sim build/obj_$(WASP1_TOP)_metrics/V$(WASP1_TOP) \
+		--logs-dir logs \
+		--csv logs/cache_metrics.csv \
+		--markdown logs/cache_metrics.md > logs/cache_metrics.log 2>&1
+	@cat logs/cache_metrics.log
 
 sim-rbb-build:
 	@mkdir -p build logs

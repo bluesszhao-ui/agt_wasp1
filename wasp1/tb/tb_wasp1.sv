@@ -213,13 +213,31 @@ module tb_wasp1;
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
   bit          gpio_irq_trace;              // Enables focused GPIO/INTC interrupt diagnostics.
+  bit          metrics_enable;              // Enables cache/runtime metric summary printing.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
+  string       metrics_label;               // Program label printed with metric summary.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
   int unsigned uart_tx_push_count;          // Number of bytes accepted into the UART TX FIFO.
   logic [31:0] last_ex_pc;                  // Most recent execute-stage PC for timeout diagnostics.
   logic [31:0] last_ex_instr;               // Most recent execute-stage instruction for diagnostics.
   int unsigned core_rsp_count;              // Number of core bridge responses observed.
   bit          otp_fasttext_seen;           // Set after execute PC enters I-SRAM for OTP programming.
+  longint unsigned metric_cycles;           // Active hclk cycles after reset release.
+  longint unsigned metric_retired;          // Architectural instruction retire pulses.
+  longint unsigned metric_rf_commits;       // Architectural register-file writes.
+  longint unsigned metric_ic_req;           // I-cache frontend requests accepted.
+  longint unsigned metric_ic_hit;           // I-cache accepted requests satisfied by tag hit.
+  longint unsigned metric_ic_miss;          // I-cache refill starts caused by misses.
+  longint unsigned metric_ic_refill;        // I-cache refill lines accepted.
+  longint unsigned metric_dc_req;           // D-cache core data requests accepted.
+  longint unsigned metric_dc_cacheable;     // D-cache cacheable, aligned data requests.
+  longint unsigned metric_dc_uncached;      // D-cache uncached data requests.
+  longint unsigned metric_dc_hit;           // D-cache cacheable requests with tag hit.
+  longint unsigned metric_dc_miss;          // D-cache cacheable requests without tag hit.
+  longint unsigned metric_dc_load;          // D-cache load requests.
+  longint unsigned metric_dc_store;         // D-cache store requests.
+  longint unsigned metric_dc_refill;        // D-cache refill lines accepted.
+  longint unsigned metric_dc_store_hit;     // D-cache store-hit line updates.
 
   wasp1 #(
     .GPIO_WIDTH(GPIO_WIDTH)
@@ -269,7 +287,70 @@ module tb_wasp1;
       last_ex_instr <= '0;
       core_rsp_count <= 0;
       otp_fasttext_seen <= 1'b0;
+      metric_cycles <= 0;
+      metric_retired <= 0;
+      metric_rf_commits <= 0;
+      metric_ic_req <= 0;
+      metric_ic_hit <= 0;
+      metric_ic_miss <= 0;
+      metric_ic_refill <= 0;
+      metric_dc_req <= 0;
+      metric_dc_cacheable <= 0;
+      metric_dc_uncached <= 0;
+      metric_dc_hit <= 0;
+      metric_dc_miss <= 0;
+      metric_dc_load <= 0;
+      metric_dc_store <= 0;
+      metric_dc_refill <= 0;
+      metric_dc_store_hit <= 0;
     end else begin
+      if (metrics_enable) begin
+        metric_cycles <= metric_cycles + 1;
+        if (u_wasp1.u_tile.u_core.datapath_u.retire_valid) begin
+          metric_retired <= metric_retired + 1;
+        end
+        if (u_wasp1.commit_valid) begin
+          metric_rf_commits <= metric_rf_commits + 1;
+        end
+        if (u_wasp1.u_tile.u_icache.u_ctrl.req_fire) begin
+          metric_ic_req <= metric_ic_req + 1;
+          if (!u_wasp1.u_tile.u_icache.u_ctrl.invalid_req &&
+              u_wasp1.u_tile.u_icache.u_ctrl.tag_hit_i) begin
+            metric_ic_hit <= metric_ic_hit + 1;
+          end
+        end
+        if (u_wasp1.u_tile.u_icache.u_ctrl.refill_start_fire) begin
+          metric_ic_miss <= metric_ic_miss + 1;
+        end
+        if (u_wasp1.u_tile.u_icache.u_ctrl.refill_line_fire) begin
+          metric_ic_refill <= metric_ic_refill + 1;
+        end
+        if (u_wasp1.u_tile.u_dcache.u_ctrl.req_fire) begin
+          metric_dc_req <= metric_dc_req + 1;
+          if (u_wasp1.u_tile.core_dmem_if.req_write) begin
+            metric_dc_store <= metric_dc_store + 1;
+          end else begin
+            metric_dc_load <= metric_dc_load + 1;
+          end
+          if (!u_wasp1.u_tile.u_dcache.u_ctrl.invalid_req &&
+              u_wasp1.u_tile.u_dcache.u_ctrl.req_cacheable_i) begin
+            metric_dc_cacheable <= metric_dc_cacheable + 1;
+            if (u_wasp1.u_tile.u_dcache.u_ctrl.tag_hit_i) begin
+              metric_dc_hit <= metric_dc_hit + 1;
+            end else begin
+              metric_dc_miss <= metric_dc_miss + 1;
+            end
+          end else if (!u_wasp1.u_tile.u_dcache.u_ctrl.invalid_req) begin
+            metric_dc_uncached <= metric_dc_uncached + 1;
+          end
+        end
+        if (u_wasp1.u_tile.u_dcache.u_ctrl.refill_line_fire) begin
+          metric_dc_refill <= metric_dc_refill + 1;
+        end
+        if (u_wasp1.u_tile.u_dcache.u_ctrl.data_store_valid_o) begin
+          metric_dc_store_hit <= metric_dc_store_hit + 1;
+        end
+      end
       if (u_wasp1.ex_valid) begin
         last_ex_pc <= u_wasp1.ex_pc;
         last_ex_instr <= u_wasp1.ex_instr;
@@ -370,7 +451,10 @@ module tb_wasp1;
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
     gpio_irq_trace = $test$plusargs("WASP1_GPIO_IRQ_TRACE");
+    metrics_enable = $test$plusargs("WASP1_METRICS");
     otp_hex_path = "";
+    metrics_label = "unknown";
+    void'($value$plusargs("WASP1_METRICS_LABEL=%s", metrics_label));
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
       #1ps;
       $readmemh(otp_hex_path, u_wasp1.u_ahb_otp.otp_mem_q);
@@ -1583,6 +1667,30 @@ module tb_wasp1;
     end
   endtask
 
+  task automatic print_cache_metrics;
+    longint unsigned ic_hit_milli;
+    longint unsigned dc_hit_milli;
+    longint unsigned ipc_milli;
+    longint unsigned cpi_milli;
+    begin
+      ic_hit_milli = (metric_ic_req == 0) ? 0 :
+                     ((metric_ic_hit * 1000) / metric_ic_req);
+      dc_hit_milli = (metric_dc_cacheable == 0) ? 0 :
+                     ((metric_dc_hit * 1000) / metric_dc_cacheable);
+      ipc_milli = (metric_cycles == 0) ? 0 :
+                  ((metric_retired * 1000) / metric_cycles);
+      cpi_milli = (metric_retired == 0) ? 0 :
+                  ((metric_cycles * 1000) / metric_retired);
+      $display("WASP1_METRICS label=%s cycles=%0d retired=%0d rf_commits=%0d ipc_milli=%0d cpi_milli=%0d ic_req=%0d ic_hit=%0d ic_miss=%0d ic_refill=%0d ic_hit_milli=%0d dc_req=%0d dc_cacheable=%0d dc_uncached=%0d dc_hit=%0d dc_miss=%0d dc_load=%0d dc_store=%0d dc_refill=%0d dc_store_hit=%0d dc_hit_milli=%0d",
+               metrics_label, metric_cycles, metric_retired, metric_rf_commits,
+               ipc_milli, cpi_milli, metric_ic_req, metric_ic_hit,
+               metric_ic_miss, metric_ic_refill, ic_hit_milli,
+               metric_dc_req, metric_dc_cacheable, metric_dc_uncached,
+               metric_dc_hit, metric_dc_miss, metric_dc_load, metric_dc_store,
+               metric_dc_refill, metric_dc_store_hit, dc_hit_milli);
+    end
+  endtask
+
   initial begin
     drive_defaults();
     hresetn = 1'b0;
@@ -1630,6 +1738,10 @@ module tb_wasp1;
       $fatal(1);
     end
     pass_count++;
+
+    if (metrics_enable) begin
+      print_cache_metrics();
+    end
 
     $display("tb_wasp1 PASS pass_count=%0d trap_valid=%0b trap_cause=0x%02h bus_grant_idx=%0b dbg_running=%0b dbg_halted=%0b dbg_dmactive=%0b",
              pass_count, trap_valid, trap_cause, bus_grant_idx, dbg_running, dbg_halted,
