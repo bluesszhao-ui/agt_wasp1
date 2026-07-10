@@ -18,9 +18,9 @@ clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
 
 The diagram separates AHB region decode, captured request state, OTP data array
-storage, programming register/status state, and the combinational program/read
-response mux. All sequential state is drawn separately from combinational
-decode and mux logic.
+storage behind `wasp1_otp_macro`, programming register/status state, and the
+combinational program/read response mux. All sequential state is drawn
+separately from combinational decode and mux logic.
 
 ## 3. Address Layout
 
@@ -70,6 +70,7 @@ WDATA does not request any 0 -> 1 bit transition
 On accepted programming:
 
 ```text
+wasp1_otp_macro.program(word, OTP_WDATA)
 otp_word_next = otp_word_current & OTP_WDATA
 STATUS.done = 1
 STATUS.error = 0
@@ -169,8 +170,8 @@ software-visible OTP state transitions.
 
 | Target macro | Implementation intent |
 | --- | --- |
-| `WASP1_TARGET_IC` | IC implementation path. The open RTL model keeps the boundary ready for OTP macro replacement. |
-| `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Adds Xilinx-friendly RAM style attributes so the data array can infer Virtex-7 block RAM. |
+| `WASP1_TARGET_IC` | IC implementation path. Replace `wasp1_otp_macro` with an OTP/NVM macro wrapper or the blackbox listed under `otp/dc/`. |
+| `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Uses the `wasp1_otp_macro` behavioral body with Xilinx-friendly RAM attributes so the executable OTP model can infer Virtex-7 block RAM. |
 | `WASP1_TARGET_SIM_GENERIC` | Default generic simulation model when no explicit target macro is defined. |
 
 ## 9. Verification Summary

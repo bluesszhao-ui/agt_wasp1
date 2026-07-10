@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-06-11 |
+| Date | 2026-07-10 |
 | Tool | Verilator 5.046 |
 | Lint command | `make -C otp lint` |
 | IC lint command | `make -C otp lint-ic` |
@@ -12,6 +12,7 @@
 | Simulation command | `make -C otp sim` |
 | Lint result | PASS |
 | Target lint result | PASS for generic, IC, and Xilinx Virtex-7 FPGA macro builds |
+| Macro boundary result | `wasp1_otp_macro` wrapper integrated and verified |
 | Simulation result | PASS |
 | Self-check count | 84 |
 | Lint log | `otp/logs/lint.log` |
@@ -42,6 +43,7 @@ clock frequency = 100MHz
 | Directed | Misaligned, unknown-register, out-of-range AHB accesses | HRESP ERROR | PASS |
 | Random | 4 deterministic program/readback pairs | Readback matches programmed data | PASS |
 | Directed | Lock OTP and attempt programming | locked status set, programming rejected | PASS |
+| Structure | OTP data storage accessed through `wasp1_otp_macro` | AHB read/program behavior unchanged | PASS |
 
 ## 4. Functional Coverage Summary
 

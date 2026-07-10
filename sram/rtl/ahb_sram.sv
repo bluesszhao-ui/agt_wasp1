@@ -26,14 +26,6 @@ module ahb_sram #(
   localparam int WORD_COUNT = MEM_BYTES / STRB_WIDTH_LOCAL;
   localparam int WORD_INDEX_WIDTH = (WORD_COUNT <= 1) ? 1 : $clog2(WORD_COUNT);
 
-`ifdef WASP1_TARGET_FPGA_XILINX_VIRTEX7
-  (* ram_style = "block" *) logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
-`elsif WASP1_TARGET_IC
-  logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
-`else
-  logic [DATA_WIDTH-1:0] mem_q [WORD_COUNT];
-`endif
-
   logic                  req_valid_q;
   logic                  req_write_q;
   logic [ADDR_WIDTH-1:0] req_addr_q;
@@ -49,8 +41,8 @@ module ahb_sram #(
   logic [WORD_INDEX_WIDTH-1:0] req_word_idx_raw;
   logic [1:0]            req_byte_off;
   logic [DATA_WIDTH-1:0] read_word;
-  logic [DATA_WIDTH-1:0] write_word;
   logic [STRB_WIDTH_LOCAL-1:0] write_mask;
+  logic                  macro_write;
 
   assign hready_o = 1'b1;
   assign addr_offset = haddr_i - ADDR_WIDTH'(BASE_ADDR);
@@ -71,7 +63,24 @@ module ahb_sram #(
   assign req_word_idx_raw = req_addr_q[$clog2(STRB_WIDTH_LOCAL) +: WORD_INDEX_WIDTH];
   assign req_word_idx = req_err_q ? '0 : req_word_idx_raw;
   assign req_byte_off = req_addr_q[1:0];
-  assign read_word = mem_q[req_word_idx];
+  assign macro_write = req_valid_q && req_write_q && !req_err_q;
+
+  // The storage body is isolated behind a macro wrapper. Generic simulation and
+  // FPGA builds use the behavioral body in `wasp1_sram_macro`; IC synthesis can
+  // replace that module with a foundry SRAM compiler macro without changing the
+  // AHB protocol wrapper.
+  wasp1_sram_macro #(
+    .DATA_WIDTH(DATA_WIDTH),
+    .DEPTH(WORD_COUNT),
+    .ADDR_WIDTH(WORD_INDEX_WIDTH)
+  ) u_sram_macro (
+    .clk_i(hclk_i),
+    .write_i(macro_write),
+    .addr_i(req_word_idx),
+    .wstrb_i(write_mask),
+    .wdata_i(hwdata_i),
+    .rdata_o(read_word)
+  );
 
   always_comb begin
     write_mask = '0;
@@ -86,16 +95,6 @@ module ahb_sram #(
     endcase
   end
 
-  always_comb begin
-    write_word = read_word;
-    for (int byte_idx = 0; byte_idx < STRB_WIDTH_LOCAL; byte_idx++) begin
-      if (write_mask[byte_idx]) begin
-        write_word[(byte_idx * BYTE_WIDTH) +: BYTE_WIDTH] =
-          hwdata_i[(byte_idx * BYTE_WIDTH) +: BYTE_WIDTH];
-      end
-    end
-  end
-
   always_ff @(posedge hclk_i or negedge hresetn_i) begin
     if (!hresetn_i) begin
       req_valid_q <= 1'b0;
@@ -106,10 +105,6 @@ module ahb_sram #(
       hrdata_o    <= '0;
       hresp_o     <= AHB_HRESP_OKAY;
     end else begin
-      if (req_valid_q && req_write_q && !req_err_q) begin
-        mem_q[req_word_idx] <= write_word;
-      end
-
       if (req_valid_q && !req_write_q && !req_err_q) begin
         hrdata_o <= read_word;
       end else begin

@@ -40,7 +40,9 @@
 ../bus/rtl/ahb_default_slave.sv
 ../bus/rtl/ahb_slave_mux.sv
 ../bus/rtl/ahb_fabric_2m.sv
+../sram/rtl/wasp1_sram_macro.sv
 ../sram/rtl/ahb_sram.sv
+../otp/rtl/wasp1_otp_macro.sv
 ../otp/rtl/ahb_otp.sv
 ../dma/rtl/ahb_dma.sv
 ../wdg/rtl/ahb_wdg.sv

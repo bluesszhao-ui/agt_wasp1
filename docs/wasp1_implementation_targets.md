@@ -62,9 +62,19 @@ For chip implementation:
 
 ```text
 WASP1_TARGET_IC selects an IC memory integration path.
-The first open-source RTL milestone may use a synthesizable model, but the
-module boundary must allow replacement by foundry/compiler SRAM or OTP macros.
+Large I-SRAM, D-SRAM, and OTP storage must be replaced at the checked-in macro
+boundary modules by foundry/compiler SRAM or OTP macros.
 ```
+
+The current macro boundary modules are:
+
+| Storage | Boundary module | ASIC blackbox collateral |
+| --- | --- | --- |
+| I-SRAM/D-SRAM | `wasp1_sram_macro` | `sram/dc/wasp1_sram_macro_blackbox.sv` |
+| OTP data window | `wasp1_otp_macro` | `otp/dc/wasp1_otp_macro_blackbox.sv` |
+
+See `docs/wasp1_memory_macro_replacement.md` for capacity and gate-count
+accounting policy.
 
 For Virtex-7 FPGA implementation:
 

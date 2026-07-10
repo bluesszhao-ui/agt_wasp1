@@ -7,6 +7,7 @@
 | `wasp1_architecture.md` | SoC baseline and top-level architecture |
 | `wasp1_module_hierarchy.md` | First-level module list and submodule hierarchy |
 | `wasp1_memory_map.md` | Initial address map and linker layout |
+| `wasp1_memory_macro_replacement.md` | SRAM/OTP memory macro replacement and gate-count accounting policy |
 | `wasp1_design_plan.md` | Planned module implementation order |
 | `wasp1_verification_plan.md` | Project-wide verification expectations |
 | `wasp1_implementation_targets.md` | IC/FPGA target macro policy, including Virtex-7 |

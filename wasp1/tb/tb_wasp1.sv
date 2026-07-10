@@ -457,13 +457,13 @@ module tb_wasp1;
     void'($value$plusargs("WASP1_METRICS_LABEL=%s", metrics_label));
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
       #1ps;
-      $readmemh(otp_hex_path, u_wasp1.u_ahb_otp.otp_mem_q);
+      $readmemh(otp_hex_path, u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q);
       otp_image_loaded = 1'b1;
       $display("tb_wasp1 loaded OTP image: %s", otp_hex_path);
       if (sw_trace) begin
         $display("tb_wasp1 OTP word[0]=0x%08h word[1]=0x%08h word[2]=0x%08h word[3]=0x%08h",
-                 u_wasp1.u_ahb_otp.otp_mem_q[0], u_wasp1.u_ahb_otp.otp_mem_q[1],
-                 u_wasp1.u_ahb_otp.otp_mem_q[2], u_wasp1.u_ahb_otp.otp_mem_q[3]);
+                 u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[0], u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[1],
+                 u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[2], u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[3]);
       end
     end
   end
@@ -807,7 +807,7 @@ module tb_wasp1;
     int unsigned timeout;
     begin
       timeout = 0;
-      while ((u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
+      while ((u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
               OTP_PROGRAM_EXPECTED_DATA) &&
              timeout < 30000) begin
         @(posedge hclk);
@@ -815,12 +815,12 @@ module tb_wasp1;
         timeout++;
       end
 
-      if (u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
+      if (u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[OTP_PROGRAM_WORD_IDX] !==
           OTP_PROGRAM_EXPECTED_DATA) begin
         dump_sw_timeout_diagnostics();
         $error("OTP programming firmware did not program word[%0d]: got=0x%08h expected=0x%08h",
                OTP_PROGRAM_WORD_IDX,
-               u_wasp1.u_ahb_otp.otp_mem_q[OTP_PROGRAM_WORD_IDX],
+               u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[OTP_PROGRAM_WORD_IDX],
                OTP_PROGRAM_EXPECTED_DATA);
         $fatal(1);
       end
@@ -847,7 +847,7 @@ module tb_wasp1;
       while (!copy_done && timeout < 40000) begin
         copy_done = 1'b1;
         for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
-          if (u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_DST_WORD_IDX + idx] !==
+          if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_COPY_DST_WORD_IDX + idx] !==
               DMA_COPY_EXPECTED[idx]) begin
             copy_done = 1'b0;
           end
@@ -869,22 +869,22 @@ module tb_wasp1;
         for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
           $display("  dma src[%0d] got=0x%08h expected=0x%08h",
                    idx,
-                   u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
+                   u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
                    DMA_COPY_EXPECTED[idx]);
           $display("  dma dst[%0d] got=0x%08h expected=0x%08h",
                    idx,
-                   u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_DST_WORD_IDX + idx],
+                   u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_COPY_DST_WORD_IDX + idx],
                    DMA_COPY_EXPECTED[idx]);
         end
         $error("DMA copy firmware did not update D-SRAM destination buffer");
         $fatal(1);
       end
       for (int idx = 0; idx < DMA_COPY_WORDS; idx++) begin
-        if (u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx] !==
+        if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_COPY_SRC_WORD_IDX + idx] !==
             DMA_COPY_EXPECTED[idx]) begin
           $error("DMA source word[%0d] changed: got=0x%08h expected=0x%08h",
                  idx,
-                 u_wasp1.u_ahb_dsram.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_COPY_SRC_WORD_IDX + idx],
                  DMA_COPY_EXPECTED[idx]);
           $fatal(1);
         end
@@ -914,14 +914,14 @@ module tb_wasp1;
       done_word = '0;
       while (!irq_done && timeout < 50000) begin
         irq_done = 1'b1;
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_DONE_WORD_IDX];
         if ((magic_word !== DMA_IRQ_EXPECTED_MAGIC) ||
             (done_word !== DMA_IRQ_EXPECTED_DONE)) begin
           irq_done = 1'b0;
         end
         for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
-          if (u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DST_WORD_IDX + idx] !==
+          if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_DST_WORD_IDX + idx] !==
               DMA_IRQ_EXPECTED[idx]) begin
             irq_done = 1'b0;
           end
@@ -933,18 +933,18 @@ module tb_wasp1;
         end
       end
 
-      mcause_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_MCAUSE_WORD_IDX];
-      claim_word = u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_CLAIM_WORD_IDX];
+      mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_CLAIM_WORD_IDX];
       if (!irq_done) begin
         dump_sw_timeout_diagnostics();
         for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
           $display("  dma_irq src[%0d] got=0x%08h expected=0x%08h",
                    idx,
-                   u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
+                   u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
                    DMA_IRQ_EXPECTED[idx]);
           $display("  dma_irq dst[%0d] got=0x%08h expected=0x%08h",
                    idx,
-                   u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_DST_WORD_IDX + idx],
+                   u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_DST_WORD_IDX + idx],
                    DMA_IRQ_EXPECTED[idx]);
         end
         $error("DMA IRQ firmware did not complete: magic=0x%08h done=0x%08h mcause=0x%08h claim=0x%08h",
@@ -966,11 +966,11 @@ module tb_wasp1;
         $fatal(1);
       end
       for (int idx = 0; idx < DMA_IRQ_WORDS; idx++) begin
-        if (u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx] !==
+        if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_SRC_WORD_IDX + idx] !==
             DMA_IRQ_EXPECTED[idx]) begin
           $error("DMA IRQ source word[%0d] changed: got=0x%08h expected=0x%08h",
                  idx,
-                 u_wasp1.u_ahb_dsram.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[DMA_IRQ_SRC_WORD_IDX + idx],
                  DMA_IRQ_EXPECTED[idx]);
           $fatal(1);
         end
@@ -997,7 +997,7 @@ module tb_wasp1;
       timeout = 0;
       ready_word = '0;
       while ((ready_word !== GPIO_IRQ_EXPECTED_READY) && timeout < 50000) begin
-        ready_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_READY_WORD_IDX];
+        ready_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_READY_WORD_IDX];
         if (ready_word !== GPIO_IRQ_EXPECTED_READY) begin
           @(posedge hclk);
           #1ns;
@@ -1019,8 +1019,8 @@ module tb_wasp1;
       while (((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
               (done_word !== GPIO_IRQ_EXPECTED_DONE)) &&
              timeout < 50000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_DONE_WORD_IDX];
         if ((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
             (done_word !== GPIO_IRQ_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1029,9 +1029,9 @@ module tb_wasp1;
         end
       end
 
-      mcause_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_MCAUSE_WORD_IDX];
-      claim_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_CLAIM_WORD_IDX];
-      level_word = u_wasp1.u_ahb_dsram.mem_q[GPIO_IRQ_LEVEL_WORD_IDX];
+      mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_CLAIM_WORD_IDX];
+      level_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[GPIO_IRQ_LEVEL_WORD_IDX];
       if ((magic_word !== GPIO_IRQ_EXPECTED_MAGIC) ||
           (done_word !== GPIO_IRQ_EXPECTED_DONE)) begin
         dump_sw_timeout_diagnostics();
@@ -1081,8 +1081,8 @@ module tb_wasp1;
       while (((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
               (done_word !== UART_IRQ_EXPECTED_DONE)) &&
              timeout < 50000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_IRQ_DONE_WORD_IDX];
         if ((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
             (done_word !== UART_IRQ_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1091,9 +1091,9 @@ module tb_wasp1;
         end
       end
 
-      mcause_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_MCAUSE_WORD_IDX];
-      claim_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_CLAIM_WORD_IDX];
-      status_word = u_wasp1.u_ahb_dsram.mem_q[UART_IRQ_STATUS_WORD_IDX];
+      mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_IRQ_CLAIM_WORD_IDX];
+      status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_IRQ_STATUS_WORD_IDX];
       if ((magic_word !== UART_IRQ_EXPECTED_MAGIC) ||
           (done_word !== UART_IRQ_EXPECTED_DONE)) begin
         dump_sw_timeout_diagnostics();
@@ -1174,7 +1174,7 @@ module tb_wasp1;
       timeout = 0;
       ready_word = '0;
       while ((ready_word !== UART_RX_IRQ_EXPECTED_READY) && timeout < 50000) begin
-        ready_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_READY_WORD_IDX];
+        ready_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_READY_WORD_IDX];
         if (ready_word !== UART_RX_IRQ_EXPECTED_READY) begin
           @(posedge hclk);
           #1ns;
@@ -1192,17 +1192,17 @@ module tb_wasp1;
       timeout = 0;
       magic_word = '0;
       while ((magic_word !== UART_RX_IRQ_EXPECTED_MAGIC) && timeout < 50000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_MAGIC_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_MAGIC_WORD_IDX];
         if (magic_word !== UART_RX_IRQ_EXPECTED_MAGIC) begin
           @(posedge hclk);
           #1ns;
           timeout++;
         end
       end
-      mcause_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_MCAUSE_WORD_IDX];
-      claim_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_CLAIM_WORD_IDX];
-      status_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_STATUS_WORD_IDX];
-      data_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_DATA_WORD_IDX];
+      mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_MCAUSE_WORD_IDX];
+      claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_CLAIM_WORD_IDX];
+      status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_STATUS_WORD_IDX];
+      data_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_DATA_WORD_IDX];
       if (magic_word !== UART_RX_IRQ_EXPECTED_MAGIC ||
           mcause_word !== UART_RX_IRQ_EXPECTED_MCAUSE ||
           claim_word !== UART_RX_IRQ_EXPECTED_CLAIM ||
@@ -1219,7 +1219,7 @@ module tb_wasp1;
       ovr_ready_word = '0;
       while ((ovr_ready_word !== UART_RX_IRQ_EXPECTED_OVR_READY) &&
              timeout < 50000) begin
-        ovr_ready_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_READY_WORD_IDX];
+        ovr_ready_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_OVR_READY_WORD_IDX];
         if (ovr_ready_word !== UART_RX_IRQ_EXPECTED_OVR_READY) begin
           @(posedge hclk);
           #1ns;
@@ -1242,8 +1242,8 @@ module tb_wasp1;
       while (((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
               (done_word !== UART_RX_IRQ_EXPECTED_DONE)) &&
              timeout < 50000) begin
-        ovr_magic_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_DONE_WORD_IDX];
+        ovr_magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_OVR_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_DONE_WORD_IDX];
         if ((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
             (done_word !== UART_RX_IRQ_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1251,9 +1251,9 @@ module tb_wasp1;
           timeout++;
         end
       end
-      ovr_status_word = u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_STATUS_WORD_IDX];
+      ovr_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_OVR_STATUS_WORD_IDX];
       ovr_uart_status_word =
-        u_wasp1.u_ahb_dsram.mem_q[UART_RX_IRQ_OVR_UART_STATUS_WORD_IDX];
+        u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[UART_RX_IRQ_OVR_UART_STATUS_WORD_IDX];
       if ((ovr_magic_word !== UART_RX_IRQ_EXPECTED_OVR_MAGIC) ||
           (done_word !== UART_RX_IRQ_EXPECTED_DONE) ||
           (ovr_status_word & UART_RX_IRQ_EXPECTED_OVR_STATUS) !==
@@ -1298,8 +1298,8 @@ module tb_wasp1;
       while (((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
               (done_word !== LONG_BOOT_EXPECTED_DONE)) &&
              timeout < 80000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DONE_WORD_IDX];
         if ((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
             (done_word !== LONG_BOOT_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1308,11 +1308,11 @@ module tb_wasp1;
         end
       end
 
-      sum_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_SUM_WORD_IDX];
-      gpio_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_GPIO_WORD_IDX];
-      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_STATUS_WORD_IDX];
-      timer_status_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_TIMER_STATUS_WORD_IDX];
-      otp0_word = u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_OTP0_WORD_IDX];
+      sum_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_SUM_WORD_IDX];
+      gpio_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_GPIO_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DMA_STATUS_WORD_IDX];
+      timer_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_TIMER_STATUS_WORD_IDX];
+      otp0_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_OTP0_WORD_IDX];
       if ((magic_word !== LONG_BOOT_EXPECTED_MAGIC) ||
           (done_word !== LONG_BOOT_EXPECTED_DONE)) begin
         dump_sw_timeout_diagnostics();
@@ -1351,20 +1351,20 @@ module tb_wasp1;
                timer_status_word, u_wasp1.timer_irq);
         $fatal(1);
       end
-      if (otp0_word !== u_wasp1.u_ahb_otp.otp_mem_q[0]) begin
+      if (otp0_word !== u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[0]) begin
         $error("long boot OTP read mismatch: mailbox=0x%08h otp_mem0=0x%08h",
-               otp0_word, u_wasp1.u_ahb_otp.otp_mem_q[0]);
+               otp0_word, u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[0]);
         $fatal(1);
       end
       for (int idx = 0; idx < LONG_BOOT_WORDS; idx++) begin
-        if (u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx] !==
+        if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx] !==
             LONG_BOOT_EXPECTED[idx] ||
-            u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx] !==
+            u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx] !==
             LONG_BOOT_EXPECTED[idx]) begin
           $error("long boot DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
                  idx,
-                 u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx],
-                 u_wasp1.u_ahb_dsram.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[LONG_BOOT_DMA_DST_WORD_IDX + idx],
                  LONG_BOOT_EXPECTED[idx]);
           $fatal(1);
         end
@@ -1395,7 +1395,7 @@ module tb_wasp1;
       timeout = 0;
       ready_word = '0;
       while ((ready_word !== MIXED_IRQ_EXPECTED_READY) && timeout < 50000) begin
-        ready_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_READY_WORD_IDX];
+        ready_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_READY_WORD_IDX];
         if (ready_word !== MIXED_IRQ_EXPECTED_READY) begin
           @(posedge hclk);
           #1ns;
@@ -1419,9 +1419,9 @@ module tb_wasp1;
               (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
               (done_word !== MIXED_IRQ_EXPECTED_DONE)) &&
              timeout < 70000) begin
-        dma_magic_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_MAGIC_WORD_IDX];
-        gpio_magic_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_GPIO_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DONE_WORD_IDX];
+        dma_magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_MAGIC_WORD_IDX];
+        gpio_magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_GPIO_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DONE_WORD_IDX];
         if ((dma_magic_word !== MIXED_IRQ_EXPECTED_DMA_MAGIC) ||
             (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
             (done_word !== MIXED_IRQ_EXPECTED_DONE)) begin
@@ -1431,13 +1431,13 @@ module tb_wasp1;
         end
       end
 
-      claim0_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_CLAIM0_WORD_IDX];
-      claim1_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_CLAIM1_WORD_IDX];
-      mcause0_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_MCAUSE0_WORD_IDX];
-      mcause1_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_MCAUSE1_WORD_IDX];
-      gpio_level_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_GPIO_LEVEL_WORD_IDX];
-      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_STATUS_WORD_IDX];
-      handled_word = u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_HANDLED_MASK_WORD_IDX];
+      claim0_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_CLAIM0_WORD_IDX];
+      claim1_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_CLAIM1_WORD_IDX];
+      mcause0_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_MCAUSE0_WORD_IDX];
+      mcause1_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_MCAUSE1_WORD_IDX];
+      gpio_level_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_GPIO_LEVEL_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_STATUS_WORD_IDX];
+      handled_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_HANDLED_MASK_WORD_IDX];
       if ((dma_magic_word !== MIXED_IRQ_EXPECTED_DMA_MAGIC) ||
           (gpio_magic_word !== MIXED_IRQ_EXPECTED_GPIO_MAGIC) ||
           (done_word !== MIXED_IRQ_EXPECTED_DONE)) begin
@@ -1465,14 +1465,14 @@ module tb_wasp1;
         $fatal(1);
       end
       for (int idx = 0; idx < MIXED_IRQ_WORDS; idx++) begin
-        if (u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx] !==
+        if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx] !==
             MIXED_IRQ_EXPECTED[idx] ||
-            u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx] !==
+            u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx] !==
             MIXED_IRQ_EXPECTED[idx]) begin
           $error("mixed IRQ/DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
                  idx,
-                 u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx],
-                 u_wasp1.u_ahb_dsram.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[MIXED_IRQ_DMA_DST_WORD_IDX + idx],
                  MIXED_IRQ_EXPECTED[idx]);
           $fatal(1);
         end
@@ -1530,8 +1530,8 @@ module tb_wasp1;
       while (((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
               (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) &&
              timeout < 160000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DONE_WORD_IDX];
         if ((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
             (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1540,13 +1540,13 @@ module tb_wasp1;
         end
       end
 
-      rounds_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_ROUNDS_WORD_IDX];
-      checksum_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_CHECKSUM_WORD_IDX];
-      gpio_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_GPIO_WORD_IDX];
-      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_STATUS_WORD_IDX];
-      timer_status_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_TIMER_STATUS_WORD_IDX];
-      otp_xor_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_OTP_XOR_WORD_IDX];
-      uart_count_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_UART_COUNT_WORD_IDX];
+      rounds_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_ROUNDS_WORD_IDX];
+      checksum_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_CHECKSUM_WORD_IDX];
+      gpio_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_GPIO_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DMA_STATUS_WORD_IDX];
+      timer_status_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_TIMER_STATUS_WORD_IDX];
+      otp_xor_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_OTP_XOR_WORD_IDX];
+      uart_count_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_UART_COUNT_WORD_IDX];
       if ((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
           (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) begin
         dump_sw_timeout_diagnostics();
@@ -1565,10 +1565,10 @@ module tb_wasp1;
         end
       end
 
-      expected_otp_xor = u_wasp1.u_ahb_otp.otp_mem_q[0] ^
-                         u_wasp1.u_ahb_otp.otp_mem_q[1] ^
-                         u_wasp1.u_ahb_otp.otp_mem_q[2] ^
-                         u_wasp1.u_ahb_otp.otp_mem_q[3];
+      expected_otp_xor = u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[0] ^
+                         u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[1] ^
+                         u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[2] ^
+                         u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q[3];
 
       if (rounds_word !== 32'(SYSTEM_STRESS_ROUNDS) ||
           checksum_word !== expected_checksum ||
@@ -1587,14 +1587,14 @@ module tb_wasp1;
 
       for (int idx = 0; idx < SYSTEM_STRESS_WORDS; idx++) begin
         expected_word = system_stress_expected_word(SYSTEM_STRESS_ROUNDS - 1, idx);
-        if (u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx] !==
+        if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx] !==
             expected_word ||
-            u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx] !==
+            u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx] !==
             expected_word) begin
           $error("system stress DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
                  idx,
-                 u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx],
-                 u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx],
                  expected_word);
           $fatal(1);
         end
@@ -1627,8 +1627,8 @@ module tb_wasp1;
       while (((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
               (done_word !== TIMER_IRQ_EXPECTED_DONE)) &&
              timeout < 40000) begin
-        magic_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MAGIC_WORD_IDX];
-        done_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_DONE_WORD_IDX];
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[TIMER_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[TIMER_IRQ_DONE_WORD_IDX];
         if ((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
             (done_word !== TIMER_IRQ_EXPECTED_DONE)) begin
           @(posedge hclk);
@@ -1637,8 +1637,8 @@ module tb_wasp1;
         end
       end
 
-      mcause_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MCAUSE_WORD_IDX];
-      mepc_word = u_wasp1.u_ahb_dsram.mem_q[TIMER_IRQ_MEPC_WORD_IDX];
+      mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[TIMER_IRQ_MCAUSE_WORD_IDX];
+      mepc_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[TIMER_IRQ_MEPC_WORD_IDX];
       if ((magic_word !== TIMER_IRQ_EXPECTED_MAGIC) ||
           (done_word !== TIMER_IRQ_EXPECTED_DONE)) begin
         dump_sw_timeout_diagnostics();

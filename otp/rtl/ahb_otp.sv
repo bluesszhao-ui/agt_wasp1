@@ -28,12 +28,6 @@ module ahb_otp #(
   localparam int DATA_WORDS = DATA_BYTES / STRB_WIDTH_LOCAL;
   localparam int WORD_INDEX_WIDTH = (DATA_WORDS <= 1) ? 1 : $clog2(DATA_WORDS);
 
-`ifdef WASP1_TARGET_FPGA_XILINX_VIRTEX7
-  (* ram_style = "block" *) logic [DATA_WIDTH-1:0] otp_mem_q [DATA_WORDS];
-`else
-  logic [DATA_WIDTH-1:0] otp_mem_q [DATA_WORDS];
-`endif
-
   logic                  req_valid_q;
   logic                  req_write_q;
   logic                  req_data_q;
@@ -53,7 +47,11 @@ module ahb_otp #(
   logic [31:0]           req_reg_offset;
   logic [WORD_INDEX_WIDTH-1:0] req_word_idx;
   logic [WORD_INDEX_WIDTH-1:0] req_word_idx_raw;
-  logic [DATA_WIDTH-1:0] old_word;
+  logic [DATA_WIDTH-1:0] otp_read_word;
+  logic [DATA_WIDTH-1:0] otp_prog_word;
+  logic                  otp_program_start;
+  logic                  otp_program_legal;
+  logic                  otp_program_fire;
 
   logic [31:0]           addr_reg_q;
   logic [31:0]           wdata_reg_q;
@@ -65,9 +63,6 @@ module ahb_otp #(
   logic                  busy_q;
   logic                  done_q;
   logic                  error_q;
-`ifndef SYNTHESIS
-  string                 otp_hex_path;  // Simulation-only OTP preload image path.
-`endif
 
   assign hready_o = 1'b1;
   assign addr_offset = haddr_i - ADDR_WIDTH'(BASE_ADDR);
@@ -92,20 +87,25 @@ module ahb_otp #(
   assign req_reg_offset = req_offset_q - ADDR_WIDTH'(DATA_BYTES);
   assign req_word_idx_raw = req_offset_q[$clog2(STRB_WIDTH_LOCAL) +: WORD_INDEX_WIDTH];
   assign req_word_idx = (req_err_q || !req_data_q) ? '0 : req_word_idx_raw;
-  assign old_word = otp_mem_q[req_word_idx];
   assign prog_addr_valid = (addr_reg_q < DATA_WORDS);
   assign prog_word_idx = prog_addr_valid ? addr_reg_q[WORD_INDEX_WIDTH-1:0] : '0;
 
-  initial begin
-    for (int idx = 0; idx < DATA_WORDS; idx++) begin
-      otp_mem_q[idx] = '1;
-    end
-`ifndef SYNTHESIS
-    if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
-      $readmemh(otp_hex_path, otp_mem_q);
-    end
-`endif
-  end
+  // The executable OTP data bits sit behind a macro wrapper. The surrounding
+  // logic keeps the AHB register contract, unlock/lock policy, and illegal
+  // 0->1 program rejection visible in normal RTL and verification.
+  wasp1_otp_macro #(
+    .DATA_WIDTH(DATA_WIDTH),
+    .DEPTH(DATA_WORDS),
+    .ADDR_WIDTH(WORD_INDEX_WIDTH)
+  ) u_otp_macro (
+    .clk_i(hclk_i),
+    .read_addr_i(req_word_idx),
+    .read_data_o(otp_read_word),
+    .prog_addr_i(prog_word_idx),
+    .prog_i(otp_program_fire),
+    .prog_data_i(wdata_reg_q),
+    .prog_read_data_o(otp_prog_word)
+  );
 
   function automatic logic is_known_reg(input logic [31:0] reg_offset);
     begin
@@ -134,18 +134,26 @@ module ahb_otp #(
     end
   endfunction
 
+  assign otp_program_start = req_valid_q && !req_err_q && req_write_q &&
+                             req_reg_q && (req_reg_offset == OTP_CTRL_OFFSET) &&
+                             hwdata_i[OTP_CTRL_PROG_EN_BIT] &&
+                             hwdata_i[OTP_CTRL_START_BIT];
+  assign otp_program_legal = !locked_q && key_unlocked_q && prog_addr_valid &&
+                             !(|(wdata_reg_q & ~otp_prog_word));
+  assign otp_program_fire = otp_program_start && otp_program_legal;
+
   always_comb begin
     read_data_next = '0;
     if (req_valid_q && !req_write_q && !req_err_q) begin
       if (req_data_q) begin
-        read_data_next = old_word;
+        read_data_next = otp_read_word;
       end else if (req_reg_q) begin
         unique case (req_reg_offset)
           OTP_CTRL_OFFSET:   read_data_next = '0;
           OTP_STATUS_OFFSET: read_data_next = make_status();
           OTP_ADDR_OFFSET:   read_data_next = addr_reg_q;
           OTP_WDATA_OFFSET:  read_data_next = wdata_reg_q;
-          OTP_RDATA_OFFSET:  read_data_next = prog_addr_valid ? otp_mem_q[prog_word_idx] : '0;
+          OTP_RDATA_OFFSET:  read_data_next = prog_addr_valid ? otp_prog_word : '0;
           OTP_KEY_OFFSET:    read_data_next = {31'b0, key_unlocked_q};
           OTP_LOCK_OFFSET:   read_data_next = {31'b0, locked_q};
           default:           read_data_next = '0;
@@ -195,11 +203,9 @@ module ahb_otp #(
                     busy_q <= 1'b1;
                     done_q <= 1'b0;
                     error_q <= 1'b0;
-                    if (locked_q || !key_unlocked_q || !prog_addr_valid ||
-                        |(wdata_reg_q & ~otp_mem_q[prog_word_idx])) begin
+                    if (!otp_program_legal) begin
                       error_q <= 1'b1;
                     end else begin
-                      otp_mem_q[prog_word_idx] <= otp_mem_q[prog_word_idx] & wdata_reg_q;
                       done_q <= 1'b1;
                     end
                   end

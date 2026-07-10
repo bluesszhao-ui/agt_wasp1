@@ -4,13 +4,14 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-06-11 |
+| Date | 2026-07-10 |
 | Tool | Verilator 5.046 |
 | Lint command | `make -C sram lint` |
 | Simulation command | `make -C sram sim` |
 | Lint result | PASS |
 | Simulation result | PASS |
 | Target lint result | PASS for generic, IC, and Xilinx Virtex-7 FPGA macro builds |
+| Macro boundary result | `wasp1_sram_macro` wrapper integrated and verified |
 | Self-check count | 52 |
 | Lint log | `sram/logs/lint.log` |
 | Simulation log | `sram/logs/tb_ahb_sram.log` |
@@ -37,6 +38,7 @@ clock frequency = 100MHz
 | Directed | Out-of-range high write | HRESP ERROR | PASS |
 | Directed | Below-base read | HRESP ERROR | PASS |
 | Random | 16 deterministic word write/read pairs | Read data matches written data | PASS |
+| Structure | Storage array accessed through `wasp1_sram_macro` | AHB-visible behavior unchanged | PASS |
 
 ## 4. Functional Coverage Summary
 

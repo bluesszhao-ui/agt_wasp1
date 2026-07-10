@@ -19,8 +19,8 @@ clock domains:   SEQ clk=hclk_i rst=hresetn_i
 ```
 
 The diagram separates AHB address-phase decode, captured request state,
-combinational byte-lane merge logic, the target memory array, and registered
-response outputs.
+combinational byte-lane write-mask logic, the `wasp1_sram_macro` storage
+boundary, and registered response outputs.
 
 ## 3. Ports
 
@@ -51,8 +51,8 @@ response outputs.
 
 | Target macro | Implementation intent |
 | --- | --- |
-| `WASP1_TARGET_IC` | IC implementation path. The current model remains synthesizable and keeps the wrapper boundary ready for later SRAM macro replacement. |
-| `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Adds Xilinx-friendly RAM style attributes so the array can infer Virtex-7 block RAM. |
+| `WASP1_TARGET_IC` | IC implementation path. Replace `wasp1_sram_macro` with a foundry/compiler SRAM macro or the blackbox listed under `sram/dc/`. |
+| `WASP1_TARGET_FPGA_XILINX_VIRTEX7` | Uses the `wasp1_sram_macro` behavioral body with Xilinx-friendly RAM attributes so the array can infer Virtex-7 block RAM. |
 | `WASP1_TARGET_SIM_GENERIC` | Default generic simulation model when no explicit target macro is defined. |
 
 ## 6. Behavior
@@ -116,20 +116,19 @@ Cycle N+1 data/response phase:
   if captured transfer has error:
     hresp_o <- ERROR
     hrdata_o <- 0
-    memory holds
+    wasp1_sram_macro holds
 
   else if captured write:
-    merge hwdata_i into selected byte lanes
-    memory[word] <- merged data
+    drive byte write strobes and hwdata_i into wasp1_sram_macro
     hresp_o <- OKAY
 
   else if captured read:
-    hrdata_o <- selected word/byte/halfword read data
+    hrdata_o <- selected word read data from wasp1_sram_macro
     hresp_o <- OKAY
 ```
 
 There is no explicit FSM enum. The AHB address-phase capture registers and the
-SRAM word array are the sequential state.
+SRAM macro boundary are the sequential state.
 
 ## 8. Verification Summary
 

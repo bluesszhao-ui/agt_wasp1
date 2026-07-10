@@ -401,7 +401,7 @@ write_word/read_word}</string>
 
 \f0\fs17 \cf0 SEQ SRAM + outputs\
 clk=hclk_i rst=hresetn_i\
-mem_q array\
+wasp1_sram_macro\
 hrdata/hresp regs}</string>
 			</dict>
 		</dict>
