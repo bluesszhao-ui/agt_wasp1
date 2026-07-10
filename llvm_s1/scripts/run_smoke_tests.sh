@@ -124,6 +124,7 @@ syntax_sources="
   bsp/examples/uart_rx_irq.c
   bsp/examples/long_boot.c
   bsp/examples/mixed_irq_dma.c
+  bsp/examples/system_stress.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
@@ -299,6 +300,27 @@ if [ "$codegen_ok" -eq 1 ]; then
     fi
   else
     require_or_skip "mixed_irq_dma link skipped because required objects were not produced"
+  fi
+
+  system_stress_obj="build/smoke/system_stress.o"
+  if [ -f "$system_stress_obj" ] && [ -n "$runtime_objects" ] && [ -n "$asm_objects" ]; then
+    if run_capture "link system_stress ELF" "$clang_bin" $ldflags $asm_objects "$system_stress_obj" $runtime_objects -o build/smoke/system_stress.elf; then
+      if command -v "$objcopy_bin" >/dev/null 2>&1; then
+        if run_capture "objcopy system_stress binary" "$objcopy_bin" -O binary build/smoke/system_stress.elf build/smoke/system_stress.bin; then
+          run_capture "make system_stress OTP hex" scripts/wasp1_make_otp_image.py \
+            --format bin \
+            --input build/smoke/system_stress.bin \
+            --output-hex build/smoke/system_stress_otp.hex \
+            --output-bin build/smoke/system_stress_otp.bin || failures=$((failures + 1))
+        else
+          failures=$((failures + 1))
+        fi
+      fi
+    else
+      require_or_skip "bare-metal linker unavailable for system_stress riscv32"
+    fi
+  else
+    require_or_skip "system_stress link skipped because required objects were not produced"
   fi
 
   dma_obj="build/smoke/dma_copy.o"

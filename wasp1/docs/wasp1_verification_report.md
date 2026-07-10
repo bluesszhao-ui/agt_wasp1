@@ -10,6 +10,7 @@ make -C wasp1 sim
 make -C wasp1 sim-sw
 make -C wasp1 sim-long-boot
 make -C wasp1 sim-mixed-irq-dma
+make -C wasp1 sim-system-stress
 make -C wasp1 sim-otp-program
 make -C wasp1 sim-dma-copy
 make -C wasp1 sim-uart-irq
@@ -33,6 +34,7 @@ make -C wasp1 sim-openocd-gdb-stress
 | `tb_wasp1` OTP firmware simulation | PASS |
 | `tb_wasp1` long boot firmware simulation | PASS |
 | `tb_wasp1` mixed IRQ/DMA firmware simulation | PASS |
+| `tb_wasp1` system stress firmware simulation | PASS |
 | `tb_wasp1` OTP programming firmware simulation | PASS |
 | `tb_wasp1` DMA copy firmware simulation | PASS |
 | `tb_wasp1` UART IRQ firmware simulation | PASS |
@@ -53,6 +55,8 @@ tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_run
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/long_boot_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/mixed_irq_dma_otp.hex
+tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
+tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/system_stress_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/otp_program_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
@@ -95,6 +99,7 @@ wasp1_openocd_gdb_stress PASS
 | 16.705us-17us | Software smoke completion window | UART activity observed and no top-level fatal trap is reported | PASS |
 | 105ns-260us | Long boot firmware run | CPU executes one generated OTP image that performs UART output, GPIO output/toggle, D-SRAM pattern stores/reads, polled DMA copy of eight words, polled timer compare, and executable OTP readback; testbench checks completion mailboxes and hardware side effects | PASS |
 | 105ns-166us | Mixed IRQ/DMA firmware run | CPU enables DMA IRQ ID 5 and GPIO IRQ ID 4 together, starts DMA, testbench drives GPIO[0] high after firmware ready, INTC claims DMA before GPIO by priority, handler clears both sources, and testbench checks copied D-SRAM data plus final IRQ deassertion | PASS |
+| 105ns-737us | System stress firmware run | CPU runs six polling rounds of D-SRAM seed/readback, DMA copy of eight words, timer compare polling, GPIO writes/toggles, UART TX pushes, and executable OTP readback; testbench checks checksum, final DMA buffers, GPIO value, status accumulators, and final deasserted IRQ state | PASS |
 | 105ns-33us | OTP programming firmware run | Startup copies `.fasttext` to I-SRAM; CPU executes the programming routine from I-SRAM and programs OTP word `0x00003fa0` to `0x13572468` with `done=1` and `error=0` | PASS |
 | 105ns-21us | DMA copy firmware run | CPU seeds D-SRAM source words at `0x20003000`, starts DMA to copy four words to `0x20003040`, and the testbench observes matching destination words with `done=1`, `error=0`, and `irq=1` | PASS |
 | 105ns-75us | UART IRQ firmware run | CPU enables UART TX-empty IRQ ID 2 in INTC, services one machine external interrupt, claims/completes IRQ 2, clears UART sticky TX-empty status, disables UART TX IRQ enable, and returns to idle | PASS |
@@ -116,6 +121,9 @@ register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
 The long boot firmware image now combines UART, GPIO, D-SRAM, DMA, timer, and
 OTP readback activity in one generated-image run.
+The system stress firmware image repeats D-SRAM, DMA, timer, GPIO, UART, and
+OTP-read activity over six polling rounds and checks accumulated status and
+checksum mailboxes at the top level.
 The mixed IRQ/DMA firmware image now combines DMA master activity with two INTC
 external sources and verifies DMA-before-GPIO priority order in software.
 The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
@@ -123,4 +131,4 @@ interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes richer debug
 operations such as multiple simultaneous breakpoints, data/load/store triggers,
-and longer software/debugger stress regressions.
+longer randomized software stress, and interrupt-heavy stress regressions.

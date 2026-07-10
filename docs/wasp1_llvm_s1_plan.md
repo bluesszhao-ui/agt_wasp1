@@ -133,6 +133,7 @@ implemented:
   SoC boot regression that consumes generated hello_uart OTP image
   SoC long boot regression that consumes generated long_boot OTP image
   SoC mixed interrupt-and-DMA regression that consumes generated mixed_irq_dma OTP image
+  SoC system stress regression that consumes generated system_stress OTP image
   SoC DMA copy regression that consumes generated dma_copy OTP image
   SoC UART external interrupt regression that consumes generated uart_irq OTP image
   SoC UART RX/overrun interrupt regression that consumes generated uart_rx_irq OTP image
@@ -144,7 +145,7 @@ implemented:
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  longer software stress regressions
+  longer randomized and interrupt-heavy software stress regressions
 ```
 
 ## 5. Linker Layout
@@ -171,6 +172,7 @@ UART external interrupt program
 UART RX/overrun external interrupt program
 long multi-peripheral boot program
 mixed interrupt-and-DMA program
+system stress program
 timer interrupt program
 DMA copy program
 DMA external interrupt program

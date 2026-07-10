@@ -115,6 +115,25 @@ module tb_wasp1;
   localparam logic [31:0] MIXED_IRQ_EXPECTED_CLAIM1 = 32'h0000_0004;
   localparam logic [31:0] MIXED_IRQ_EXPECTED_HANDLED = 32'h0000_0003;
   localparam logic [31:0] MIXED_IRQ_EXPECTED_DMA_STATUS = 32'h0000_0002;
+  localparam int unsigned SYSTEM_STRESS_MAGIC_WORD_IDX = 32'h0000_3c00 >> 2;
+  localparam int unsigned SYSTEM_STRESS_DONE_WORD_IDX = 32'h0000_3c04 >> 2;
+  localparam int unsigned SYSTEM_STRESS_ROUNDS_WORD_IDX = 32'h0000_3c08 >> 2;
+  localparam int unsigned SYSTEM_STRESS_CHECKSUM_WORD_IDX = 32'h0000_3c0c >> 2;
+  localparam int unsigned SYSTEM_STRESS_GPIO_WORD_IDX = 32'h0000_3c10 >> 2;
+  localparam int unsigned SYSTEM_STRESS_DMA_STATUS_WORD_IDX = 32'h0000_3c14 >> 2;
+  localparam int unsigned SYSTEM_STRESS_TIMER_STATUS_WORD_IDX = 32'h0000_3c18 >> 2;
+  localparam int unsigned SYSTEM_STRESS_OTP_XOR_WORD_IDX = 32'h0000_3c1c >> 2;
+  localparam int unsigned SYSTEM_STRESS_UART_COUNT_WORD_IDX = 32'h0000_3c20 >> 2;
+  localparam int unsigned SYSTEM_STRESS_DMA_SRC_WORD_IDX = 32'h0000_3d00 >> 2;
+  localparam int unsigned SYSTEM_STRESS_DMA_DST_WORD_IDX = 32'h0000_3d80 >> 2;
+  localparam int unsigned SYSTEM_STRESS_ROUNDS = 6;
+  localparam int unsigned SYSTEM_STRESS_WORDS = 8;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_MAGIC = 32'h5354_5352;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_DONE = 32'h5354_4f4b;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_GPIO = 32'h0000_005f;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_DMA_STATUS = 32'h0000_0002;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_TIMER_STATUS = 32'h0000_0001;
+  localparam logic [31:0] SYSTEM_STRESS_EXPECTED_UART_COUNT = 32'h0000_001b;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -189,6 +208,7 @@ module tb_wasp1;
   bit          uart_rx_irq_check;           // Selects UART RX/overrun interrupt assertions.
   bit          long_boot_check;             // Selects longer generated-image boot assertions.
   bit          mixed_irq_dma_check;         // Selects mixed DMA/GPIO interrupt assertions.
+  bit          system_stress_check;         // Selects multi-round polling stress assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -345,6 +365,7 @@ module tb_wasp1;
     uart_rx_irq_check = $test$plusargs("WASP1_UART_RX_IRQ_CHECK");
     long_boot_check = $test$plusargs("WASP1_LONG_BOOT_CHECK");
     mixed_irq_dma_check = $test$plusargs("WASP1_MIXED_IRQ_DMA_CHECK");
+    system_stress_check = $test$plusargs("WASP1_SYSTEM_STRESS_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -1389,6 +1410,126 @@ module tb_wasp1;
     end
   endtask
 
+  function automatic logic [31:0] system_stress_expected_word(
+    input int unsigned round,
+    input int unsigned idx
+  );
+    begin
+      // Mirror llvm_s1/bsp/examples/system_stress.c without multiply support.
+      system_stress_expected_word =
+        32'h5100_0000 |
+        (32'(round & 32'h0000_000f) << 20) |
+        (32'(idx & 32'h0000_000f) << 12) |
+        (32'(round & 32'h0000_000f) << 4) |
+        32'(idx & 32'h0000_000f);
+    end
+  endfunction
+
+  task automatic wait_for_system_stress_activity;
+    int unsigned timeout;
+    logic [31:0] magic_word;
+    logic [31:0] done_word;
+    logic [31:0] rounds_word;
+    logic [31:0] checksum_word;
+    logic [31:0] gpio_word;
+    logic [31:0] dma_status_word;
+    logic [31:0] timer_status_word;
+    logic [31:0] otp_xor_word;
+    logic [31:0] uart_count_word;
+    logic [31:0] expected_checksum;
+    logic [31:0] expected_otp_xor;
+    logic [31:0] expected_word;
+    begin
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      while (((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
+              (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) &&
+             timeout < 160000) begin
+        magic_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DONE_WORD_IDX];
+        if ((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
+            (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+
+      rounds_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_ROUNDS_WORD_IDX];
+      checksum_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_CHECKSUM_WORD_IDX];
+      gpio_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_GPIO_WORD_IDX];
+      dma_status_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_STATUS_WORD_IDX];
+      timer_status_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_TIMER_STATUS_WORD_IDX];
+      otp_xor_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_OTP_XOR_WORD_IDX];
+      uart_count_word = u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_UART_COUNT_WORD_IDX];
+      if ((magic_word !== SYSTEM_STRESS_EXPECTED_MAGIC) ||
+          (done_word !== SYSTEM_STRESS_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("system stress firmware did not complete: magic=0x%08h done=0x%08h rounds=0x%08h checksum=0x%08h gpio=0x%08h dma=0x%08h timer=0x%08h uart_count=0x%08h",
+               magic_word, done_word, rounds_word, checksum_word, gpio_word,
+               dma_status_word, timer_status_word, uart_count_word);
+        $fatal(1);
+      end
+
+      expected_checksum = '0;
+      for (int round = 0; round < SYSTEM_STRESS_ROUNDS; round++) begin
+        for (int idx = 0; idx < SYSTEM_STRESS_WORDS; idx++) begin
+          expected_word = system_stress_expected_word(round, idx);
+          expected_checksum = expected_checksum +
+                              (expected_word ^ (32'(round) << idx));
+        end
+      end
+
+      expected_otp_xor = u_wasp1.u_ahb_otp.otp_mem_q[0] ^
+                         u_wasp1.u_ahb_otp.otp_mem_q[1] ^
+                         u_wasp1.u_ahb_otp.otp_mem_q[2] ^
+                         u_wasp1.u_ahb_otp.otp_mem_q[3];
+
+      if (rounds_word !== 32'(SYSTEM_STRESS_ROUNDS) ||
+          checksum_word !== expected_checksum ||
+          gpio_word !== SYSTEM_STRESS_EXPECTED_GPIO ||
+          gpio_out !== SYSTEM_STRESS_EXPECTED_GPIO ||
+          dma_status_word !== SYSTEM_STRESS_EXPECTED_DMA_STATUS ||
+          timer_status_word !== SYSTEM_STRESS_EXPECTED_TIMER_STATUS ||
+          otp_xor_word !== expected_otp_xor ||
+          uart_count_word !== SYSTEM_STRESS_EXPECTED_UART_COUNT) begin
+        $error("system stress mailbox mismatch: rounds=0x%08h checksum=0x%08h expected_checksum=0x%08h gpio=0x%08h dma=0x%08h timer=0x%08h otp_xor=0x%08h expected_otp_xor=0x%08h uart_count=0x%08h",
+               rounds_word, checksum_word, expected_checksum, gpio_word,
+               dma_status_word, timer_status_word, otp_xor_word,
+               expected_otp_xor, uart_count_word);
+        $fatal(1);
+      end
+
+      for (int idx = 0; idx < SYSTEM_STRESS_WORDS; idx++) begin
+        expected_word = system_stress_expected_word(SYSTEM_STRESS_ROUNDS - 1, idx);
+        if (u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx] !==
+            expected_word ||
+            u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx] !==
+            expected_word) begin
+          $error("system stress DMA word[%0d] mismatch: src=0x%08h dst=0x%08h expected=0x%08h",
+                 idx,
+                 u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_SRC_WORD_IDX + idx],
+                 u_wasp1.u_ahb_dsram.mem_q[SYSTEM_STRESS_DMA_DST_WORD_IDX + idx],
+                 expected_word);
+          $fatal(1);
+        end
+      end
+
+      if (u_wasp1.u_ahb_dma.done_q !== 1'b0 ||
+          u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+          u_wasp1.dma_irq !== 1'b0 ||
+          u_wasp1.timer_irq !== 1'b0 ||
+          uart_tx_push_count < SYSTEM_STRESS_EXPECTED_UART_COUNT) begin
+        $error("system stress final state mismatch: dma_done=%0b dma_error=%0b dma_irq=%0b timer_irq=%0b tx_push_count=%0d",
+               u_wasp1.u_ahb_dma.done_q, u_wasp1.u_ahb_dma.error_q,
+               u_wasp1.dma_irq, u_wasp1.timer_irq, uart_tx_push_count);
+        $fatal(1);
+      end
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -1471,6 +1612,8 @@ module tb_wasp1;
         wait_for_long_boot_activity();
       end else if (mixed_irq_dma_check) begin
         wait_for_mixed_irq_dma_activity();
+      end else if (system_stress_check) begin
+        wait_for_system_stress_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin

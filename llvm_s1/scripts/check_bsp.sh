@@ -72,6 +72,7 @@ bsp_files="
   bsp/examples/uart_rx_irq.c
   bsp/examples/long_boot.c
   bsp/examples/mixed_irq_dma.c
+  bsp/examples/system_stress.c
   bsp/examples/dma_copy.c
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c

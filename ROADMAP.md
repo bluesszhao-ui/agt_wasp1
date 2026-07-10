@@ -66,19 +66,19 @@ PASS       Current verification target passes
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, and one OpenOCD/GDB hardware breakpoint |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak smoke, OpenOCD/GDB register-write/step/breakpoint stress, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak smoke, OpenOCD/GDB register-write/step/breakpoint stress, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round system stress smoke, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/mixed-IRQ-DMA/DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
+| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/system-stress/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/mixed-IRQ-DMA/system-stress/DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
 | `ftdi_debugger` | SPEC | FT2232H external hardware debugger requirements, reference pinout, OpenOCD FTDI config, Rev A schematic-input/netlist/BOM package, and collateral checker are captured; formal EDA schematic, PCB, and FPGA/board bring-up remain |
-| full system software | TODO | Machine timer, UART TX-empty, UART RX/overrun, DMA external interrupt, GPIO external interrupt, long generated-image boot, mixed IRQ/DMA smokes, and first OpenOCD/GDB stress pass; longer software/debugger regressions remain |
+| full system software | TODO | Machine timer, UART TX-empty, UART RX/overrun, DMA external interrupt, GPIO external interrupt, long generated-image boot, mixed IRQ/DMA smokes, first six-round polling system stress, and first OpenOCD/GDB stress pass; randomized software, interrupt-heavy, and longer debugger regressions remain |
 
 ## Near-Term Plan
 
 ```text
 1. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 2. Extend debug stress beyond the first register/step/hbreak regression: longer debugger runs, multiple triggers, and optional program-buffer/SBA support
-3. Add longer software stress regressions
+3. Add randomized software and interrupt-heavy stress regressions
 ```
 
 ## Commit Policy Going Forward

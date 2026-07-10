@@ -14,12 +14,13 @@ UART_RX_IRQ_HEX ?= ../llvm_s1/build/smoke/uart_rx_irq_otp.hex
 LONG_BOOT_HEX ?= ../llvm_s1/build/smoke/long_boot_otp.hex
 MIXED_IRQ_DMA_HEX ?= ../llvm_s1/build/smoke/mixed_irq_dma_otp.hex
 TIMER_IRQ_HEX ?= ../llvm_s1/build/smoke/timer_irq_otp.hex
+SYSTEM_STRESS_HEX ?= ../llvm_s1/build/smoke/system_stress_otp.hex
 SIM_ARGS ?=
 RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-timer-irq sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
 
 all: lint
 
@@ -121,6 +122,17 @@ sim-mixed-irq-dma:
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(MIXED_IRQ_DMA_HEX) \
 		+WASP1_MIXED_IRQ_DMA_CHECK $(SIM_ARGS) > logs/tb_wasp1_mixed_irq_dma.log 2>&1
 	@cat logs/tb_wasp1_mixed_irq_dma.log
+
+sim-system-stress:
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_system_stress_build.log 2>&1
+	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(SYSTEM_STRESS_HEX) \
+		+WASP1_SYSTEM_STRESS_CHECK $(SIM_ARGS) > logs/tb_wasp1_system_stress.log 2>&1
+	@cat logs/tb_wasp1_system_stress.log
 
 sim-timer-irq:
 	$(MAKE) -C ../llvm_s1 smoke
