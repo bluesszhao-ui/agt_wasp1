@@ -59,10 +59,11 @@ The split DM modports allow `debug_halt_ctrl` and `debug_reg_access` to connect
 to the same eventual interface without either submodule driving the other's
 signals.
 
-`debug_if` also carries the single execute-address trigger programmed through
-Debug Spec trigger CSRs. The Debug Module drives `trigger_execute_valid` and
-`trigger_execute_addr`; the core compares them against the instruction in
-decode and reports the resulting DCSR cause through `dcsr_cause`.
+`debug_if` also carries the execute-address trigger slots programmed through
+Debug Spec trigger CSRs. The Debug Module drives per-slot
+`trigger_execute_valid` and `trigger_execute_addr`; the core compares them
+against the instruction in decode and reports the resulting DCSR cause through
+`dcsr_cause`.
 
 ## 5. Synthesis Notes
 

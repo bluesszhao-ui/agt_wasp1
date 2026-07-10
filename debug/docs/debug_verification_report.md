@@ -4,7 +4,7 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-07-08 |
+| Date | 2026-07-10 |
 | Tool | Verilator 5.046 |
 | Generic lint | PASS: `make -C debug lint` |
 | IC lint | PASS: `make -C debug lint-ic` |
@@ -66,7 +66,8 @@ debug_jtag_verification_report.md
 ## 5. Residual Scope
 
 OpenOCD/GDB end-to-end smoke, including native GDB `stepi` over remote-bitbang,
-and hardware breakpoint `hbreak`, is covered by the wasp1 top-level
-verification report. Program buffer, System Bus Access, debug ROM, multiple
-hardware triggers, architectural CSR side effects beyond debugger probes, and
-multi-hart behavior beyond nonexistent-hart reporting remain future work.
+and two hardware breakpoint `hbreak` locations, is covered by the wasp1
+top-level verification report. Program buffer, System Bus Access, debug ROM,
+data/load/store triggers, architectural CSR side effects beyond debugger
+probes, and multi-hart behavior beyond nonexistent-hart reporting remain future
+work.

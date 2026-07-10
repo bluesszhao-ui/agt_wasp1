@@ -63,8 +63,8 @@ module debug (
   logic [31:0] mem_rsp_rdata;        // Halted core memory response data.
   logic        mem_rsp_error;        // Halted core memory response error.
   logic        mem_flush;            // Abort/drain memory command on DM/hart loss.
-  logic        trigger_execute_valid; // Abstract trigger CSR enables execute compare.
-  logic [31:0] trigger_execute_addr;  // Abstract trigger CSR execute compare address.
+  logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid; // Per-slot execute compare enables.
+  logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr; // Per-slot execute compare addresses.
 
   debug_if gpr_debug (
     .clk(clk_i),

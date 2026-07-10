@@ -42,8 +42,8 @@ module debug_abstract_cmd (
   input  logic [31:0] mem_rsp_rdata_i,       // Raw 32-bit memory read data.
   input  logic        mem_rsp_error_i,       // Memory path reported access/bus error.
   output logic        dcsr_step_o,           // Latched DCSR.step bit used by resume single-step.
-  output logic        trigger_execute_valid_o,// Execute-address trigger enable toward the core.
-  output logic [31:0] trigger_execute_addr_o,// Execute-address trigger compare value.
+  output logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid_o, // Per-slot execute trigger enables.
+  output logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr_o, // Per-slot execute compare values.
   output logic        reg_flush_o,           // Abort/drain downstream GPR work on DM/hart loss.
   output logic        mem_flush_o            // Abort/drain downstream memory work on DM/hart loss.
 );
@@ -60,6 +60,10 @@ module debug_abstract_cmd (
 
   abstract_state_e state_q;
   abstract_state_e state_d;
+
+  localparam int TRIGGER_COUNT = ABSTRACT_TRIGGER_COUNT;
+  localparam int TRIGGER_INDEX_WIDTH =
+      (TRIGGER_COUNT <= 1) ? 1 : $clog2(TRIGGER_COUNT);
 
   // Raw command field decode is combinational and contains no protocol state.
   logic [7:0]  command_type;
@@ -109,8 +113,9 @@ module debug_abstract_cmd (
   logic [31:0] data1_update_q;
   logic [2:0]  completion_error_q;
   logic        dcsr_step_q;
-  logic [31:0] trigger_tdata1_q;
-  logic [31:0] trigger_tdata2_q;
+  logic [TRIGGER_INDEX_WIDTH-1:0] trigger_select_q;
+  logic [31:0] trigger_tdata1_q [TRIGGER_COUNT];
+  logic [31:0] trigger_tdata2_q [TRIGGER_COUNT];
 
   logic reg_cmd_fire;
   logic reg_rsp_fire;
@@ -165,9 +170,9 @@ module debug_abstract_cmd (
     unique case (command_regno)
       ABSTRACT_CSR_MSTATUS: command_csr_rdata = ABSTRACT_CSR_MSTATUS_RV32_M;
       ABSTRACT_CSR_MISA: command_csr_rdata = ABSTRACT_CSR_MISA_RV32I;
-      ABSTRACT_CSR_TSELECT: command_csr_rdata = 32'h0000_0000;
-      ABSTRACT_CSR_TDATA1: command_csr_rdata = trigger_tdata1_q;
-      ABSTRACT_CSR_TDATA2: command_csr_rdata = trigger_tdata2_q;
+      ABSTRACT_CSR_TSELECT: command_csr_rdata = 32'(trigger_select_q);
+      ABSTRACT_CSR_TDATA1: command_csr_rdata = trigger_tdata1_q[trigger_select_q];
+      ABSTRACT_CSR_TDATA2: command_csr_rdata = trigger_tdata2_q[trigger_select_q];
       ABSTRACT_CSR_TDATA3: command_csr_rdata = 32'h0000_0000;
       ABSTRACT_CSR_TINFO: command_csr_rdata = ABSTRACT_TINFO_MCONTROL_ONLY;
       ABSTRACT_CSR_TCONTROL: command_csr_rdata = 32'h0000_0000;
@@ -183,9 +188,9 @@ module debug_abstract_cmd (
     endcase
   end
 
-  // The single trigger is an RV32 mcontrol execute-address trigger. Unsupported
+  // Each trigger slot is an RV32 mcontrol execute-address trigger. Unsupported
   // fields are WARL-zeroed, action accepts only Debug Mode, and unsupported
-  // type writes fall back to a disabled mcontrol image so one trigger remains
+  // type writes fall back to a disabled mcontrol image so trigger slots remain
   // discoverable through tdata1/tinfo.
   always_comb begin
     command_csr_warl_tdata1 =
@@ -274,15 +279,17 @@ module debug_abstract_cmd (
   assign mem_cmd_wstrb_o = mem_wstrb_q;
   assign mem_rsp_ready_o = (state_q == ABSTRACT_WAIT) && op_is_mem_q;
   assign dcsr_step_o = dcsr_step_q;
-  assign trigger_execute_valid_o =
-      ((trigger_tdata1_q & ABSTRACT_TDATA1_TYPE_MASK) ==
-       ABSTRACT_TDATA1_TYPE_MCONTROL) &&
-      ((trigger_tdata1_q & ABSTRACT_MCONTROL_ACTION_MASK) ==
-       ABSTRACT_MCONTROL_ACTION_DEBUG) &&
-      ((trigger_tdata1_q & ABSTRACT_MCONTROL_MATCH_MASK) == 32'h0000_0000) &&
-      ((trigger_tdata1_q & ABSTRACT_MCONTROL_M) != 32'h0000_0000) &&
-      ((trigger_tdata1_q & ABSTRACT_MCONTROL_EXECUTE) != 32'h0000_0000);
-  assign trigger_execute_addr_o = trigger_tdata2_q;
+  for (genvar trig_idx = 0; trig_idx < TRIGGER_COUNT; trig_idx++) begin : gen_trigger_outputs
+    assign trigger_execute_valid_o[trig_idx] =
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_TDATA1_TYPE_MASK) ==
+         ABSTRACT_TDATA1_TYPE_MCONTROL) &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_ACTION_MASK) ==
+         ABSTRACT_MCONTROL_ACTION_DEBUG) &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_MATCH_MASK) == 32'h0000_0000) &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_M) != 32'h0000_0000) &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_EXECUTE) != 32'h0000_0000);
+    assign trigger_execute_addr_o[trig_idx] = trigger_tdata2_q[trig_idx];
+  end
 
   // Losing DM activation or halted state aborts the downstream transaction.
   assign reg_flush_o = !dmactive_i ||
@@ -369,8 +376,11 @@ module debug_abstract_cmd (
       data1_update_q <= '0;
       completion_error_q <= CMDERR_NONE;
       dcsr_step_q <= 1'b0;
-      trigger_tdata1_q <= ABSTRACT_TDATA1_TYPE_MCONTROL;
-      trigger_tdata2_q <= 32'h0000_0000;
+      trigger_select_q <= '0;
+      for (int trig_idx = 0; trig_idx < TRIGGER_COUNT; trig_idx++) begin
+        trigger_tdata1_q[trig_idx] <= ABSTRACT_TDATA1_TYPE_MCONTROL;
+        trigger_tdata2_q[trig_idx] <= 32'h0000_0000;
+      end
     end else begin
       state_q <= state_d;
 
@@ -379,8 +389,11 @@ module debug_abstract_cmd (
         data1_update_valid_q <= 1'b0;
         completion_error_q <= CMDERR_NONE;
         dcsr_step_q <= 1'b0;
-        trigger_tdata1_q <= ABSTRACT_TDATA1_TYPE_MCONTROL;
-        trigger_tdata2_q <= 32'h0000_0000;
+        trigger_select_q <= '0;
+        for (int trig_idx = 0; trig_idx < TRIGGER_COUNT; trig_idx++) begin
+          trigger_tdata1_q[trig_idx] <= ABSTRACT_TDATA1_TYPE_MCONTROL;
+          trigger_tdata2_q[trig_idx] <= 32'h0000_0000;
+        end
       end else if ((state_q == ABSTRACT_IDLE) && command_valid_i) begin
         op_is_reg_q <= (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
                        command_transfer && !command_csr_supported;
@@ -411,11 +424,18 @@ module debug_abstract_cmd (
               (command_regno == ABSTRACT_CSR_DCSR)) begin
             dcsr_step_q <= (data0_i & ABSTRACT_CSR_DCSR_STEP_MASK) != 32'h0000_0000;
           end else if (command_csr_write_supported &&
+                       (command_regno == ABSTRACT_CSR_TSELECT)) begin
+            if (data0_i < 32'(TRIGGER_COUNT)) begin
+              trigger_select_q <= data0_i[TRIGGER_INDEX_WIDTH-1:0];
+            end else begin
+              trigger_select_q <= TRIGGER_INDEX_WIDTH'(TRIGGER_COUNT - 1);
+            end
+          end else if (command_csr_write_supported &&
                        (command_regno == ABSTRACT_CSR_TDATA1)) begin
-            trigger_tdata1_q <= command_csr_warl_tdata1;
+            trigger_tdata1_q[trigger_select_q] <= command_csr_warl_tdata1;
           end else if (command_csr_write_supported &&
                        (command_regno == ABSTRACT_CSR_TDATA2)) begin
-            trigger_tdata2_q <= data0_i;
+            trigger_tdata2_q[trigger_select_q] <= data0_i;
           end
         end else begin
           completion_error_q <= CMDERR_NONE;

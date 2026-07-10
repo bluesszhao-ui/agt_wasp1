@@ -78,7 +78,7 @@ hart_halted/hart_running/hart_resumeack/hart_havereset back to debug_dmi_regs
 `debug_abstract_cmd` decodes the command register and drives one decoded GPR
 transaction into `debug_reg_access`. It also consumes `core_debug.dpc` for
 abstract CSR reads of `dpc`, consumes `core_debug.dcsr_cause` for `dcsr`
-readback, owns the local `dcsr.step` bit and single trigger CSR image, and
+readback, owns the local `dcsr.step` bit and two trigger CSR images, and
 returns successful read data or cmderr updates to `debug_dmi_regs`.
 
 Single-step is a small wrapper-level combinational path:
@@ -96,12 +96,13 @@ The execute trigger path is also wrapper-level combinational after the trigger
 CSR registers:
 
 ```text
-core_debug.trigger_execute_valid = trigger_tdata1 enables legal mcontrol execute match
-core_debug.trigger_execute_addr  = trigger_tdata2
+core_debug.trigger_execute_valid[slot] = selected trigger slot enables legal mcontrol execute match
+core_debug.trigger_execute_addr[slot]  = selected trigger slot tdata2 compare address
 ```
 
-The core performs the ID-stage PC compare, enters Debug Mode before the matched
-instruction retires, and reports DCSR cause back through `core_debug.dcsr_cause`.
+The core performs ID-stage PC compares across the enabled trigger slots, enters
+Debug Mode before the matched instruction retires, and reports DCSR cause back
+through `core_debug.dcsr_cause`.
 
 `debug_reg_access` uses an internal `debug_if` instance with the `dm_gpr`
 modport. The wrapper explicitly bridges only GPR request/response signals to

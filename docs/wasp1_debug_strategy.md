@@ -61,14 +61,14 @@ read and write GPRs
 resume the hart
 single-step one instruction through DCSR.step
 read memory through halted-core Access Memory
-hit one hardware breakpoint through hbreak
+hit two hardware breakpoints through hbreak
 ```
 
-Physical Access Memory, native `stepi`, and one hardware breakpoint are now
-part of the automated remote-bitbang OpenOCD/GDB smoke. A first stress target
-also covers GPR write/read and breakpoint delete/reinstall at two OTP
-addresses. Multiple simultaneous triggers, data triggers, System Bus Access,
-and program-buffer execution remain later-stage targets.
+Physical Access Memory, native `stepi`, and two execute-address hardware
+breakpoints are now part of the automated remote-bitbang OpenOCD/GDB smoke and
+stress flow. The stress target also covers GPR write/read and breakpoint
+delete/reinstall at two OTP addresses. Data triggers, System Bus Access, and
+program-buffer execution remain later-stage targets.
 
 ## 6. External FTDI Debugger
 

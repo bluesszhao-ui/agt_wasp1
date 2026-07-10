@@ -30,8 +30,8 @@ elaboration, reset connectivity, and first fetch-path activity.
 | JTAG debug smoke | Check SoC-level Debug Module access | Bit-bang JTAG to read IDCODE/DTMCS, write `dmcontrol.dmactive`, and read `dmstatus`. |
 | Remote-bitbang smoke | Check OpenOCD-facing socket bridge | Build `Vwasp1` remote-bitbang harness and use a Python client to exercise IDCODE/DTMCS/DMI over TCP. |
 | OpenOCD smoke | Check external debugger server compatibility | Run OpenOCD remote_bitbang against `Vwasp1` and require TAP, DTM, hart, XLEN, and `misa` discovery. |
-| GDB smoke | Check external GDB debug access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs/PC, execute native `stepi`, hit one hardware breakpoint, detach, and exit. |
-| GDB stress | Check repeated external debugger operations | Reuse the OpenOCD/GDB harness to write/read a GPR, single-step the OTP loop, delete/reinstall one hardware trigger, and hit breakpoints at `0x0` and `0x4`. |
+| GDB smoke | Check external GDB debug access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs/PC, execute native `stepi`, hit an execute-address hardware breakpoint, detach, and exit. |
+| GDB stress | Check repeated external debugger operations | Reuse the OpenOCD/GDB harness to write/read a GPR, single-step the OTP loop, delete/reinstall hardware triggers, and hit two hardware breakpoints at `0x0` and `0x4`. |
 | Cache/runtime metrics | Measure cache hit rate and execution efficiency | Run all generated OTP C firmware images with `+WASP1_METRICS` and summarize cycles, retired instructions, IPC/CPI, and I/D cache hit rates. |
 | Idle peripheral stability | Check inactive peripherals stay benign | Run additional cycles and ensure WDG reset and I2C OE remain deasserted. |
 
@@ -57,13 +57,14 @@ that a timer interrupt firmware image can enter and return from the C trap
 handler, that the
 SoC JTAG pins reach the integrated Debug Module, and that an automated external
 OpenOCD/GDB process can complete the debug smoke, including halt, register
-read, PC memory disassembly through Access Memory, native GDB `stepi`, and one
-hardware breakpoint through the single execute-address trigger. It also verifies
-a longer GDB stress path with GPR write/read and trigger delete/reinstall.
+read, PC memory disassembly through Access Memory, native GDB `stepi`, and an
+execute-address hardware breakpoint. It also verifies a longer GDB stress path
+with GPR write/read, trigger delete/reinstall, and two hardware breakpoints at
+separate OTP addresses.
 The metrics run records cache hit rates and runtime efficiency for each current
 generated C firmware image so regressions can be compared against a stable
 baseline.
-Multi-trigger and data/load/store breakpoint workflows remain later scope.
+Data/load/store breakpoint workflows remain later scope.
 
 ## 4. Pass Criteria
 

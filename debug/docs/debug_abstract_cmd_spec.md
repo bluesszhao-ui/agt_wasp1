@@ -8,8 +8,8 @@ accesses, and provides the CSR probes needed by OpenOCD/GDB. The implementation
 supports RV32 integer GPR Access Register commands, physical Access Memory
 byte/half/word transfers through the halted core, local reads of `misa`,
 `mstatus`, `dcsr`, and the core-captured `dpc`, plus writes to the `dcsr.step`
-bit used for single-step. It also implements one RV32 `mcontrol`
-execute-address trigger for OpenOCD/GDB hardware breakpoints.
+bit used for single-step. It also implements two RV32 `mcontrol`
+execute-address trigger slots for OpenOCD/GDB hardware breakpoints.
 
 ## 2. Supported Access Register Command
 
@@ -32,7 +32,7 @@ command, including this transfer-disabled no-op.
 CSR reads complete locally for the supported probe set. Unimplemented CSR
 probes complete as zero so OpenOCD does not disable abstract CSR access after
 probing optional status CSRs. CSR writes complete as no-ops except for
-`dcsr.step`, `tdata1`, and `tdata2`.
+`dcsr.step`, `tselect`, `tdata1`, and `tdata2`.
 
 ```text
 misa      -> 0x40000100, RV32 + I extension
@@ -45,18 +45,18 @@ dpc       -> hart_dpc_i, the core-captured Debug PC/resume PC
 The trigger CSR behavior is intentionally minimal and WARL-filtered:
 
 ```text
-tselect  -> always reads 0; writes are ignored, exposing trigger 0 only
+tselect  -> selects trigger slot 0 or 1; out-of-range writes clamp to slot 1
 tinfo    -> 0x00000004, advertising RV32 mcontrol support
-tdata1   -> RV32 mcontrol type=2; legal fields are dmode, action, match, m, execute
-tdata2   -> execute-address compare value
+tdata1   -> selected slot's RV32 mcontrol type=2 image; legal fields are dmode, action, match, m, execute
+tdata2   -> selected slot's execute-address compare value
 tdata3   -> zero
 tcontrol -> zero
 ```
 
 The only enabled trigger mode is `mcontrol` execute-address equality in M-mode
 with `action=1` (enter Debug Mode). Unsupported `type` writes return a disabled
-`mcontrol` image, and unsupported actions are cleared so the core comparator is
-not enabled.
+`mcontrol` image for the selected slot, and unsupported actions are cleared so
+that slot's core comparator is not enabled.
 
 ## 3. Supported Access Memory Command
 

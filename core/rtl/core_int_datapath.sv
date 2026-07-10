@@ -57,6 +57,8 @@ module core_int_datapath (
 );
   import core_types_pkg::*;
 
+  localparam int DEBUG_TRIGGER_COUNT = 2;
+
   logic        id_valid;          // IF/ID valid from core_pipe; not decoded here yet.
   logic [31:0] id_pc;             // IF/ID PC from core_pipe.
   logic [31:0] id_instr;          // IF/ID instruction from core_pipe.
@@ -208,6 +210,7 @@ module core_int_datapath (
   logic        debug_mem_req_outstanding_q;// Debug memory request waits for dmem rsp.
   logic        debug_busy;         // Debug GPR response is pending or being created.
   logic        debug_resume_redirect;// Resume/step redirects frontend to captured DPC.
+  logic [DEBUG_TRIGGER_COUNT-1:0] debug_trigger_match; // Per-slot execute trigger compare hit.
   logic        debug_trigger_halt;  // Execute-address trigger requests Debug Mode entry.
   logic [31:0] debug_trigger_pc;    // Matched trigger PC captured into DPC.
   logic [31:0] debug_next_pc_q;    // Resume PC candidate updated by accepted fetches/retire.
@@ -248,8 +251,12 @@ module core_int_datapath (
   assign debug_resume_redirect = debug_halted && core_debug.resume_req &&
                                  !core_debug.halt_req && !debug_busy;
   assign debug_trigger_pc = id_pc;
-  assign debug_trigger_halt = id_valid && core_debug.trigger_execute_valid &&
-                              (id_pc == core_debug.trigger_execute_addr) &&
+  for (genvar trig_idx = 0; trig_idx < DEBUG_TRIGGER_COUNT; trig_idx++) begin : gen_debug_trigger_match
+    assign debug_trigger_match[trig_idx] =
+        core_debug.trigger_execute_valid[trig_idx] &&
+        (id_pc == core_debug.trigger_execute_addr[trig_idx]);
+  end
+  assign debug_trigger_halt = id_valid && (|debug_trigger_match) &&
                               !debug_halted && !core_debug.halt_req &&
                               !debug_freeze_pipe && !lsu_req_outstanding_q &&
                               (!ex_valid || retire_valid);

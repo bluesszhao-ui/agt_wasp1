@@ -22,7 +22,7 @@ GDB
 
 The debugger must support the existing OpenOCD/GDB smoke flow already verified
 with the Verilator remote-bitbang harness, including register reads, native
-`stepi`, and one hardware breakpoint through `hbreak`.
+`stepi`, and two execute-address hardware breakpoints through `hbreak`.
 
 ## 3. Hardware Baseline
 

@@ -1,7 +1,8 @@
 `timescale 1ns/1ps
 
 interface debug_if #(
-  parameter int XLEN = 32 // Core integer register width carried by the GPR channel.
+  parameter int XLEN = 32, // Core integer register width carried by the GPR channel.
+  parameter int TRIGGER_COUNT = 2 // Number of execute-address trigger slots.
 ) (
   input logic clk,   // Shared core/debug handshake clock.
   input logic rst_n  // Active-low reset associated with the interface endpoints.
@@ -14,8 +15,8 @@ interface debug_if #(
   logic            running;        // Core reports normal instruction execution.
   logic [XLEN-1:0] dpc;            // Debug PC captured by the core when it enters Debug Mode.
   logic [2:0]      dcsr_cause;     // Core-reported DCSR cause for the latest Debug Mode entry.
-  logic            trigger_execute_valid; // Debug Module enables one execute-address trigger.
-  logic [XLEN-1:0] trigger_execute_addr;  // Execute-address trigger compare value.
+  logic [TRIGGER_COUNT-1:0]            trigger_execute_valid; // Per-slot execute-address trigger enables.
+  logic [TRIGGER_COUNT-1:0][XLEN-1:0] trigger_execute_addr;  // Per-slot execute-address compare values.
 
   // Ready/valid GPR access request from Debug Module to the halted core.
   logic            gpr_req_valid;  // Request fields are valid and held until ready.

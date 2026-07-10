@@ -47,8 +47,8 @@ module tb_debug_abstract_cmd;
   logic [31:0] mem_rsp_rdata;
   logic        mem_rsp_error;
   logic        dcsr_step;
-  logic        trigger_execute_valid;
-  logic [31:0] trigger_execute_addr;
+  logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid;
+  logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr;
   logic        reg_flush;
   logic        mem_flush;
 
@@ -618,10 +618,11 @@ module tb_debug_abstract_cmd;
     end
   endtask
 
-  // Exercise the single mcontrol trigger image used by OpenOCD hardware
-  // breakpoints. Writes are WARL-filtered before driving the core comparator.
+  // Exercise both mcontrol trigger images used by OpenOCD/GDB hardware
+  // breakpoints. Writes are WARL-filtered before driving the core comparators.
   task automatic check_trigger_csrs;
     logic [31:0] command_value;
+    logic [31:0] tselect_command;
     logic [31:0] valid_tdata1;
     logic [31:0] bad_action_tdata1;
     logic [31:0] bad_type_tdata1;
@@ -639,10 +640,23 @@ module tb_debug_abstract_cmd;
                         ABSTRACT_MCONTROL_M |
                         ABSTRACT_MCONTROL_EXECUTE;
 
+      tselect_command = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TSELECT);
+      pulse_command(tselect_command, 32'h0000_0000);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready) begin
+        $error("tselect slot0 write mismatch");
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("tselect slot0 write idle");
       check_csr_read(ABSTRACT_CSR_TSELECT, 32'h0000_0000,
-                     "tselect single trigger read");
+                     "tselect slot0 read");
       check_csr_read(ABSTRACT_CSR_TDATA1, ABSTRACT_TDATA1_TYPE_MCONTROL,
-                     "tdata1 reset mcontrol read");
+                     "slot0 tdata1 reset mcontrol read");
       check_csr_read(ABSTRACT_CSR_TINFO, ABSTRACT_TINFO_MCONTROL_ONLY,
                      "tinfo mcontrol support read");
 
@@ -650,8 +664,8 @@ module tb_debug_abstract_cmd;
           ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA2);
       pulse_command(command_value, 32'h0000_0040);
       if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
-          reg_rsp_ready || (trigger_execute_addr !== 32'h0000_0040)) begin
-        $error("tdata2 write mismatch addr=0x%08x", trigger_execute_addr);
+          reg_rsp_ready || (trigger_execute_addr[0] !== 32'h0000_0040)) begin
+        $error("slot0 tdata2 write mismatch addr=0x%08x", trigger_execute_addr[0]);
         $fatal(1);
       end
       csr_write_count++;
@@ -664,10 +678,10 @@ module tb_debug_abstract_cmd;
           ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA1);
       pulse_command(command_value, valid_tdata1);
       if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
-          reg_rsp_ready || !trigger_execute_valid ||
-          (trigger_execute_addr !== 32'h0000_0040)) begin
-        $error("valid tdata1 write mismatch valid=%0b addr=0x%08x",
-               trigger_execute_valid, trigger_execute_addr);
+          reg_rsp_ready || !trigger_execute_valid[0] ||
+          (trigger_execute_addr[0] !== 32'h0000_0040)) begin
+        $error("slot0 valid tdata1 write mismatch valid=%0b addr=0x%08x",
+               trigger_execute_valid[0], trigger_execute_addr[0]);
         $fatal(1);
       end
       csr_write_count++;
@@ -678,12 +692,79 @@ module tb_debug_abstract_cmd;
       check_csr_read(ABSTRACT_CSR_TDATA1, valid_tdata1,
                      "valid tdata1 readback");
       check_csr_read(ABSTRACT_CSR_TDATA2, 32'h0000_0040,
-                     "tdata2 readback");
+                     "slot0 tdata2 readback");
+
+      pulse_command(tselect_command, 32'h0000_0001);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready) begin
+        $error("tselect slot1 write mismatch");
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("tselect slot1 write idle");
+      check_csr_read(ABSTRACT_CSR_TSELECT, 32'h0000_0001,
+                     "tselect slot1 read");
+      check_csr_read(ABSTRACT_CSR_TDATA1, ABSTRACT_TDATA1_TYPE_MCONTROL,
+                     "slot1 tdata1 reset mcontrol read");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA2);
+      pulse_command(command_value, 32'h0000_0080);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || (trigger_execute_addr[1] !== 32'h0000_0080)) begin
+        $error("slot1 tdata2 write mismatch addr=0x%08x", trigger_execute_addr[1]);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot1 tdata2 write idle");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b1, ABSTRACT_CSR_TDATA1);
+      pulse_command(command_value, valid_tdata1);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready || (trigger_execute_valid !== 2'b11) ||
+          (trigger_execute_addr[0] !== 32'h0000_0040) ||
+          (trigger_execute_addr[1] !== 32'h0000_0080)) begin
+        $error("dual trigger enable mismatch valid=%0b addr0=0x%08x addr1=0x%08x",
+               trigger_execute_valid, trigger_execute_addr[0],
+               trigger_execute_addr[1]);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot1 valid tdata1 write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, valid_tdata1,
+                     "slot1 valid tdata1 readback");
+      check_csr_read(ABSTRACT_CSR_TDATA2, 32'h0000_0080,
+                     "slot1 tdata2 readback");
+
+      pulse_command(tselect_command, 32'h0000_0002);
+      if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
+          reg_rsp_ready) begin
+        $error("tselect out-of-range write mismatch");
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("tselect out-of-range write idle");
+      check_csr_read(ABSTRACT_CSR_TSELECT, 32'h0000_0001,
+                     "tselect clamps to last slot read");
 
       pulse_command(command_value, bad_action_tdata1);
       if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
-          reg_rsp_ready || trigger_execute_valid) begin
-        $error("bad-action tdata1 should disable trigger valid=%0b",
+          reg_rsp_ready || !trigger_execute_valid[0] ||
+          trigger_execute_valid[1]) begin
+        $error("bad-action slot1 should only disable slot1 valid=%0b",
                trigger_execute_valid);
         $fatal(1);
       end
@@ -696,12 +777,14 @@ module tb_debug_abstract_cmd;
                      ABSTRACT_TDATA1_TYPE_MCONTROL |
                      ABSTRACT_MCONTROL_M |
                      ABSTRACT_MCONTROL_EXECUTE,
-                     "bad-action tdata1 readback");
+                     "slot1 bad-action tdata1 readback");
 
       pulse_command(command_value, bad_type_tdata1);
       if (!busy || command_error_valid || data0_we || reg_cmd_valid ||
-          reg_rsp_ready || trigger_execute_valid) begin
-        $error("bad-type tdata1 should return disabled mcontrol");
+          reg_rsp_ready || !trigger_execute_valid[0] ||
+          trigger_execute_valid[1]) begin
+        $error("bad-type slot1 should return disabled mcontrol valid=%0b",
+               trigger_execute_valid);
         $fatal(1);
       end
       csr_write_count++;
@@ -710,7 +793,7 @@ module tb_debug_abstract_cmd;
       step_clock();
       expect_idle("bad-type tdata1 write idle");
       check_csr_read(ABSTRACT_CSR_TDATA1, ABSTRACT_TDATA1_TYPE_MCONTROL,
-                     "bad-type tdata1 readback");
+                     "slot1 bad-type tdata1 readback");
     end
   endtask
 
@@ -956,7 +1039,7 @@ module tb_debug_abstract_cmd;
                    ({29'h0000_0000, ABSTRACT_DCSR_CAUSE_TRIGGER} << 6),
                    "dcsr trigger cause read");
     hart_dcsr_cause = ABSTRACT_DCSR_CAUSE_HALTREQ;
-    check_csr_write_noop(ABSTRACT_CSR_TSELECT, "tselect write no-op");
+    check_csr_write_noop(ABSTRACT_CSR_TCONTROL, "tcontrol write no-op");
     check_trigger_csrs();
     $display("phase memory start=%0t", $time);
     check_memory_paths();

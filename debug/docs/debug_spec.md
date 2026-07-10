@@ -8,7 +8,7 @@ discovery, halt/resume control, and RV32 integer GPR abstract access.
 It also exposes physical Access Memory through the halted core plus the
 `misa`, `mstatus`, `dcsr`, and core-captured `dpc` abstract CSR probes required
 for OpenOCD/GDB discovery, register-packet reads, memory disassembly around PC,
-native `stepi` setup, and one execute-address hardware breakpoint trigger.
+native `stepi` setup, and two execute-address hardware breakpoint triggers.
 
 The JTAG TAP/DTM transport is integrated with this Debug Module by the
 `debug_jtag` wrapper. This module intentionally remains the ready/valid DMI
@@ -27,8 +27,8 @@ Debug Module register/control boundary.
 
 `core_debug.step_req` asserts during a resume transaction when the latched
 `dcsr.step` bit is set. `core_debug.trigger_execute_valid` and
-`core_debug.trigger_execute_addr` reflect the single supported `mcontrol`
-trigger programmed through abstract trigger CSRs.
+`core_debug.trigger_execute_addr` reflect the supported `mcontrol` trigger
+slots programmed through abstract trigger CSRs.
 
 ## 3. Implemented Functions
 
@@ -41,7 +41,7 @@ trigger programmed through abstract trigger CSRs.
 | GPR transport | Sequence one core GPR request and one response per abstract transfer |
 | Memory transport | Sequence one halted-core memory request and one response per Access Memory command |
 | Single-step | Convert `dcsr.step=1` plus `dmcontrol.resumereq` into `core_debug.step_req` |
-| Hardware breakpoint | Provide one RV32 `mcontrol` execute-address trigger for OpenOCD/GDB `hbreak` |
+| Hardware breakpoint | Provide two RV32 `mcontrol` execute-address trigger slots for OpenOCD/GDB `hbreak` |
 | Error reporting | Preserve leaf-module `cmderr` mapping and DMI `FAILED` response behavior |
 
 ## 4. Unsupported Stage-1 Scope
@@ -52,7 +52,7 @@ The following are intentionally outside this module:
 program buffer
 debug ROM
 architectural CSR side effects beyond `dcsr.step`
-multiple hardware triggers or data/load/store trigger modes
+data/load/store trigger modes
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 

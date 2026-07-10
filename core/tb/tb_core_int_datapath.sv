@@ -730,8 +730,10 @@ module tb_core_int_datapath;
     begin
       match_pc = exp_fetch_pc;
       @(negedge clk);
-      core_debug.trigger_execute_addr = match_pc;
-      core_debug.trigger_execute_valid = 1'b1;
+      core_debug.trigger_execute_addr = '0;
+      core_debug.trigger_execute_valid = '0;
+      core_debug.trigger_execute_addr[0] = match_pc;
+      core_debug.trigger_execute_valid[0] = 1'b1;
 
       drive_instr(enc_i(12'd7, 5'd0, 3'b000, 5'd13));
       #1;
@@ -760,7 +762,7 @@ module tb_core_int_datapath;
                    name, core_debug.running, instr_ready, core_debug.dpc,
                    core_debug.dcsr_cause, match_pc);
           end
-          core_debug.trigger_execute_valid = 1'b0;
+          core_debug.trigger_execute_valid = '0;
           pass_count++;
           debug_count++;
           trigger_count++;
@@ -808,8 +810,8 @@ module tb_core_int_datapath;
     core_debug.halt_req = 1'b0;
     core_debug.resume_req = 1'b0;
     core_debug.step_req = 1'b0;
-    core_debug.trigger_execute_valid = 1'b0;
-    core_debug.trigger_execute_addr = 32'h0000_0000;
+    core_debug.trigger_execute_valid = '0;
+    core_debug.trigger_execute_addr = '0;
     core_debug.gpr_req_valid = 1'b0;
     core_debug.gpr_req_write = 1'b0;
     core_debug.gpr_req_addr = 5'd0;

@@ -61,6 +61,9 @@ package debug_dmi_pkg;
   localparam logic [2:0]  ABSTRACT_DCSR_CAUSE_STEP = 3'd4;
   localparam logic [31:0] ABSTRACT_CSR_DPC_RESET = 32'h0000_0000;
   localparam logic [31:0] ABSTRACT_TINFO_MCONTROL_ONLY = 32'h0000_0004;
+  // Stage-2 debug supports two execute-address mcontrol trigger slots so GDB
+  // can keep more than one hardware breakpoint armed at the same time.
+  localparam int ABSTRACT_TRIGGER_COUNT = 2;
   localparam logic [31:0] ABSTRACT_TDATA1_TYPE_MASK = 32'hF000_0000;
   localparam logic [31:0] ABSTRACT_TDATA1_TYPE_MCONTROL = 32'h2000_0000;
   localparam logic [31:0] ABSTRACT_TDATA1_DMODE = 32'h0800_0000;

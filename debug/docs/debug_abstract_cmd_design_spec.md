@@ -4,10 +4,10 @@
 
 The block decodes and executes the RV32 GPR subset of Access Register commands,
 physical Access Memory commands, local CSR reads for debugger discovery, the
-minimal `dcsr.step` write used for single-step, and one RV32 `mcontrol`
-execute-address trigger used by OpenOCD/GDB hardware breakpoints. FPR access,
-program-buffer execution, virtual memory access, and multi-trigger support
-remain explicitly unsupported.
+minimal `dcsr.step` write used for single-step, and two RV32 `mcontrol`
+execute-address trigger slots used by OpenOCD/GDB hardware breakpoints. FPR
+access, program-buffer execution, virtual memory access, data/load/store
+triggers, and System Bus Access remain explicitly unsupported.
 
 ## 2. Editable FSM/Block Diagram
 
@@ -106,12 +106,14 @@ fixed, `dcsr` combines the fixed RV32/M-mode discovery value with
 only this bit from `data0_i[2]`; other DCSR fields remain fixed readback
 metadata in this stage.
 
-`trigger_tdata1_q` and `trigger_tdata2_q` are local sequential state. Reset and
-DM deactivation return `tdata1` to a disabled RV32 `mcontrol` image and clear
-`tdata2`. The combinational WARL filter accepts only `type=2`, equality match,
-M-mode execute, and `action=debug mode`. The trigger output toward the core is
-asserted only when the filtered `tdata1` image is fully enabled; the compare
-address is the registered `tdata2` value.
+`trigger_select_q`, `trigger_tdata1_q[2]`, and `trigger_tdata2_q[2]` are local
+sequential state. Reset and DM deactivation select trigger 0, return every
+`tdata1` slot to a disabled RV32 `mcontrol` image, and clear every `tdata2`
+slot. `tselect` writes select slot 0 or 1, while out-of-range writes clamp to
+the last legal slot. The combinational WARL filter accepts only `type=2`,
+equality match, M-mode execute, and `action=debug mode`. Each trigger output
+toward the core is asserted only when that slot's filtered `tdata1` image is
+fully enabled; the compare address is that slot's registered `tdata2` value.
 
 ## 7. Target Behavior
 

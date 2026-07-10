@@ -60,10 +60,10 @@ PASS       Current verification target passes
 | `debug/debug_dmi_regs` | PASS | DMI register transport, hart status/control, abstract state, errors, and backpressure pass |
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
-| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, physical Access Memory, OpenOCD/GDB CSR probes including core-captured DPC, DCSR.step, single execute-address trigger, cmderr mapping, aborts, and random commands pass |
+| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, physical Access Memory, OpenOCD/GDB CSR probes including core-captured DPC, DCSR.step, two execute-address trigger slots, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
 | `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
-| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, and one OpenOCD/GDB hardware breakpoint |
+| `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, and two OpenOCD/GDB hardware breakpoints |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
 | `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak smoke, OpenOCD/GDB register-write/step/breakpoint stress, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round system stress smoke, cache/runtime metrics sweep, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |

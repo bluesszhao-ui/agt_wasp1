@@ -148,8 +148,8 @@ resume:
   leaves halted state after any pending GPR response is consumed
 
 execute trigger:
-  compares the ID-stage PC with core_debug.trigger_execute_addr
-  requires core_debug.trigger_execute_valid and a drainable older EX/LSU state
+  compares the ID-stage PC with every core_debug.trigger_execute_addr slot
+  requires at least one core_debug.trigger_execute_valid slot and a drainable older EX/LSU state
   redirects fetch back to the matched PC
   updates debug_next_pc_q/debug_dcsr_cause_q before Debug Mode capture
   prevents the matched instruction from retiring before halt

@@ -115,7 +115,7 @@ The first board must pass the same chip-side debug flow as remote-bitbang:
 OpenOCD TAP IDCODE 0x100001cf
 hart 0 XLEN=32
 misa=0x40000100
-one trigger discovered
+two triggers discovered
 GDB register read
 GDB native stepi
 GDB hbreak at 0x4
