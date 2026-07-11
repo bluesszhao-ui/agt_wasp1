@@ -19,7 +19,8 @@ elaboration, reset connectivity, and first fetch-path activity.
 | Long boot firmware smoke | Check longer generated-image mixed peripheral path | Load `long_boot_otp.hex`, run UART output, GPIO writes/toggle, D-SRAM stores/loads, polled DMA copy, polled timer compare, and OTP readback, then check D-SRAM mailboxes and hardware side effects. |
 | Mixed IRQ/DMA firmware smoke | Check multi-source INTC handling with DMA active | Load `mixed_irq_dma_otp.hex`, start a DMA copy with IRQ enabled while GPIO level IRQ is armed, drive `gpio_in[0]`, require DMA priority/claim before GPIO, and check copied D-SRAM data plus final IRQ deassertion. |
 | System stress firmware smoke | Check repeated software-driven peripheral and memory activity | Load `system_stress_otp.hex`, run six polling rounds of D-SRAM seed/readback, DMA copy, timer compare, GPIO output updates, UART TX pushes, and OTP readback, then check D-SRAM mailboxes and final hardware state. |
-| Deterministic-random IRQ stress | Check repeatable interrupt-heavy event interleaving | Load `random_irq_stress_otp.hex`, use fixed-seed xorshift32 to select 12 timer, DMA, GPIO, or concurrent timer+DMA rounds, respond to firmware GPIO epochs from the testbench, and independently check event counts, checksums, DMA data, selector trace, and final IRQ deassertion. |
+| Deterministic-random IRQ stress | Check repeatable interrupt-heavy event interleaving | Load `random_irq_stress_otp.hex`, capture a nonzero GPIO seed, use xorshift32 to select 12 timer, DMA, GPIO, or concurrent timer+DMA rounds, respond to firmware GPIO epochs from the testbench, and independently check event counts, checksums, DMA data, selector trace, and final IRQ deassertion. |
+| Multi-seed IRQ campaign | Broaden randomized schedule coverage without rebuilding firmware | Drive four nonzero seeds through GPIO during reset, require the seed-capture mailbox before GPIO IRQ stimulus, run 48 total rounds from one OTP image, preserve one log per seed, and require every independent scoreboard to pass. |
 | OTP programming firmware smoke | Check CPU-controlled OTP programming flow | Load `otp_program_otp.hex`, copy `.fasttext` to I-SRAM, execute the OTP programming routine from I-SRAM, and check the programmed OTP word plus status bits. |
 | DMA copy firmware smoke | Check DMA moves real D-SRAM contents | Load `dma_copy_otp.hex`, let CPU seed D-SRAM source/destination windows, start DMA, and check the destination words plus DMA done/error/IRQ status. |
 | UART IRQ firmware smoke | Check UART external interrupt through INTC | Load `uart_irq_otp.hex`, enable UART TX-empty IRQ ID 2 in INTC, claim/complete MEIP in the C trap handler, clear the sticky UART IRQ source, and check D-SRAM mailboxes plus IRQ deassertion. |
@@ -49,9 +50,10 @@ D-SRAM, DMA, timer, and OTP reads in one boot, that a generated system stress
 image can repeat D-SRAM, DMA, timer, GPIO, UART, and OTP-read activity for
 multiple rounds, that a mixed generated OTP image can handle DMA and GPIO
 external interrupt sources in one run while preserving priority order, that a
-fixed-seed randomized image can repeatedly interleave machine-timer and INTC
+seeded randomized image can repeatedly interleave machine-timer and INTC
 DMA/GPIO interrupts, including concurrent timer+DMA rounds, while the
-testbench independently reconstructs the complete event schedule, that a
+testbench independently reconstructs the complete event schedule, that the
+same OTP image can repeat this check across four captured GPIO seeds, that a
 DMA firmware image can move real D-SRAM contents through the second AHB master
 path, that DMA completion can reach the core as a
 machine external interrupt through INTC, that a UART TX-empty source can reach
@@ -78,6 +80,7 @@ All lint targets plus `tb_wasp1` bare/software-loaded simulations, the OTP
 programming firmware simulation, the long boot firmware simulation,
 the mixed IRQ/DMA firmware simulation, the system stress firmware simulation,
 the deterministic-random IRQ stress firmware simulation,
+the four-seed IRQ campaign,
 the DMA copy firmware simulation,
 the UART IRQ firmware simulation, the UART RX IRQ firmware simulation,
 the DMA IRQ firmware simulation,

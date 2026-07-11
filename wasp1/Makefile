@@ -16,12 +16,14 @@ MIXED_IRQ_DMA_HEX ?= ../llvm_s1/build/smoke/mixed_irq_dma_otp.hex
 TIMER_IRQ_HEX ?= ../llvm_s1/build/smoke/timer_irq_otp.hex
 SYSTEM_STRESS_HEX ?= ../llvm_s1/build/smoke/system_stress_otp.hex
 RANDOM_IRQ_STRESS_HEX ?= ../llvm_s1/build/smoke/random_irq_stress_otp.hex
+RANDOM_IRQ_SEED ?= 1a2b3c4d
+RANDOM_IRQ_SEEDS ?= 1a2b3c4d 12345678 deadbeef 0f1e2d3c
 SIM_ARGS ?=
 RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress clean
 
 all: lint
 
@@ -143,8 +145,23 @@ sim-random-irq-stress:
 		-Mdir build/obj_$(WASP1_TOP) \
 		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_random_irq_stress_build.log 2>&1
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(RANDOM_IRQ_STRESS_HEX) \
-		+WASP1_RANDOM_IRQ_STRESS_CHECK $(SIM_ARGS) > logs/tb_wasp1_random_irq_stress.log 2>&1
+		+WASP1_RANDOM_IRQ_STRESS_CHECK +WASP1_RANDOM_IRQ_SEED=$(RANDOM_IRQ_SEED) \
+		$(SIM_ARGS) > logs/tb_wasp1_random_irq_stress.log 2>&1
 	@cat logs/tb_wasp1_random_irq_stress.log
+
+sim-random-irq-multiseed:
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_random_irq_multiseed_build.log 2>&1
+	python3 dv/wasp1_random_irq_multiseed.py \
+		--sim build/obj_$(WASP1_TOP)/V$(WASP1_TOP) \
+		--otp-hex $(RANDOM_IRQ_STRESS_HEX) \
+		--logs-dir logs --seeds $(RANDOM_IRQ_SEEDS) \
+		> logs/random_irq_multiseed.log 2>&1
+	@cat logs/random_irq_multiseed.log
 
 sim-timer-irq:
 	$(MAKE) -C ../llvm_s1 smoke

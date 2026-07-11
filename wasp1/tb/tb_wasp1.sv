@@ -151,9 +151,10 @@ module tb_wasp1;
   localparam int unsigned RANDOM_IRQ_FAIL_WORD_IDX = 32'h0000_3b38 >> 2;
   localparam int unsigned RANDOM_IRQ_UART_COUNT_WORD_IDX = 32'h0000_3b3c >> 2;
   localparam int unsigned RANDOM_IRQ_TRACE_WORD_IDX = 32'h0000_3b40 >> 2;
+  localparam int unsigned RANDOM_IRQ_SEED_WORD_IDX = 32'h0000_3b44 >> 2;
   localparam int unsigned RANDOM_IRQ_ROUNDS = 12;
   localparam int unsigned RANDOM_IRQ_DMA_WORDS = 4;
-  localparam logic [31:0] RANDOM_IRQ_SEED = 32'h1a2b_3c4d;
+  localparam logic [31:0] RANDOM_IRQ_DEFAULT_SEED = 32'h1a2b_3c4d;
   localparam logic [31:0] RANDOM_IRQ_EXPECTED_MAGIC = 32'h5249_5251;
   localparam logic [31:0] RANDOM_IRQ_EXPECTED_DONE = 32'h5249_4f4b;
   localparam logic [31:0] RANDOM_IRQ_EXPECTED_UART_COUNT = 32'd13;
@@ -240,6 +241,7 @@ module tb_wasp1;
   bit          metrics_enable;              // Enables cache/runtime metric summary printing.
   string       otp_hex_path;                // Runtime plusarg path to readmemh OTP image.
   string       metrics_label;               // Program label printed with metric summary.
+  logic [31:0] random_irq_seed;              // Campaign seed driven on GPIO during reset.
   int unsigned uart_addr_count;             // Number of UART AHB address phases observed.
   int unsigned uart_tx_push_count;          // Number of bytes accepted into the UART TX FIFO.
   logic [31:0] last_ex_pc;                  // Most recent execute-stage PC for timeout diagnostics.
@@ -479,10 +481,16 @@ module tb_wasp1;
     metrics_enable = $test$plusargs("WASP1_METRICS");
     otp_hex_path = "";
     metrics_label = "unknown";
+    random_irq_seed = RANDOM_IRQ_DEFAULT_SEED;
     void'($value$plusargs("WASP1_METRICS_LABEL=%s", metrics_label));
+    void'($value$plusargs("WASP1_RANDOM_IRQ_SEED=%h", random_irq_seed));
     if ($value$plusargs("WASP1_OTP_HEX=%s", otp_hex_path)) begin
       #1ps;
       $readmemh(otp_hex_path, u_wasp1.u_ahb_otp.u_otp_macro.otp_mem_q);
+      if (random_irq_stress_check) begin
+        // Hold the complete seed stable until firmware publishes SEED_WORD.
+        gpio_in = random_irq_seed;
+      end
       otp_image_loaded = 1'b1;
       $display("tb_wasp1 loaded OTP image: %s", otp_hex_path);
       if (sw_trace) begin
@@ -1680,6 +1688,7 @@ module tb_wasp1;
     logic [31:0] fail_word;
     logic [31:0] gpio_req_word;
     logic [31:0] gpio_ack_word;
+    logic [31:0] seed_word;
     logic [31:0] expected_state;
     logic [31:0] expected_trace;
     logic [31:0] expected_event_sum;
@@ -1694,6 +1703,7 @@ module tb_wasp1;
       fail_word = '0;
       gpio_req_word = '0;
       gpio_ack_word = '0;
+      seed_word = '0;
 
       // Drive each requested level interrupt until firmware acknowledges that
       // the handler masked and cleared the GPIO source.
@@ -1705,7 +1715,13 @@ module tb_wasp1;
         fail_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_FAIL_WORD_IDX];
         gpio_req_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_REQ_WORD_IDX];
         gpio_ack_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_ACK_WORD_IDX];
-        gpio_in[0] = (gpio_req_word > gpio_ack_word);
+        seed_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_SEED_WORD_IDX];
+        if (seed_word === random_irq_seed) begin
+          gpio_in[0] = (gpio_req_word > gpio_ack_word);
+        end else begin
+          // Firmware has not captured the synchronized strap value yet.
+          gpio_in = random_irq_seed;
+        end
         if (fail_word !== 32'h0) begin
           dump_sw_timeout_diagnostics();
           $error("random IRQ stress firmware reported failure code 0x%08h", fail_word);
@@ -1718,7 +1734,7 @@ module tb_wasp1;
           timeout++;
         end
       end
-      gpio_in[0] = 1'b0;
+      gpio_in = '0;
 
       if ((magic_word !== RANDOM_IRQ_EXPECTED_MAGIC) ||
           (done_word !== RANDOM_IRQ_EXPECTED_DONE)) begin
@@ -1729,7 +1745,7 @@ module tb_wasp1;
       end
 
       // Reconstruct the fixed-seed schedule and every order-independent result.
-      expected_state = RANDOM_IRQ_SEED;
+      expected_state = random_irq_seed;
       expected_trace = '0;
       expected_event_sum = '0;
       expected_data_sum = '0;
@@ -1777,6 +1793,7 @@ module tb_wasp1;
       last_mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_LAST_MCAUSE_WORD_IDX];
       last_claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_LAST_CLAIM_WORD_IDX];
       if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_STATE_WORD_IDX] !== expected_state ||
+          seed_word !== random_irq_seed ||
           u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_ROUNDS_WORD_IDX] !== 32'(RANDOM_IRQ_ROUNDS) ||
           u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TOTAL_WORD_IDX] !== 32'(expected_total) ||
           u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TIMER_WORD_IDX] !== 32'(expected_timer) ||
@@ -1788,7 +1805,8 @@ module tb_wasp1;
           gpio_ack_word !== 32'(expected_gpio) ||
           u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_UART_COUNT_WORD_IDX] !== RANDOM_IRQ_EXPECTED_UART_COUNT ||
           u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TRACE_WORD_IDX] !== expected_trace) begin
-        $error("random IRQ stress mailbox mismatch: state=0x%08h/0x%08h trace=0x%08h/0x%08h total=%0d/%0d timer=%0d/%0d dma=%0d/%0d gpio=%0d/%0d event_sum=0x%08h/0x%08h data_sum=0x%08h/0x%08h req=%0d ack=%0d",
+        $error("random IRQ stress mailbox mismatch: seed=0x%08h/0x%08h state=0x%08h/0x%08h trace=0x%08h/0x%08h total=%0d/%0d timer=%0d/%0d dma=%0d/%0d gpio=%0d/%0d event_sum=0x%08h/0x%08h data_sum=0x%08h/0x%08h req=%0d ack=%0d",
+               seed_word, random_irq_seed,
                u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_STATE_WORD_IDX], expected_state,
                u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TRACE_WORD_IDX], expected_trace,
                u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TOTAL_WORD_IDX], expected_total,
@@ -1819,8 +1837,8 @@ module tb_wasp1;
                u_wasp1.u_ahb_gpio.irq_status_q, uart_tx_push_count);
         $fatal(1);
       end
-      $display("Random IRQ stress: state=0x%08h trace=0x%08h events=%0d timer=%0d dma=%0d gpio=%0d event_sum=0x%08h data_sum=0x%08h PASS",
-               expected_state, expected_trace, expected_total, expected_timer,
+      $display("Random IRQ stress: seed=0x%08h state=0x%08h trace=0x%08h events=%0d timer=%0d dma=%0d gpio=%0d event_sum=0x%08h data_sum=0x%08h PASS",
+               random_irq_seed, expected_state, expected_trace, expected_total, expected_timer,
                expected_dma, expected_gpio, expected_event_sum,
                expected_data_sum);
       pass_count++;

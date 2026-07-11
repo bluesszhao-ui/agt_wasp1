@@ -87,9 +87,10 @@ records the expected DMA-then-GPIO claim sequence plus copied D-SRAM data.
 The system stress example runs six polling rounds of D-SRAM seed/readback, DMA
 copy, timer compare, GPIO output updates, UART TX pushes, and executable OTP
 readback, then records accumulated status and checksum mailboxes.
-The randomized IRQ stress example uses a fixed xorshift32 seed for 12 timer,
-DMA, GPIO, and concurrent timer-plus-DMA rounds. Firmware and testbench compare
-the reconstructed schedule, source counts, checksums, and GPIO handshake epochs.
+The randomized IRQ stress example captures a nonzero GPIO seed and runs 12
+timer, DMA, GPIO, and concurrent timer-plus-DMA rounds. Firmware and testbench
+compare the reconstructed schedule, source counts, checksums, and GPIO
+handshake epochs; the standard campaign reuses one OTP image for four seeds.
 The UART IRQ example enables the UART TX-empty interrupt, routes it through INTC
 as machine external interrupt IRQ ID 2, claims/completes the interrupt in the C
 trap handler, clears the sticky UART source, disables the TX IRQ enable, and
@@ -113,5 +114,4 @@ boot regressions:
 
 1. Add an installed LLVM bundle under `llvm_s1/toolchain/install` or document
    an external LLVM install path.
-2. Add richer debug operations and extend the fixed-seed interrupt-heavy
-   regression to a multi-seed campaign.
+2. Add richer debug operations and longer-duration multi-seed campaigns.

@@ -8,8 +8,11 @@ DMA, GPIO, UART, and mixed-interrupt firmware tests; it does not replace them.
 
 ## 2. Stimulus Contract
 
-The OTP firmware shall start xorshift32 with seed `0x1a2b3c4d` and execute 12
-rounds. The low two bits of each updated state select one operation:
+The testbench shall hold a nonzero 32-bit seed on GPIO while reset is active.
+The OTP firmware shall sample the synchronized GPIO value, publish a seed
+capture mailbox, start xorshift32 with that value, and execute 12 rounds. GPIO
+shall not be repurposed as interrupt stimulus until seed capture is observed.
+The low two bits of each updated state select one operation:
 
 | Selector | Operation | Expected interrupt events |
 | ---: | --- | ---: |
@@ -28,6 +31,7 @@ Firmware shall publish a D-SRAM mailbox at offset `0x3b00` containing:
 
 ```text
 completion magic and done word
+captured input seed
 final PRNG state and packed selector trace
 completed round and interrupt-event counts
 timer, DMA, and GPIO interrupt counts
@@ -44,7 +48,8 @@ not match.
 
 ## 4. Independent Testbench Checks
 
-The top-level testbench shall independently run the same xorshift32 recurrence
+The top-level testbench shall first verify the captured seed, then independently
+run the same xorshift32 recurrence
 to derive the final state, selector trace, source counts, total event count,
 event checksum, DMA checksum, and expected number of GPIO handshakes. It shall
 drive GPIO[0] high only while the request epoch exceeds the acknowledgement
@@ -57,5 +62,6 @@ clear, and the observed UART FIFO pushes cover all 13 progress bytes.
 ## 5. Timing and Reproducibility
 
 The verification clock is 100 MHz with `1ns/1ps` simulation resolution. The
-seed and round count are fixed in the baseline regression so failures reproduce
-exactly. Additional seeds may be added later as separate named regressions.
+baseline seed is `0x1a2b3c4d`. The multi-seed campaign runs the same OTP image
+with seeds `0x1a2b3c4d`, `0x12345678`, `0xdeadbeef`, and `0x0f1e2d3c`, for 48
+total rounds. Seed zero is rejected because it is the xorshift32 lock state.

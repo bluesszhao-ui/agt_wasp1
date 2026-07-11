@@ -35,7 +35,10 @@ PROGRAMS = [
     {
         "label": "random_irq_stress",
         "hex": "../llvm_s1/build/smoke/random_irq_stress_otp.hex",
-        "plusargs": ["+WASP1_RANDOM_IRQ_STRESS_CHECK"],
+        "plusargs": [
+            "+WASP1_RANDOM_IRQ_STRESS_CHECK",
+            "+WASP1_RANDOM_IRQ_SEED=1a2b3c4d",
+        ],
     },
     {
         "label": "dma_copy",

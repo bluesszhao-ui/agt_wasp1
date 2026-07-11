@@ -9,7 +9,6 @@
 #define RANDOM_IRQ_DMA_SRC_ADDR  (WASP1_DSRAM_BASE + UINT32_C(0x00003d00))
 #define RANDOM_IRQ_DMA_DST_ADDR  (WASP1_DSRAM_BASE + UINT32_C(0x00003d80))
 
-#define RANDOM_IRQ_SEED          UINT32_C(0x1a2b3c4d)
 #define RANDOM_IRQ_ROUNDS        UINT32_C(12)
 #define RANDOM_IRQ_DMA_WORDS     UINT32_C(4)
 #define RANDOM_IRQ_GPIO_MASK     UINT32_C(0x00000001)
@@ -44,7 +43,8 @@ enum {
   RANDOM_IRQ_FAIL_WORD = 14,
   RANDOM_IRQ_UART_COUNT_WORD = 15,
   RANDOM_IRQ_TRACE_WORD = 16,
-  RANDOM_IRQ_BOX_WORDS = 17
+  RANDOM_IRQ_SEED_WORD = 17,
+  RANDOM_IRQ_BOX_WORDS = 18
 };
 
 static volatile uint32_t *const random_irq_box =
@@ -204,7 +204,7 @@ static uint32_t random_irq_check_dma(uint32_t round, uint32_t state)
 
 int main(void)
 {
-  uint32_t state = RANDOM_IRQ_SEED;
+  uint32_t state;
   uint32_t trace = 0u;
   uint32_t data_sum = 0u;
   uint32_t uart_count = 0u;
@@ -219,6 +219,14 @@ int main(void)
   random_irq_gpio_count = 0u;
   random_irq_event_sum = 0u;
   random_irq_failure = 0u;
+
+  /*
+   * Verification drives a nonzero campaign seed on GPIO during reset. Publish
+   * the captured synchronized value before GPIO[0] is reused as IRQ stimulus.
+   * Hardware users may choose a strap value using the same contract.
+   */
+  state = wasp1_gpio_read();
+  random_irq_box[RANDOM_IRQ_SEED_WORD] = state;
 
   wasp1_uart_init(4u);
   wasp1_uart_putc('R');
