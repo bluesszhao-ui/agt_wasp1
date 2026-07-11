@@ -60,7 +60,7 @@ PASS       Current verification target passes
 | `debug/debug_dmi_regs` | PASS | DMI register transport, hart status/control, abstract state, errors, and backpressure pass |
 | `debug/debug_halt_ctrl` | PASS | Halt/resume FSM, sticky status, reset priority, aborts, and random core latency pass |
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
-| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, physical Access Memory, OpenOCD/GDB CSR probes including core-captured DPC, DCSR.step, two execute-address trigger slots, cmderr mapping, aborts, and random commands pass |
+| `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, physical Access Memory, OpenOCD/GDB CSR probes including core-captured DPC, DCSR.step, two execute/load/store exact-address trigger configuration slots, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
 | `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, and two OpenOCD/GDB hardware breakpoints |
@@ -79,7 +79,7 @@ PASS       Current verification target passes
 ```text
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
-3. Extend debug beyond trigger-based hbreak coverage with optional program-buffer, SBA, and data/load/store trigger support
+3. Connect configured load/store trigger outputs to precise core LSU halt behavior, then add optional program-buffer and SBA
 4. Extend the four-seed randomized IRQ baseline with longer-duration nightly/CI campaigns
 ```
 

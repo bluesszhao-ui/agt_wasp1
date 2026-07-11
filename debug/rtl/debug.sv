@@ -65,6 +65,9 @@ module debug (
   logic        mem_flush;            // Abort/drain memory command on DM/hart loss.
   logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid; // Per-slot execute compare enables.
   logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr; // Per-slot execute compare addresses.
+  logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_load_valid; // Per-slot load compare enables.
+  logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_store_valid; // Per-slot store compare enables.
+  logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_data_addr; // Per-slot load/store compare addresses.
 
   debug_if gpr_debug (
     .clk(clk_i),
@@ -103,6 +106,9 @@ module debug (
   assign core_debug.mem_rsp_ready = mem_rsp_ready;
   assign core_debug.trigger_execute_valid = trigger_execute_valid;
   assign core_debug.trigger_execute_addr = trigger_execute_addr;
+  assign core_debug.trigger_load_valid = trigger_load_valid;
+  assign core_debug.trigger_store_valid = trigger_store_valid;
+  assign core_debug.trigger_data_addr = trigger_data_addr;
 
   debug_dmi_regs u_debug_dmi_regs (
     .clk_i(clk_i),
@@ -189,6 +195,9 @@ module debug (
     .dcsr_step_o(dcsr_step),
     .trigger_execute_valid_o(trigger_execute_valid),
     .trigger_execute_addr_o(trigger_execute_addr),
+    .trigger_load_valid_o(trigger_load_valid),
+    .trigger_store_valid_o(trigger_store_valid),
+    .trigger_data_addr_o(trigger_data_addr),
     .reg_flush_o(reg_flush),
     .mem_flush_o(mem_flush)
   );

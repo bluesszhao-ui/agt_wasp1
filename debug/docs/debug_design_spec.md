@@ -70,8 +70,6 @@ command_valid/command/data0             -> debug_abstract_cmd
 ```text
 core_debug.halt_req
 core_debug.resume_req
-core_debug.trigger_execute_valid/addr
-core_debug.dcsr_cause
 hart_halted/hart_running/hart_resumeack/hart_havereset back to debug_dmi_regs
 ```
 
@@ -92,17 +90,22 @@ When `dcsr.step=1`, the core-side `core_debug_ctrl` receives both resume and
 step for one resume transaction and re-enters halted state after one
 retirement.
 
-The execute trigger path is also wrapper-level combinational after the trigger
-CSR registers:
+The trigger output path is wrapper-level combinational after the trigger CSR
+registers:
 
 ```text
 core_debug.trigger_execute_valid[slot] = selected trigger slot enables legal mcontrol execute match
 core_debug.trigger_execute_addr[slot]  = selected trigger slot tdata2 compare address
+core_debug.trigger_load_valid[slot]    = selected trigger slot enables legal mcontrol load match
+core_debug.trigger_store_valid[slot]   = selected trigger slot enables legal mcontrol store match
+core_debug.trigger_data_addr[slot]     = selected trigger slot tdata2 compare address
 ```
 
 The core performs ID-stage PC compares across the enabled trigger slots, enters
 Debug Mode before the matched instruction retires, and reports DCSR cause back
-through `core_debug.dcsr_cause`.
+through `core_debug.dcsr_cause`. Load/store outputs are configured and exposed
+by this milestone; core LSU comparison and precise halt behavior remain the
+next integration stage.
 
 `debug_reg_access` uses an internal `debug_if` instance with the `dm_gpr`
 modport. The wrapper explicitly bridges only GPR request/response signals to

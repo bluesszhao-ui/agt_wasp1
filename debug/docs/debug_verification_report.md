@@ -4,13 +4,13 @@
 
 | Item | Result |
 | --- | --- |
-| Date | 2026-07-10 |
+| Date | 2026-07-11 |
 | Tool | Verilator 5.046 |
 | Generic lint | PASS: `make -C debug lint` |
 | IC lint | PASS: `make -C debug lint-ic` |
 | Virtex-7 lint | PASS: `make -C debug lint-fpga-v7` |
 | Simulation | PASS: `make -C debug sim` |
-| Top simulation end | `806ns` |
+| Top simulation end | `826ns` |
 | Top self-check milestones | 39 |
 | Top simulation log | `debug/logs/tb_debug.log` |
 
@@ -68,6 +68,6 @@ debug_jtag_verification_report.md
 OpenOCD/GDB end-to-end smoke, including native GDB `stepi` over remote-bitbang,
 and two hardware breakpoint `hbreak` locations, is covered by the wasp1
 top-level verification report. Program buffer, System Bus Access, debug ROM,
-data/load/store triggers, architectural CSR side effects beyond debugger
+core-side data/load/store trigger matching/precise halt, architectural CSR side effects beyond debugger
 probes, and multi-hart behavior beyond nonexistent-hart reporting remain future
 work.

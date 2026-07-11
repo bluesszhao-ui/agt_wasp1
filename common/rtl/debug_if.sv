@@ -2,7 +2,7 @@
 
 interface debug_if #(
   parameter int XLEN = 32, // Core integer register width carried by the GPR channel.
-  parameter int TRIGGER_COUNT = 2 // Number of execute-address trigger slots.
+  parameter int TRIGGER_COUNT = 2 // Number of exact-address trigger slots.
 ) (
   input logic clk,   // Shared core/debug handshake clock.
   input logic rst_n  // Active-low reset associated with the interface endpoints.
@@ -17,6 +17,9 @@ interface debug_if #(
   logic [2:0]      dcsr_cause;     // Core-reported DCSR cause for the latest Debug Mode entry.
   logic [TRIGGER_COUNT-1:0]            trigger_execute_valid; // Per-slot execute-address trigger enables.
   logic [TRIGGER_COUNT-1:0][XLEN-1:0] trigger_execute_addr;  // Per-slot execute-address compare values.
+  logic [TRIGGER_COUNT-1:0]            trigger_load_valid;    // Per-slot load-address trigger enables.
+  logic [TRIGGER_COUNT-1:0]            trigger_store_valid;   // Per-slot store-address trigger enables.
+  logic [TRIGGER_COUNT-1:0][XLEN-1:0] trigger_data_addr;      // Shared load/store compare values.
 
   // Ready/valid GPR access request from Debug Module to the halted core.
   logic            gpr_req_valid;  // Request fields are valid and held until ready.
@@ -58,7 +61,10 @@ interface debug_if #(
     output resume_req,
     output step_req,
     output trigger_execute_valid,
-    output trigger_execute_addr
+    output trigger_execute_addr,
+    output trigger_load_valid,
+    output trigger_store_valid,
+    output trigger_data_addr
   );
 
   // Abstract-access DM view prevents command logic from driving hart control.
@@ -107,6 +113,9 @@ interface debug_if #(
     output step_req,
     output trigger_execute_valid,
     output trigger_execute_addr,
+    output trigger_load_valid,
+    output trigger_store_valid,
+    output trigger_data_addr,
     output gpr_req_valid,
     output gpr_req_write,
     output gpr_req_addr,
@@ -129,6 +138,9 @@ interface debug_if #(
     input  step_req,
     input  trigger_execute_valid,
     input  trigger_execute_addr,
+    input  trigger_load_valid,
+    input  trigger_store_valid,
+    input  trigger_data_addr,
     input  gpr_req_valid,
     input  gpr_req_write,
     input  gpr_req_addr,
@@ -163,6 +175,9 @@ interface debug_if #(
     input step_req,
     input trigger_execute_valid,
     input trigger_execute_addr,
+    input trigger_load_valid,
+    input trigger_store_valid,
+    input trigger_data_addr,
     input halted,
     input running,
     input dpc,

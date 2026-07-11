@@ -49,6 +49,9 @@ module tb_debug_abstract_cmd;
   logic        dcsr_step;
   logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid;
   logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr;
+  logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_load_valid;
+  logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_store_valid;
+  logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_data_addr;
   logic        reg_flush;
   logic        mem_flush;
 
@@ -113,6 +116,9 @@ module tb_debug_abstract_cmd;
     .dcsr_step_o(dcsr_step),
     .trigger_execute_valid_o(trigger_execute_valid),
     .trigger_execute_addr_o(trigger_execute_addr),
+    .trigger_load_valid_o(trigger_load_valid),
+    .trigger_store_valid_o(trigger_store_valid),
+    .trigger_data_addr_o(trigger_data_addr),
     .reg_flush_o(reg_flush),
     .mem_flush_o(mem_flush)
   );
@@ -624,6 +630,9 @@ module tb_debug_abstract_cmd;
     logic [31:0] command_value;
     logic [31:0] tselect_command;
     logic [31:0] valid_tdata1;
+    logic [31:0] load_tdata1;
+    logic [31:0] store_tdata1;
+    logic [31:0] load_store_tdata1;
     logic [31:0] bad_action_tdata1;
     logic [31:0] bad_type_tdata1;
     begin
@@ -631,6 +640,15 @@ module tb_debug_abstract_cmd;
                      ABSTRACT_MCONTROL_ACTION_DEBUG |
                      ABSTRACT_MCONTROL_M |
                      ABSTRACT_MCONTROL_EXECUTE;
+      load_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL |
+                    ABSTRACT_MCONTROL_ACTION_DEBUG |
+                    ABSTRACT_MCONTROL_M |
+                    ABSTRACT_MCONTROL_LOAD;
+      store_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL |
+                     ABSTRACT_MCONTROL_ACTION_DEBUG |
+                     ABSTRACT_MCONTROL_M |
+                     ABSTRACT_MCONTROL_STORE;
+      load_store_tdata1 = load_tdata1 | ABSTRACT_MCONTROL_STORE;
       bad_action_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL |
                           32'h0000_2000 |
                           ABSTRACT_MCONTROL_M |
@@ -745,6 +763,75 @@ module tb_debug_abstract_cmd;
                      "slot1 valid tdata1 readback");
       check_csr_read(ABSTRACT_CSR_TDATA2, 32'h0000_0080,
                      "slot1 tdata2 readback");
+
+      // Reconfigure slot 0 through each data-access mode while slot 1 remains
+      // an execute breakpoint. This proves per-slot and per-class isolation.
+      pulse_command(tselect_command, 32'h0000_0000);
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("tselect slot0 data-trigger write idle");
+
+      pulse_command(command_value, load_tdata1);
+      if (!busy || command_error_valid || data0_we ||
+          (trigger_execute_valid !== 2'b10) ||
+          (trigger_load_valid !== 2'b01) ||
+          (trigger_store_valid !== 2'b00) ||
+          (trigger_data_addr[0] !== 32'h0000_0040)) begin
+        $error("slot0 load trigger mismatch exec=%0b load=%0b store=%0b addr=0x%08x",
+               trigger_execute_valid, trigger_load_valid, trigger_store_valid,
+               trigger_data_addr[0]);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot0 load trigger write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, load_tdata1,
+                     "slot0 load trigger readback");
+
+      pulse_command(command_value, store_tdata1);
+      if ((trigger_execute_valid !== 2'b10) ||
+          (trigger_load_valid !== 2'b00) ||
+          (trigger_store_valid !== 2'b01)) begin
+        $error("slot0 store trigger mismatch exec=%0b load=%0b store=%0b",
+               trigger_execute_valid, trigger_load_valid, trigger_store_valid);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot0 store trigger write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, store_tdata1,
+                     "slot0 store trigger readback");
+
+      pulse_command(command_value, load_store_tdata1);
+      if ((trigger_execute_valid !== 2'b10) ||
+          (trigger_load_valid !== 2'b01) ||
+          (trigger_store_valid !== 2'b01)) begin
+        $error("slot0 load/store trigger mismatch exec=%0b load=%0b store=%0b",
+               trigger_execute_valid, trigger_load_valid, trigger_store_valid);
+        $fatal(1);
+      end
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot0 load/store trigger write idle");
+      check_csr_read(ABSTRACT_CSR_TDATA1, load_store_tdata1,
+                     "slot0 load/store trigger readback");
+
+      // Restore slot 0 execute mode for the following slot-1 WARL isolation
+      // checks, which intentionally disable only the selected slot.
+      pulse_command(command_value, valid_tdata1);
+      csr_write_count++;
+      trigger_count++;
+      pass_count++;
+      step_clock();
+      expect_idle("slot0 execute trigger restore idle");
 
       pulse_command(tselect_command, 32'h0000_0002);
       if (!busy || command_error_valid || data0_we || reg_cmd_valid ||

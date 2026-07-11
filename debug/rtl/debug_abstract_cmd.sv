@@ -44,6 +44,9 @@ module debug_abstract_cmd (
   output logic        dcsr_step_o,           // Latched DCSR.step bit used by resume single-step.
   output logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid_o, // Per-slot execute trigger enables.
   output logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr_o, // Per-slot execute compare values.
+  output logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_load_valid_o, // Per-slot load-address trigger enables.
+  output logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_store_valid_o, // Per-slot store-address trigger enables.
+  output logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_data_addr_o, // Per-slot load/store compare values.
   output logic        reg_flush_o,           // Abort/drain downstream GPR work on DM/hart loss.
   output logic        mem_flush_o            // Abort/drain downstream memory work on DM/hart loss.
 );
@@ -116,6 +119,7 @@ module debug_abstract_cmd (
   logic [TRIGGER_INDEX_WIDTH-1:0] trigger_select_q;
   logic [31:0] trigger_tdata1_q [TRIGGER_COUNT];
   logic [31:0] trigger_tdata2_q [TRIGGER_COUNT];
+  logic [TRIGGER_COUNT-1:0] trigger_common_valid; // Type/action/match/mode qualification shared by access classes.
 
   logic reg_cmd_fire;
   logic reg_rsp_fire;
@@ -199,7 +203,9 @@ module debug_abstract_cmd (
                     ABSTRACT_MCONTROL_ACTION_MASK |
                     ABSTRACT_MCONTROL_MATCH_MASK |
                     ABSTRACT_MCONTROL_M |
-                    ABSTRACT_MCONTROL_EXECUTE));
+                    ABSTRACT_MCONTROL_EXECUTE |
+                    ABSTRACT_MCONTROL_LOAD |
+                    ABSTRACT_MCONTROL_STORE));
 
     if ((data0_i & ABSTRACT_TDATA1_TYPE_MASK) != ABSTRACT_TDATA1_TYPE_MCONTROL) begin
       command_csr_warl_tdata1 = ABSTRACT_TDATA1_TYPE_MCONTROL;
@@ -280,15 +286,21 @@ module debug_abstract_cmd (
   assign mem_rsp_ready_o = (state_q == ABSTRACT_WAIT) && op_is_mem_q;
   assign dcsr_step_o = dcsr_step_q;
   for (genvar trig_idx = 0; trig_idx < TRIGGER_COUNT; trig_idx++) begin : gen_trigger_outputs
-    assign trigger_execute_valid_o[trig_idx] =
+    assign trigger_common_valid[trig_idx] =
         ((trigger_tdata1_q[trig_idx] & ABSTRACT_TDATA1_TYPE_MASK) ==
          ABSTRACT_TDATA1_TYPE_MCONTROL) &&
         ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_ACTION_MASK) ==
          ABSTRACT_MCONTROL_ACTION_DEBUG) &&
         ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_MATCH_MASK) == 32'h0000_0000) &&
-        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_M) != 32'h0000_0000) &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_M) != 32'h0000_0000);
+    assign trigger_execute_valid_o[trig_idx] = trigger_common_valid[trig_idx] &&
         ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_EXECUTE) != 32'h0000_0000);
+    assign trigger_load_valid_o[trig_idx] = trigger_common_valid[trig_idx] &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_LOAD) != 32'h0000_0000);
+    assign trigger_store_valid_o[trig_idx] = trigger_common_valid[trig_idx] &&
+        ((trigger_tdata1_q[trig_idx] & ABSTRACT_MCONTROL_STORE) != 32'h0000_0000);
     assign trigger_execute_addr_o[trig_idx] = trigger_tdata2_q[trig_idx];
+    assign trigger_data_addr_o[trig_idx] = trigger_tdata2_q[trig_idx];
   end
 
   // Losing DM activation or halted state aborts the downstream transaction.

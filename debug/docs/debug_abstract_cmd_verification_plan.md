@@ -13,7 +13,9 @@ core.
 successful GPR read and write
 successful local `misa`, `dcsr`, and `dpc` CSR probes
 supported `dcsr.step` set/read/clear
-single RV32 mcontrol trigger discovery through `tselect`, `tdata1`, `tdata2`, and `tinfo`
+two-slot RV32 mcontrol trigger discovery through `tselect`, `tdata1`, `tdata2`, and `tinfo`
+independent execute-only, load-only, store-only, and combined load/store output qualification
+shared per-slot data compare address and isolation between differently configured slots
 WARL filtering for unsupported trigger type/action writes
 request and response delay
 downstream error -> CMDERR_EXCEPTION

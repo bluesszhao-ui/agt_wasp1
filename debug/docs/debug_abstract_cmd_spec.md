@@ -8,8 +8,8 @@ accesses, and provides the CSR probes needed by OpenOCD/GDB. The implementation
 supports RV32 integer GPR Access Register commands, physical Access Memory
 byte/half/word transfers through the halted core, local reads of `misa`,
 `mstatus`, `dcsr`, and the core-captured `dpc`, plus writes to the `dcsr.step`
-bit used for single-step. It also implements two RV32 `mcontrol`
-execute-address trigger slots for OpenOCD/GDB hardware breakpoints.
+bit used for single-step. It also implements two RV32 `mcontrol` exact-address
+trigger slots with independently selectable execute, load, and store modes.
 
 ## 2. Supported Access Register Command
 
@@ -47,16 +47,21 @@ The trigger CSR behavior is intentionally minimal and WARL-filtered:
 ```text
 tselect  -> selects trigger slot 0 or 1; out-of-range writes clamp to slot 1
 tinfo    -> 0x00000004, advertising RV32 mcontrol support
-tdata1   -> selected slot's RV32 mcontrol type=2 image; legal fields are dmode, action, match, m, execute
-tdata2   -> selected slot's execute-address compare value
+tdata1   -> selected slot's RV32 mcontrol type=2 image; legal fields are dmode, action, match, m, execute, load, store
+tdata2   -> selected slot's exact-address compare value
 tdata3   -> zero
 tcontrol -> zero
 ```
 
-The only enabled trigger mode is `mcontrol` execute-address equality in M-mode
-with `action=1` (enter Debug Mode). Unsupported `type` writes return a disabled
-`mcontrol` image for the selected slot, and unsupported actions are cleared so
-that slot's core comparator is not enabled.
+The enabled trigger modes are `mcontrol` execute, load, and store address
+equality in M-mode with `action=1` (enter Debug Mode). A slot may enable any
+combination of those three access classes against its single `tdata2` address.
+Unsupported `type` writes return a disabled `mcontrol` image for the selected
+slot, and unsupported actions are cleared so no comparator output is enabled.
+
+This module provides filtered per-slot execute/load/store enables and compare
+addresses. Precise load/store trigger action in the core LSU is a separate
+integration stage and is not claimed by this module-level contract.
 
 ## 3. Supported Access Memory Command
 

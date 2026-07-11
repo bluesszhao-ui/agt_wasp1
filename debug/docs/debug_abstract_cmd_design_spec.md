@@ -5,9 +5,10 @@
 The block decodes and executes the RV32 GPR subset of Access Register commands,
 physical Access Memory commands, local CSR reads for debugger discovery, the
 minimal `dcsr.step` write used for single-step, and two RV32 `mcontrol`
-execute-address trigger slots used by OpenOCD/GDB hardware breakpoints. FPR
-access, program-buffer execution, virtual memory access, data/load/store
-triggers, and System Bus Access remain explicitly unsupported.
+exact-address trigger configuration slots. Each slot exports independent
+execute, load, and store qualifiers. FPR access, program-buffer execution,
+virtual memory access, core-side load/store trigger action, and System Bus
+Access remain explicitly unsupported at this boundary.
 
 ## 2. Editable FSM/Block Diagram
 
@@ -111,9 +112,11 @@ sequential state. Reset and DM deactivation select trigger 0, return every
 `tdata1` slot to a disabled RV32 `mcontrol` image, and clear every `tdata2`
 slot. `tselect` writes select slot 0 or 1, while out-of-range writes clamp to
 the last legal slot. The combinational WARL filter accepts only `type=2`,
-equality match, M-mode execute, and `action=debug mode`. Each trigger output
-toward the core is asserted only when that slot's filtered `tdata1` image is
-fully enabled; the compare address is that slot's registered `tdata2` value.
+equality match, M-mode execute/load/store qualifiers, and `action=debug mode`.
+A shared per-slot common-enable term checks type, action, equality match, and
+M-mode. Execute, load, and store outputs then AND that term with their
+respective `tdata1` access bit. The compare addresses are the selected slots'
+registered `tdata2` values; load and store share one data-address output.
 
 ## 7. Target Behavior
 
