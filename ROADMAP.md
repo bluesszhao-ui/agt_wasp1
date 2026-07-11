@@ -66,13 +66,13 @@ PASS       Current verification target passes
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, and two OpenOCD/GDB hardware breakpoints |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak smoke, OpenOCD/GDB register-write/step/breakpoint stress, long OpenOCD/GDB dual-breakpoint stress, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round system stress smoke, cache/runtime metrics sweep, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak smoke, OpenOCD/GDB register-write/step/breakpoint stress, long OpenOCD/GDB dual-breakpoint stress, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round polling stress, 12-round fixed-seed randomized IRQ stress, cache/runtime metrics sweep, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
 | `wasp1` synthesis collateral | PASS | ASIC/DC and Virtex-7/Vivado script skeletons, clock constraints, ASIC SRAM/OTP blackbox filelist, and static collateral checker pass; real library/board synthesis remains |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
-| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/system-stress/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and wasp1 OTP boot/long-boot/mixed-IRQ-DMA/system-stress/DMA/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA-IRQ/timer/programming smokes pass |
+| `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/system-stress/random-IRQ-stress/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and corresponding wasp1 software smokes pass |
 | `ftdi_debugger` | SPEC | FT2232H external hardware debugger requirements, reference pinout, OpenOCD FTDI config, Rev A schematic-input/netlist/BOM package, and collateral checker are captured; formal EDA schematic, PCB, and FPGA/board bring-up remain |
-| full system software | TODO | Machine timer, UART TX-empty, UART RX/overrun, DMA external interrupt, GPIO external interrupt, long generated-image boot, mixed IRQ/DMA smokes, first six-round polling system stress, first OpenOCD/GDB stress, and long dual-breakpoint OpenOCD/GDB stress pass; randomized software, interrupt-heavy, and optional advanced debug regressions remain |
+| full system software | TODO | Directed machine timer and external interrupt tests, long generated-image boot, mixed IRQ/DMA smoke, six-round polling stress, 12-round fixed-seed randomized IRQ stress, and debugger stress pass; multi-seed campaigns and optional advanced debug regressions remain |
 
 ## Near-Term Plan
 
@@ -80,7 +80,7 @@ PASS       Current verification target passes
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
 3. Extend debug beyond trigger-based hbreak coverage with optional program-buffer, SBA, and data/load/store trigger support
-4. Add randomized software and interrupt-heavy stress regressions
+4. Extend deterministic-random software stress from one baseline seed to a multi-seed regression campaign
 ```
 
 ## Commit Policy Going Forward

@@ -33,6 +33,11 @@ PROGRAMS = [
         "plusargs": ["+WASP1_SYSTEM_STRESS_CHECK"],
     },
     {
+        "label": "random_irq_stress",
+        "hex": "../llvm_s1/build/smoke/random_irq_stress_otp.hex",
+        "plusargs": ["+WASP1_RANDOM_IRQ_STRESS_CHECK"],
+    },
+    {
         "label": "dma_copy",
         "hex": "../llvm_s1/build/smoke/dma_copy_otp.hex",
         "plusargs": ["+WASP1_DMA_COPY_CHECK"],

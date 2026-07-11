@@ -24,7 +24,7 @@ system software regression suite.
 | `bsp/startup/crt0.S` | Reset entry, stack setup, mtvec setup, copy/zero loops, `main` call |
 | `bsp/startup/trap.S` | Machine trap entry saving integer context and calling `wasp1_trap_handler` |
 | `bsp/runtime/` | Minimal freestanding runtime helpers |
-| `bsp/examples/` | Tiny UART, UART TX/RX IRQ, long boot, system stress, GPIO, GPIO IRQ, DMA copy, DMA IRQ, timer IRQ, and OTP programming examples |
+| `bsp/examples/` | Tiny UART, UART TX/RX IRQ, long boot, polling and randomized IRQ stress, GPIO, GPIO IRQ, DMA copy, DMA IRQ, timer IRQ, and OTP programming examples |
 | `scripts/check_bsp.sh` | Structural BSP check that avoids requiring a RISC-V compiler |
 | `scripts/run_smoke_tests.sh` | Toolchain discovery plus syntax/compile/link smoke tests |
 | `scripts/wasp1_make_otp_image.py` | ELF/raw-binary to OTP `$readmemh` image converter |
@@ -54,8 +54,8 @@ format generation. If a full RISC-V LLVM toolchain is available, the smoke
 script also attempts RV32I object generation, startup assembly, bare-metal ELF
 linking, binary image generation, and generated OTP image creation for
 `hello_uart`, `uart_irq`, `uart_rx_irq`, `long_boot`, `mixed_irq_dma`,
-`system_stress`, `gpio_irq`, `dma_copy`, `dma_irq`, `timer_irq`, and
-`otp_program`.
+`system_stress`, `random_irq_stress`, `gpio_irq`, `dma_copy`, `dma_irq`,
+`timer_irq`, and `otp_program`.
 
 By default, missing RISC-V code generation or LLVM binary utilities are reported
 as `SKIP` so a normal workstation can still validate the BSP source tree. To
@@ -68,8 +68,9 @@ REQUIRE_RISCV_TOOLCHAIN=1 make -C llvm_s1 test
 The top-level `wasp1` simulation already consumes generated OTP images for the
 UART boot smoke, the UART TX-empty external interrupt smoke, the UART
 RX-available/RX-overrun external interrupt smoke, the long multi-peripheral boot
-smoke, the mixed interrupt-and-DMA smoke, the system stress smoke, the DMA
-real-memory-copy smoke, the DMA external interrupt smoke, the GPIO external
+smoke, the mixed interrupt-and-DMA smoke, the system stress smoke, the
+randomized interrupt stress, the DMA real-memory-copy smoke, the DMA external
+interrupt smoke, the GPIO external
 interrupt smoke, the timer interrupt smoke, and the OTP
 programming-register smoke. The
 OTP programming example places the
@@ -86,6 +87,9 @@ records the expected DMA-then-GPIO claim sequence plus copied D-SRAM data.
 The system stress example runs six polling rounds of D-SRAM seed/readback, DMA
 copy, timer compare, GPIO output updates, UART TX pushes, and executable OTP
 readback, then records accumulated status and checksum mailboxes.
+The randomized IRQ stress example uses a fixed xorshift32 seed for 12 timer,
+DMA, GPIO, and concurrent timer-plus-DMA rounds. Firmware and testbench compare
+the reconstructed schedule, source counts, checksums, and GPIO handshake epochs.
 The UART IRQ example enables the UART TX-empty interrupt, routes it through INTC
 as machine external interrupt IRQ ID 2, claims/completes the interrupt in the C
 trap handler, clears the sticky UART source, disables the TX IRQ enable, and
@@ -109,5 +113,5 @@ boot regressions:
 
 1. Add an installed LLVM bundle under `llvm_s1/toolchain/install` or document
    an external LLVM install path.
-2. Add richer debug operations plus randomized and interrupt-heavy software
-   stress regressions.
+2. Add richer debug operations and extend the fixed-seed interrupt-heavy
+   regression to a multi-seed campaign.

@@ -134,6 +134,29 @@ module tb_wasp1;
   localparam logic [31:0] SYSTEM_STRESS_EXPECTED_DMA_STATUS = 32'h0000_0002;
   localparam logic [31:0] SYSTEM_STRESS_EXPECTED_TIMER_STATUS = 32'h0000_0001;
   localparam logic [31:0] SYSTEM_STRESS_EXPECTED_UART_COUNT = 32'h0000_001b;
+  localparam int unsigned RANDOM_IRQ_MAGIC_WORD_IDX = 32'h0000_3b00 >> 2;
+  localparam int unsigned RANDOM_IRQ_DONE_WORD_IDX = 32'h0000_3b04 >> 2;
+  localparam int unsigned RANDOM_IRQ_STATE_WORD_IDX = 32'h0000_3b08 >> 2;
+  localparam int unsigned RANDOM_IRQ_ROUNDS_WORD_IDX = 32'h0000_3b0c >> 2;
+  localparam int unsigned RANDOM_IRQ_TOTAL_WORD_IDX = 32'h0000_3b10 >> 2;
+  localparam int unsigned RANDOM_IRQ_TIMER_WORD_IDX = 32'h0000_3b14 >> 2;
+  localparam int unsigned RANDOM_IRQ_DMA_WORD_IDX = 32'h0000_3b18 >> 2;
+  localparam int unsigned RANDOM_IRQ_GPIO_WORD_IDX = 32'h0000_3b1c >> 2;
+  localparam int unsigned RANDOM_IRQ_EVENT_SUM_WORD_IDX = 32'h0000_3b20 >> 2;
+  localparam int unsigned RANDOM_IRQ_DATA_SUM_WORD_IDX = 32'h0000_3b24 >> 2;
+  localparam int unsigned RANDOM_IRQ_GPIO_REQ_WORD_IDX = 32'h0000_3b28 >> 2;
+  localparam int unsigned RANDOM_IRQ_GPIO_ACK_WORD_IDX = 32'h0000_3b2c >> 2;
+  localparam int unsigned RANDOM_IRQ_LAST_MCAUSE_WORD_IDX = 32'h0000_3b30 >> 2;
+  localparam int unsigned RANDOM_IRQ_LAST_CLAIM_WORD_IDX = 32'h0000_3b34 >> 2;
+  localparam int unsigned RANDOM_IRQ_FAIL_WORD_IDX = 32'h0000_3b38 >> 2;
+  localparam int unsigned RANDOM_IRQ_UART_COUNT_WORD_IDX = 32'h0000_3b3c >> 2;
+  localparam int unsigned RANDOM_IRQ_TRACE_WORD_IDX = 32'h0000_3b40 >> 2;
+  localparam int unsigned RANDOM_IRQ_ROUNDS = 12;
+  localparam int unsigned RANDOM_IRQ_DMA_WORDS = 4;
+  localparam logic [31:0] RANDOM_IRQ_SEED = 32'h1a2b_3c4d;
+  localparam logic [31:0] RANDOM_IRQ_EXPECTED_MAGIC = 32'h5249_5251;
+  localparam logic [31:0] RANDOM_IRQ_EXPECTED_DONE = 32'h5249_4f4b;
+  localparam logic [31:0] RANDOM_IRQ_EXPECTED_UART_COUNT = 32'd13;
   localparam int unsigned TIMER_IRQ_MAGIC_WORD_IDX = 32'h0000_3100 >> 2;
   localparam int unsigned TIMER_IRQ_MCAUSE_WORD_IDX = 32'h0000_3104 >> 2;
   localparam int unsigned TIMER_IRQ_MEPC_WORD_IDX = 32'h0000_3108 >> 2;
@@ -209,6 +232,7 @@ module tb_wasp1;
   bit          long_boot_check;             // Selects longer generated-image boot assertions.
   bit          mixed_irq_dma_check;         // Selects mixed DMA/GPIO interrupt assertions.
   bit          system_stress_check;         // Selects multi-round polling stress assertions.
+  bit          random_irq_stress_check;     // Selects deterministic-random IRQ stress assertions.
   bit          timer_irq_check;             // Selects timer interrupt firmware assertions.
   bit          sw_trace;                    // Enables verbose firmware execution diagnostics.
   bit          dma_trace;                   // Enables focused DMA/fabric diagnostics.
@@ -447,6 +471,7 @@ module tb_wasp1;
     long_boot_check = $test$plusargs("WASP1_LONG_BOOT_CHECK");
     mixed_irq_dma_check = $test$plusargs("WASP1_MIXED_IRQ_DMA_CHECK");
     system_stress_check = $test$plusargs("WASP1_SYSTEM_STRESS_CHECK");
+    random_irq_stress_check = $test$plusargs("WASP1_RANDOM_IRQ_STRESS_CHECK");
     timer_irq_check = $test$plusargs("WASP1_TIMER_IRQ_CHECK");
     sw_trace = $test$plusargs("WASP1_SW_TRACE");
     dma_trace = $test$plusargs("WASP1_DMA_TRACE");
@@ -1614,6 +1639,194 @@ module tb_wasp1;
     end
   endtask
 
+  function automatic logic [31:0] random_irq_xorshift32(
+    input logic [31:0] value
+  );
+    logic [31:0] next_value;
+    begin
+      // Independently mirror the firmware's RV32I-only xorshift recurrence.
+      next_value = value;
+      next_value ^= next_value << 13;
+      next_value ^= next_value >> 17;
+      next_value ^= next_value << 5;
+      random_irq_xorshift32 = next_value;
+    end
+  endfunction
+
+  function automatic logic [31:0] random_irq_expected_word(
+    input int unsigned round,
+    input int unsigned idx,
+    input logic [31:0] state
+  );
+    begin
+      // Mirror only the public data-pattern contract, not firmware results.
+      random_irq_expected_word =
+        32'h6200_0000 |
+        (32'(round & 32'h0000_000f) << 16) |
+        (32'(idx & 32'h0000_000f) << 8) |
+        (state & 32'h0000_00ff);
+    end
+  endfunction
+
+  task automatic wait_for_random_irq_stress_activity;
+    int unsigned timeout;
+    int unsigned expected_total;
+    int unsigned expected_timer;
+    int unsigned expected_dma;
+    int unsigned expected_gpio;
+    int unsigned selector;
+    logic [31:0] magic_word;
+    logic [31:0] done_word;
+    logic [31:0] fail_word;
+    logic [31:0] gpio_req_word;
+    logic [31:0] gpio_ack_word;
+    logic [31:0] expected_state;
+    logic [31:0] expected_trace;
+    logic [31:0] expected_event_sum;
+    logic [31:0] expected_data_sum;
+    logic [31:0] expected_word;
+    logic [31:0] last_mcause_word;
+    logic [31:0] last_claim_word;
+    begin
+      timeout = 0;
+      magic_word = '0;
+      done_word = '0;
+      fail_word = '0;
+      gpio_req_word = '0;
+      gpio_ack_word = '0;
+
+      // Drive each requested level interrupt until firmware acknowledges that
+      // the handler masked and cleared the GPIO source.
+      while (((magic_word !== RANDOM_IRQ_EXPECTED_MAGIC) ||
+              (done_word !== RANDOM_IRQ_EXPECTED_DONE)) &&
+             (timeout < 300000)) begin
+        magic_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_MAGIC_WORD_IDX];
+        done_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_DONE_WORD_IDX];
+        fail_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_FAIL_WORD_IDX];
+        gpio_req_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_REQ_WORD_IDX];
+        gpio_ack_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_ACK_WORD_IDX];
+        gpio_in[0] = (gpio_req_word > gpio_ack_word);
+        if (fail_word !== 32'h0) begin
+          dump_sw_timeout_diagnostics();
+          $error("random IRQ stress firmware reported failure code 0x%08h", fail_word);
+          $fatal(1);
+        end
+        if ((magic_word !== RANDOM_IRQ_EXPECTED_MAGIC) ||
+            (done_word !== RANDOM_IRQ_EXPECTED_DONE)) begin
+          @(posedge hclk);
+          #1ns;
+          timeout++;
+        end
+      end
+      gpio_in[0] = 1'b0;
+
+      if ((magic_word !== RANDOM_IRQ_EXPECTED_MAGIC) ||
+          (done_word !== RANDOM_IRQ_EXPECTED_DONE)) begin
+        dump_sw_timeout_diagnostics();
+        $error("random IRQ stress firmware timed out: magic=0x%08h done=0x%08h fail=0x%08h req=%0d ack=%0d",
+               magic_word, done_word, fail_word, gpio_req_word, gpio_ack_word);
+        $fatal(1);
+      end
+
+      // Reconstruct the fixed-seed schedule and every order-independent result.
+      expected_state = RANDOM_IRQ_SEED;
+      expected_trace = '0;
+      expected_event_sum = '0;
+      expected_data_sum = '0;
+      expected_total = 0;
+      expected_timer = 0;
+      expected_dma = 0;
+      expected_gpio = 0;
+      for (int round = 0; round < RANDOM_IRQ_ROUNDS; round++) begin
+        expected_state = random_irq_xorshift32(expected_state);
+        selector = expected_state & 32'h3;
+        expected_trace |= 32'(selector) << (round << 1);
+        case (selector)
+          0: begin
+            expected_timer++;
+            expected_total++;
+            expected_event_sum += 32'h0000_0100 + 32'(round);
+          end
+          1: begin
+            expected_dma++;
+            expected_total++;
+            expected_event_sum += 32'h0000_0200 + 32'(round);
+          end
+          2: begin
+            expected_gpio++;
+            expected_total++;
+            expected_event_sum += 32'h0000_0400 + 32'(round);
+          end
+          default: begin
+            expected_timer++;
+            expected_dma++;
+            expected_total += 2;
+            expected_event_sum += 32'h0000_0300 + (32'(round) << 1);
+          end
+        endcase
+        if ((selector == 1) || (selector == 3)) begin
+          for (int idx = 0; idx < RANDOM_IRQ_DMA_WORDS; idx++) begin
+            expected_word = random_irq_expected_word(round, idx, expected_state);
+            expected_data_sum += expected_word ^ (32'(round) << idx);
+          end
+        end
+      end
+
+      gpio_req_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_REQ_WORD_IDX];
+      gpio_ack_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_ACK_WORD_IDX];
+      last_mcause_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_LAST_MCAUSE_WORD_IDX];
+      last_claim_word = u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_LAST_CLAIM_WORD_IDX];
+      if (u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_STATE_WORD_IDX] !== expected_state ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_ROUNDS_WORD_IDX] !== 32'(RANDOM_IRQ_ROUNDS) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TOTAL_WORD_IDX] !== 32'(expected_total) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TIMER_WORD_IDX] !== 32'(expected_timer) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_DMA_WORD_IDX] !== 32'(expected_dma) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_WORD_IDX] !== 32'(expected_gpio) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_EVENT_SUM_WORD_IDX] !== expected_event_sum ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_DATA_SUM_WORD_IDX] !== expected_data_sum ||
+          gpio_req_word !== 32'(expected_gpio) ||
+          gpio_ack_word !== 32'(expected_gpio) ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_UART_COUNT_WORD_IDX] !== RANDOM_IRQ_EXPECTED_UART_COUNT ||
+          u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TRACE_WORD_IDX] !== expected_trace) begin
+        $error("random IRQ stress mailbox mismatch: state=0x%08h/0x%08h trace=0x%08h/0x%08h total=%0d/%0d timer=%0d/%0d dma=%0d/%0d gpio=%0d/%0d event_sum=0x%08h/0x%08h data_sum=0x%08h/0x%08h req=%0d ack=%0d",
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_STATE_WORD_IDX], expected_state,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TRACE_WORD_IDX], expected_trace,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TOTAL_WORD_IDX], expected_total,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_TIMER_WORD_IDX], expected_timer,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_DMA_WORD_IDX], expected_dma,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_GPIO_WORD_IDX], expected_gpio,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_EVENT_SUM_WORD_IDX], expected_event_sum,
+               u_wasp1.u_ahb_dsram.u_sram_macro.mem_q[RANDOM_IRQ_DATA_SUM_WORD_IDX], expected_data_sum,
+               gpio_req_word, gpio_ack_word);
+        $fatal(1);
+      end
+
+      if (!((last_mcause_word == 32'h8000_0007) ||
+            (last_mcause_word == 32'h8000_000b)) ||
+          !((last_claim_word == 32'd4) || (last_claim_word == 32'd5)) ||
+          u_wasp1.u_ahb_dma.done_q !== 1'b0 ||
+          u_wasp1.u_ahb_dma.error_q !== 1'b0 ||
+          u_wasp1.dma_irq !== 1'b0 || u_wasp1.timer_irq !== 1'b0 ||
+          u_wasp1.gpio_irq !== 1'b0 || u_wasp1.external_irq !== 1'b0 ||
+          u_wasp1.u_ahb_intc.meip_o !== 1'b0 ||
+          u_wasp1.u_ahb_gpio.irq_status_q[0] !== 1'b0 ||
+          uart_tx_push_count < RANDOM_IRQ_EXPECTED_UART_COUNT) begin
+        $error("random IRQ stress final state mismatch: mcause=0x%08h claim=%0d dma_done=%0b dma_error=%0b dma_irq=%0b timer_irq=%0b gpio_irq=%0b external_irq=%0b meip=%0b gpio_status=0x%08h uart_push=%0d",
+               last_mcause_word, last_claim_word,
+               u_wasp1.u_ahb_dma.done_q, u_wasp1.u_ahb_dma.error_q,
+               u_wasp1.dma_irq, u_wasp1.timer_irq, u_wasp1.gpio_irq,
+               u_wasp1.external_irq, u_wasp1.u_ahb_intc.meip_o,
+               u_wasp1.u_ahb_gpio.irq_status_q, uart_tx_push_count);
+        $fatal(1);
+      end
+      $display("Random IRQ stress: state=0x%08h trace=0x%08h events=%0d timer=%0d dma=%0d gpio=%0d event_sum=0x%08h data_sum=0x%08h PASS",
+               expected_state, expected_trace, expected_total, expected_timer,
+               expected_dma, expected_gpio, expected_event_sum,
+               expected_data_sum);
+      pass_count++;
+    end
+  endtask
+
   task automatic wait_for_timer_irq_activity;
     int unsigned timeout;
     logic [31:0] magic_word;
@@ -1722,6 +1935,8 @@ module tb_wasp1;
         wait_for_mixed_irq_dma_activity();
       end else if (system_stress_check) begin
         wait_for_system_stress_activity();
+      end else if (random_irq_stress_check) begin
+        wait_for_random_irq_stress_activity();
       end else if (timer_irq_check) begin
         wait_for_timer_irq_activity();
       end else if (otp_program_check) begin
