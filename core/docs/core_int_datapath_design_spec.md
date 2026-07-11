@@ -153,7 +153,20 @@ execute trigger:
   redirects fetch back to the matched PC
   updates debug_next_pc_q/debug_dcsr_cause_q before Debug Mode capture
   prevents the matched instruction from retiring before halt
+
+load/store trigger:
+  compares the EX-stage LSU effective address with every core_debug.trigger_data_addr slot
+  qualifies each slot independently with trigger_load_valid or trigger_store_valid
+  gives a matched data trigger priority over LSU request, misalignment, response fault, and retirement
+  suppresses dmem_req_valid_o and lsu_req_fire in the match cycle
+  redirects to ex_pc so core_pipe flushes the matched instruction without side effects
+  records ex_pc as debug_next_pc_q and DCSR cause=trigger
+  after trigger clear and resume, refetches and executes the matched instruction once
 ```
+
+If a data trigger and a younger execute trigger are visible together, the older
+EX-stage data trigger supplies DPC. Debug Access Memory requests are generated
+only while halted and are not subject to architectural load/store triggers.
 
 The halted GPR path intentionally reuses register-file port 1 and the single
 write port because the pipeline is drained while debug access is allowed. This

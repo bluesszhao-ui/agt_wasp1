@@ -61,11 +61,11 @@ signals.
 
 `debug_if` also carries the exact-address trigger slots programmed through
 Debug Spec trigger CSRs. The Debug Module drives per-slot execute, load, and
-store enables plus execute/data compare addresses. The core currently consumes
-`trigger_execute_valid/addr` in decode and reports the resulting DCSR cause
-through `dcsr_cause`; the `trigger_load_valid`, `trigger_store_valid`, and
-`trigger_data_addr` signals reserve the verified contract for the next precise
-LSU trigger stage.
+store enables plus execute/data compare addresses. The core consumes
+`trigger_execute_valid/addr` in decode and the load/store qualifiers plus
+`trigger_data_addr` in the EX-stage LSU path. It suppresses a matched
+architectural memory request, enters Debug Mode precisely at the matched
+instruction, and reports the resulting DCSR cause through `dcsr_cause`.
 
 ## 5. Synthesis Notes
 

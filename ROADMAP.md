@@ -79,7 +79,7 @@ PASS       Current verification target passes
 ```text
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
-3. Connect configured load/store trigger outputs to precise core LSU halt behavior, then add optional program-buffer and SBA
+3. Add end-to-end OpenOCD/GDB load/store watchpoint regression, then optional program-buffer and SBA
 4. Extend the four-seed randomized IRQ baseline with longer-duration nightly/CI campaigns
 ```
 

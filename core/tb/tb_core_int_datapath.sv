@@ -69,6 +69,8 @@ module tb_core_int_datapath;
   integer pc_count;            // Fetch PC stepping coverage.
   integer debug_count;         // Debug halt/resume and GPR access coverage.
   integer trigger_count;       // Execute-address debug trigger coverage.
+  integer load_trigger_count;  // Precise load-address debug trigger coverage.
+  integer store_trigger_count; // Precise store-address debug trigger coverage.
   logic [31:0] exp_fetch_pc;   // Scoreboard expected frontend stream PC.
   logic        mem_zero_wait;   // Select zero-wait or registered response model.
   logic        mem_req_ready_en;// Allows directed request-ready backpressure.
@@ -776,6 +778,175 @@ module tb_core_int_datapath;
     end
   endtask
 
+  // Check the common precise data-trigger entry contract after a matched load
+  // or store reaches EX. No memory or architectural side effect is permitted.
+  task automatic wait_for_data_trigger_halt(
+    input string       name,
+    input logic [31:0] match_pc
+  );
+    begin
+      #1;
+      if (!redirect_valid || (redirect_pc !== match_pc) || instr_ready ||
+          dmem_req_valid || commit_valid || trap_valid || lsu_fault) begin
+        $fatal(1, "%s precise trigger mismatch redir=%0b pc=%08x ready=%0b req=%0b commit=%0b trap=%0b fault=%0b exp_pc=%08x",
+               name, redirect_valid, redirect_pc, instr_ready, dmem_req_valid,
+               commit_valid, trap_valid, lsu_fault, match_pc);
+      end
+      exp_fetch_pc = match_pc;
+      @(negedge clk);
+      instr_valid = 1'b0;
+
+      for (int unsigned tries = 0; tries < 10; tries++) begin
+        @(posedge clk);
+        #1;
+        if (dmem_req_valid || commit_valid || trap_valid || lsu_fault) begin
+          $fatal(1, "%s produced a side effect while entering Debug Mode", name);
+        end
+        if (core_debug.halted) begin
+          if (core_debug.running || instr_ready ||
+              (core_debug.dpc !== match_pc) ||
+              (core_debug.dcsr_cause !== 3'd2)) begin
+            $fatal(1, "%s halt mismatch running=%0b ready=%0b dpc=%08x cause=%0d exp_pc=%08x",
+                   name, core_debug.running, instr_ready, core_debug.dpc,
+                   core_debug.dcsr_cause, match_pc);
+          end
+          core_debug.trigger_load_valid = '0;
+          core_debug.trigger_store_valid = '0;
+          pass_count++;
+          debug_count++;
+          trigger_count++;
+          return;
+        end
+      end
+      $fatal(1, "%s did not halt on data trigger", name);
+    end
+  endtask
+
+  // Prove load-only qualification, precise suppression, and one normal load
+  // execution after clearing the trigger and resuming from DPC.
+  task automatic debug_load_trigger(input string name);
+    logic [31:0] match_pc;
+    begin
+      @(negedge clk);
+      core_debug.trigger_execute_valid = '0;
+      core_debug.trigger_load_valid = '0;
+      core_debug.trigger_store_valid = '0;
+      core_debug.trigger_data_addr = '0;
+      core_debug.trigger_data_addr[0] = 32'h0000_0300;
+      core_debug.trigger_load_valid[0] = 1'b1;
+
+      // A load to another address must execute normally while the trigger is armed.
+      drive_instr(enc_load(12'h304, 5'd0, 3'b010, 5'd14));
+      drive_instr(32'h0000_0013);
+      expect_commit({name, " address isolation"}, 5'd14, 32'h0000_0000);
+      if (redirect_valid || trap_valid || lsu_fault) begin
+        $fatal(1, "%s load trigger matched a different address", name);
+      end
+      load_count++;
+
+      // A load-only trigger must not match a store to the same address.
+      drive_instr(enc_store(12'h300, 5'd13, 5'd0, 3'b010));
+      drive_instr(32'h0000_0013);
+      expect_store_req({name, " store isolation"}, 32'h0000_0300,
+                       MEM_SIZE_WORD, 32'h0000_0007, 4'b1111);
+      if (redirect_valid || trap_valid || lsu_fault || commit_valid) begin
+        $fatal(1, "%s load-only trigger matched store", name);
+      end
+      pass_count++;
+
+      match_pc = exp_fetch_pc;
+      drive_instr(enc_load(12'h300, 5'd0, 3'b010, 5'd14));
+      drive_instr(32'h0000_0013);
+      wait_for_data_trigger_halt({name, " precise halt"}, match_pc);
+      load_trigger_count++;
+
+      debug_resume({name, " resume"});
+      drive_instr(enc_load(12'h300, 5'd0, 3'b010, 5'd14));
+      drive_instr(32'h0000_0013);
+      expect_commit({name, " resumed load"}, 5'd14, 32'h89AB_CDEF);
+      load_count++;
+    end
+  endtask
+
+  // Prove store-only qualification, precise write suppression, and one normal
+  // store request after clearing the trigger and resuming from DPC.
+  task automatic debug_store_trigger(input string name);
+    logic [31:0] match_pc;
+    begin
+      @(negedge clk);
+      core_debug.trigger_execute_valid = '0;
+      core_debug.trigger_load_valid = '0;
+      core_debug.trigger_store_valid = '0;
+      core_debug.trigger_data_addr = '0;
+      core_debug.trigger_data_addr[0] = 32'h0000_0304;
+      core_debug.trigger_store_valid[0] = 1'b1;
+
+      // A store to another address must execute normally while the trigger is armed.
+      drive_instr(enc_store(12'h308, 5'd13, 5'd0, 3'b010));
+      drive_instr(32'h0000_0013);
+      expect_store_req({name, " address isolation"}, 32'h0000_0308,
+                       MEM_SIZE_WORD, 32'h0000_0007, 4'b1111);
+      if (redirect_valid || trap_valid || lsu_fault || commit_valid) begin
+        $fatal(1, "%s store trigger matched a different address", name);
+      end
+      pass_count++;
+
+      // A store-only trigger must not match a load to the same address.
+      drive_instr(enc_load(12'h304, 5'd0, 3'b010, 5'd14));
+      drive_instr(32'h0000_0013);
+      expect_commit({name, " load isolation"}, 5'd14, 32'h0000_0000);
+      if (redirect_valid || trap_valid || lsu_fault || dmem_req_write) begin
+        $fatal(1, "%s store-only trigger matched load", name);
+      end
+      load_count++;
+
+      match_pc = exp_fetch_pc;
+      drive_instr(enc_store(12'h304, 5'd13, 5'd0, 3'b010));
+      drive_instr(32'h0000_0013);
+      wait_for_data_trigger_halt({name, " precise halt"}, match_pc);
+      store_trigger_count++;
+
+      debug_resume({name, " resume"});
+      drive_instr(enc_store(12'h304, 5'd13, 5'd0, 3'b010));
+      drive_instr(32'h0000_0013);
+      expect_store_req({name, " resumed store"}, 32'h0000_0304,
+                       MEM_SIZE_WORD, 32'h0000_0007, 4'b1111);
+      if (redirect_valid || trap_valid || lsu_fault || commit_valid) begin
+        $fatal(1, "%s resumed store side-effect mismatch", name);
+      end
+      pass_count++;
+    end
+  endtask
+
+  // Trigger entry has priority over the local alignment exception. Once the
+  // trigger is cleared, resuming the same instruction must expose the original
+  // architectural load-misaligned trap.
+  task automatic debug_misaligned_load_trigger(input string name);
+    logic [31:0] match_pc;
+    begin
+      @(negedge clk);
+      core_debug.trigger_execute_valid = '0;
+      core_debug.trigger_load_valid = '0;
+      core_debug.trigger_store_valid = '0;
+      core_debug.trigger_data_addr = '0;
+      core_debug.trigger_data_addr[0] = 32'h0000_0301;
+      core_debug.trigger_load_valid[0] = 1'b1;
+
+      match_pc = exp_fetch_pc;
+      drive_instr(enc_load(12'h301, 5'd0, 3'b010, 5'd15));
+      drive_instr(32'h0000_0013);
+      wait_for_data_trigger_halt({name, " precise halt"}, match_pc);
+      load_trigger_count++;
+
+      debug_resume({name, " resume"});
+      drive_instr(enc_load(12'h301, 5'd0, 3'b010, 5'd15));
+      drive_instr(32'h0000_0013);
+      expect_trap_redirect({name, " resumed misalignment"},
+                           TRAP_CAUSE_LOAD_MISALIGNED, 32'h0000_0301,
+                           match_pc, 32'h0000_0200);
+    end
+  endtask
+
   initial begin
     pass_count = 0;
     commit_count = 0;
@@ -798,6 +969,8 @@ module tb_core_int_datapath;
     pc_count = 0;
     debug_count = 0;
     trigger_count = 0;
+    load_trigger_count = 0;
+    store_trigger_count = 0;
 
     exp_fetch_pc = 32'h0001_0000;
     rst_n = 1'b0;
@@ -1087,6 +1260,13 @@ module tb_core_int_datapath;
     drive_instr(32'h0000_0013);
     expect_commit("post-trigger addi x13", 5'd13, 32'd7);
     alu_i_count++;
+    $display("tb_core_int_datapath phase data_trigger start=%0t", $time);
+    debug_load_trigger("debug load trigger");
+    $display("tb_core_int_datapath phase load_trigger end=%0t", $time);
+    debug_store_trigger("debug store trigger");
+    $display("tb_core_int_datapath phase store_trigger end=%0t", $time);
+    debug_misaligned_load_trigger("debug misaligned load trigger");
+    $display("tb_core_int_datapath phase data_trigger end=%0t", $time);
 
     if (commit_count < 8 || alu_i_count < 3 || alu_r_count < 2 ||
         upper_count < 2 || link_count < 3 || branch_count < 2 ||
@@ -1094,16 +1274,19 @@ module tb_core_int_datapath;
         lsu_fault_count < 1 || dmem_wait_count < 2 || dmem_bp_count < 1 ||
         csr_count < 9 || trap_count < 4 ||
         irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
-        pc_count < 59 || debug_count < 11 || trigger_count < 1) begin
+        pc_count < 59 || debug_count < 17 || trigger_count < 4 ||
+        load_trigger_count < 2 || store_trigger_count < 1) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d trigger=%0d",
+    $display("tb_core_int_datapath phase complete=%0t", $time);
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d trigger=%0d load_trigger=%0d store_trigger=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
              load_count, store_count, lsu_fault_count, dmem_wait_count,
              dmem_bp_count, csr_count, trap_count, irq_count, hazard_count,
-             suppress_count, pc_count, debug_count, trigger_count);
+             suppress_count, pc_count, debug_count, trigger_count,
+             load_trigger_count, store_trigger_count);
     $display("tb_core_int_datapath PASS");
     $finish;
   end

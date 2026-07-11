@@ -72,7 +72,8 @@ code/toggle coverage.
 The RV32 GPR Access Register decoder/controller, OpenOCD/GDB CSR probe path,
 two-slot execute/load/store trigger CSR configuration path, and physical Access Memory
 byte/half/word controller are verified against mock GPR and memory transports.
-Program-buffer execution, System Bus Access, core-side load/store trigger match
-and precise halt action, and architectural CSR side effects beyond `dcsr.step`
-remain future work. Full
-OpenOCD/GDB smoke is covered at the wasp1 top level.
+Precise core-side load/store trigger match and halt behavior is covered by the
+core datapath verification report. Program-buffer execution, System Bus Access,
+end-to-end OpenOCD/GDB watchpoint regression, and architectural CSR side
+effects beyond `dcsr.step` remain future work. Full OpenOCD/GDB breakpoint
+smoke is covered at the wasp1 top level.

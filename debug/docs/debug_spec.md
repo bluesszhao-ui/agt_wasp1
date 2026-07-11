@@ -9,7 +9,8 @@ It also exposes physical Access Memory through the halted core plus the
 `misa`, `mstatus`, `dcsr`, and core-captured `dpc` abstract CSR probes required
 for OpenOCD/GDB discovery, register-packet reads, memory disassembly around PC,
 native `stepi` setup, two execute-address hardware breakpoint triggers, and
-WARL-filtered load/store trigger configuration outputs for later core use.
+WARL-filtered load/store trigger configuration outputs consumed by the core's
+precise LSU trigger path.
 
 The JTAG TAP/DTM transport is integrated with this Debug Module by the
 `debug_jtag` wrapper. This module intentionally remains the ready/valid DMI
@@ -30,8 +31,10 @@ Debug Module register/control boundary.
 `dcsr.step` bit is set. `core_debug.trigger_execute_valid`,
 `core_debug.trigger_load_valid`, `core_debug.trigger_store_valid`, and their
 compare addresses reflect the supported `mcontrol` trigger slots programmed
-through abstract trigger CSRs. Core-side load/store match and halt behavior is
-not part of this debug-module milestone.
+through abstract trigger CSRs. The core compares those outputs against
+architectural load/store addresses and performs the precise halt action; that
+action is verified in the core datapath milestone rather than this module-level
+testbench.
 
 ## 3. Implemented Functions
 
@@ -45,7 +48,7 @@ not part of this debug-module milestone.
 | Memory transport | Sequence one halted-core memory request and one response per Access Memory command |
 | Single-step | Convert `dcsr.step=1` plus `dmcontrol.resumereq` into `core_debug.step_req` |
 | Hardware breakpoint | Provide two RV32 `mcontrol` execute-address trigger slots for OpenOCD/GDB `hbreak` |
-| Data-trigger configuration | Accept and expose per-slot exact-address load/store `mcontrol` modes; core-side action is staged separately |
+| Data-trigger configuration | Accept and expose per-slot exact-address load/store `mcontrol` modes for precise core-side LSU halt action |
 | Error reporting | Preserve leaf-module `cmderr` mapping and DMI `FAILED` response behavior |
 
 ## 4. Unsupported Stage-1 Scope
@@ -56,7 +59,6 @@ The following are intentionally outside this module:
 program buffer
 debug ROM
 architectural CSR side effects beyond `dcsr.step`
-core-side data/load/store trigger match and precise halt action
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 

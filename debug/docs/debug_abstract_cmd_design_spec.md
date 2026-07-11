@@ -6,9 +6,9 @@ The block decodes and executes the RV32 GPR subset of Access Register commands,
 physical Access Memory commands, local CSR reads for debugger discovery, the
 minimal `dcsr.step` write used for single-step, and two RV32 `mcontrol`
 exact-address trigger configuration slots. Each slot exports independent
-execute, load, and store qualifiers. FPR access, program-buffer execution,
-virtual memory access, core-side load/store trigger action, and System Bus
-Access remain explicitly unsupported at this boundary.
+execute, load, and store qualifiers. The integrated core owns the downstream
+load/store trigger action. FPR access, program-buffer execution, virtual memory
+access, and System Bus Access remain explicitly unsupported at this boundary.
 
 ## 2. Editable FSM/Block Diagram
 

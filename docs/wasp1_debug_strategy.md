@@ -33,7 +33,7 @@ debug
 | 4 | two execute-address hardware breakpoints through Debug Spec trigger CSRs |
 | 5 | longer debugger stress with simultaneous two-trigger residency |
 | 6 | FT2232H external debugger pinout/OpenOCD config, schematic/PCB, FPGA/board bring-up |
-| 7 | load/store trigger configuration outputs, followed by precise core LSU action, optional system bus, and program-buffer memory access |
+| 7 | load/store trigger configuration plus precise core LSU action, followed by optional system bus and program-buffer memory access |
 
 ## 4. Core Interaction
 
@@ -45,7 +45,7 @@ resume request
 halted status
 register access path
 memory access path
-execute-address trigger entry path
+precise execute/load/store trigger entry paths
 debug exception or debug entry behavior
 ```
 
@@ -68,9 +68,10 @@ hit two hardware breakpoints through hbreak
 Physical Access Memory, native `stepi`, and two execute-address hardware
 breakpoints are now part of the automated remote-bitbang OpenOCD/GDB smoke and
 stress flow. The stress target also covers GPR write/read and breakpoint
-delete/reinstall at two OTP addresses. Load/store trigger CSR configuration and
-filtered debug-to-core outputs are implemented; precise LSU match/halt behavior,
-System Bus Access, and program-buffer execution remain later-stage targets.
+delete/reinstall at two OTP addresses. Load/store trigger CSR configuration,
+filtered debug-to-core outputs, and precise core-side LSU match/halt behavior
+are implemented. End-to-end OpenOCD/GDB watchpoint regression, System Bus
+Access, and program-buffer execution remain later-stage targets.
 
 ## 6. External FTDI Debugger
 

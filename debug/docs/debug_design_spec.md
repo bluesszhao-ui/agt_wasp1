@@ -101,11 +101,12 @@ core_debug.trigger_store_valid[slot]   = selected trigger slot enables legal mco
 core_debug.trigger_data_addr[slot]     = selected trigger slot tdata2 compare address
 ```
 
-The core performs ID-stage PC compares across the enabled trigger slots, enters
-Debug Mode before the matched instruction retires, and reports DCSR cause back
-through `core_debug.dcsr_cause`. Load/store outputs are configured and exposed
-by this milestone; core LSU comparison and precise halt behavior remain the
-next integration stage.
+The core performs ID-stage PC compares for execute triggers and EX-stage
+effective-address compares for load/store triggers. A matched architectural
+memory operation is blocked before request issue, retirement, alignment fault,
+or response fault; the core enters Debug Mode with the matched PC in DPC and
+reports the trigger DCSR cause through `core_debug.dcsr_cause`. The core
+datapath verification report owns coverage of that downstream behavior.
 
 `debug_reg_access` uses an internal `debug_if` instance with the `dm_gpr`
 modport. The wrapper explicitly bridges only GPR request/response signals to

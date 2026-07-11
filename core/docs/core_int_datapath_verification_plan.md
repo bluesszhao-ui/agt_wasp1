@@ -40,6 +40,9 @@ each pipeline advance, and checks expected register writeback.
 | Debug halt | Assert halt, drain pipeline, and check halted status plus frontend backpressure |
 | Debug GPR read/write | Read a committed register, write/read back another register, and prove x0 remains zero |
 | Debug trigger | Enable execute-address trigger at next PC, prove matched instruction halts before retirement with DPC/cause set, clear trigger, and resume |
+| Debug load trigger | Match an EX-stage load effective address, prove no request/retire/fault side effect, check DPC/cause, clear trigger, resume, and execute the load once |
+| Debug store trigger | Match an EX-stage store effective address, prove no write request/retire side effect, check DPC/cause, clear trigger, resume, and execute the store once |
+| Debug trigger isolation | Prove load-only does not match store and store-only does not match load; unmatched addresses execute normally |
 | Debug resume | Resume from halted state and check running status returns |
 
 ## 3. Exit Criteria
@@ -48,4 +51,4 @@ All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
 load, store, LSU fault, data-memory wait state, request backpressure, CSR,
 trap, interrupt, load-use hazard, suppression, frontend-model PC stepping, and
-debug halt/GPR/trigger/resume coverage.
+debug halt/GPR/execute-trigger/load-trigger/store-trigger/isolation/resume coverage.

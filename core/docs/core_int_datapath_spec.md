@@ -39,7 +39,7 @@ ECALL/EBREAK/illegal/CSR-fault trap redirect
 MRET redirect
 machine timer/external interrupt trap inputs
 load-use hazard stall and execute bubble
-Debug Mode halt-pending drain, halted status, resume, single-step re-halt, and execute trigger halt
+Debug Mode halt-pending drain, halted status, resume, single-step re-halt, and precise execute/load/store trigger halt
 halted-core GPR read/write access through `debug_if.core`
 halted Debug PC capture through `debug_if.core.dpc`
 DCSR cause reporting through `debug_if.core.dcsr_cause`
@@ -123,7 +123,8 @@ stall/bubble behavior, frontend PC stepping in the testbench model, Debug PC
 capture on halt entry, and redirect target forwarding.
 
 Debug verification must cover halt entry after the pipeline drains, frontend
-ready suppression while halted, halted GPR read/write/readback, x0 debug access,
-DPC resume-PC capture, DCSR cause reporting for halt/step/trigger, execute
-trigger entry before the matched instruction retires, and resume back to
-running state.
+ready suppression while halted, halted GPR read/write/readback, x0 debug
+access, DPC resume-PC capture, DCSR cause reporting for halt/step/trigger,
+precise execute/load/store address trigger entry before the matched instruction
+retires or issues a data-memory request, normal re-execution from DPC after the
+selected trigger is cleared, and resume back to running state.

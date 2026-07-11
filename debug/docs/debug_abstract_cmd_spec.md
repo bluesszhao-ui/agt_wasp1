@@ -60,8 +60,9 @@ Unsupported `type` writes return a disabled `mcontrol` image for the selected
 slot, and unsupported actions are cleared so no comparator output is enabled.
 
 This module provides filtered per-slot execute/load/store enables and compare
-addresses. Precise load/store trigger action in the core LSU is a separate
-integration stage and is not claimed by this module-level contract.
+addresses. The integrated core LSU consumes those outputs for precise trigger
+action, but that downstream behavior remains outside this module-level
+contract and is covered by the core datapath verification report.
 
 ## 3. Supported Access Memory Command
 

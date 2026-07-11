@@ -758,8 +758,8 @@ debug_if.core}</string>
 \pard\qc\partightenfactor0
 
 \f0\fs17 \cf0 COMB debug controls\
-stall/freeze\
-GPR mux}</string>
+stall/freeze/trigger compare\
+GPR/memory request gate}</string>
 			</dict>
 		</dict>
 		<dict>

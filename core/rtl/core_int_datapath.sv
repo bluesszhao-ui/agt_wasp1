@@ -211,7 +211,11 @@ module core_int_datapath (
   logic        debug_busy;         // Debug GPR response is pending or being created.
   logic        debug_resume_redirect;// Resume/step redirects frontend to captured DPC.
   logic [DEBUG_TRIGGER_COUNT-1:0] debug_trigger_match; // Per-slot execute trigger compare hit.
-  logic        debug_trigger_halt;  // Execute-address trigger requests Debug Mode entry.
+  logic [DEBUG_TRIGGER_COUNT-1:0] debug_load_trigger_match; // Per-slot load effective-address hit.
+  logic [DEBUG_TRIGGER_COUNT-1:0] debug_store_trigger_match;// Per-slot store effective-address hit.
+  logic        debug_execute_trigger_halt; // Execute-address trigger requests Debug Mode entry.
+  logic        debug_data_trigger_halt; // Load/store address trigger requests precise Debug Mode entry.
+  logic        debug_trigger_halt;  // Any supported trigger requests Debug Mode entry.
   logic [31:0] debug_trigger_pc;    // Matched trigger PC captured into DPC.
   logic [31:0] debug_next_pc_q;    // Resume PC candidate updated by accepted fetches/retire.
   logic [31:0] debug_dpc_q;        // DPC value captured while the hart is halted.
@@ -225,14 +229,17 @@ module core_int_datapath (
   assign lsu_mem_op = ex_valid && (dec_load || dec_store) &&
                       !ex_fetch_fault && !dec_illegal;
   assign lsu_req_fire = lsu_req_valid_raw && !lsu_req_outstanding_q &&
-                        !debug_mem_req_active && dmem_req_ready_i;
+                        !debug_mem_req_active && !debug_data_trigger_halt &&
+                        dmem_req_ready_i;
   assign dmem_rsp_ready_o = lsu_req_outstanding_q || lsu_req_fire ||
                             debug_mem_req_outstanding_q || debug_mem_req_fire;
   assign lsu_rsp_fire = dmem_rsp_valid_i &&
                         (lsu_req_outstanding_q || lsu_req_fire);
-  assign lsu_complete = !lsu_mem_op || lsu_misaligned || lsu_rsp_fire;
-  assign lsu_wait_stall = lsu_mem_op && !lsu_misaligned && !lsu_rsp_fire;
-  assign retire_valid = ex_valid && lsu_complete;
+  assign lsu_complete = debug_data_trigger_halt || !lsu_mem_op ||
+                        lsu_misaligned || lsu_rsp_fire;
+  assign lsu_wait_stall = lsu_mem_op && !debug_data_trigger_halt &&
+                          !lsu_misaligned && !lsu_rsp_fire;
+  assign retire_valid = ex_valid && lsu_complete && !debug_data_trigger_halt;
   assign debug_pipe_idle = !id_valid && !ex_valid && !lsu_req_outstanding_q;
   assign debug_gpr_req_fire = core_debug.gpr_req_valid &&
                               core_debug.gpr_req_ready;
@@ -250,16 +257,31 @@ module core_int_datapath (
                       debug_mem_req_outstanding_q;
   assign debug_resume_redirect = debug_halted && core_debug.resume_req &&
                                  !core_debug.halt_req && !debug_busy;
-  assign debug_trigger_pc = id_pc;
+  // Data triggers act on the older EX instruction and therefore own DPC if a
+  // younger execute trigger is visible in the same cycle.
+  assign debug_trigger_pc = debug_data_trigger_halt ? ex_pc : id_pc;
   for (genvar trig_idx = 0; trig_idx < DEBUG_TRIGGER_COUNT; trig_idx++) begin : gen_debug_trigger_match
     assign debug_trigger_match[trig_idx] =
         core_debug.trigger_execute_valid[trig_idx] &&
         (id_pc == core_debug.trigger_execute_addr[trig_idx]);
+    assign debug_load_trigger_match[trig_idx] =
+        core_debug.trigger_load_valid[trig_idx] && dec_load &&
+        (lsu_req_addr == core_debug.trigger_data_addr[trig_idx]);
+    assign debug_store_trigger_match[trig_idx] =
+        core_debug.trigger_store_valid[trig_idx] && dec_store &&
+        (lsu_req_addr == core_debug.trigger_data_addr[trig_idx]);
   end
-  assign debug_trigger_halt = id_valid && (|debug_trigger_match) &&
-                              !debug_halted && !core_debug.halt_req &&
-                              !debug_freeze_pipe && !lsu_req_outstanding_q &&
-                              (!ex_valid || retire_valid);
+  assign debug_execute_trigger_halt = id_valid && (|debug_trigger_match) &&
+                                      !debug_halted && !core_debug.halt_req &&
+                                      !debug_freeze_pipe && !lsu_req_outstanding_q &&
+                                      (!ex_valid || retire_valid);
+  assign debug_data_trigger_halt = lsu_mem_op &&
+                                   ((|debug_load_trigger_match) ||
+                                    (|debug_store_trigger_match)) &&
+                                   !debug_halted && !core_debug.halt_req &&
+                                   !debug_freeze_pipe && !lsu_req_outstanding_q;
+  assign debug_trigger_halt = debug_data_trigger_halt ||
+                              debug_execute_trigger_halt;
   assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall ||
                             debug_stop_fetch;
   assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall ||
@@ -575,7 +597,8 @@ module core_int_datapath (
   );
 
   assign dmem_req_valid_o = debug_mem_req_active ||
-                            (lsu_req_valid_raw && !lsu_req_outstanding_q);
+                            (lsu_req_valid_raw && !lsu_req_outstanding_q &&
+                             !debug_data_trigger_halt);
   assign dmem_req_addr_o = debug_mem_req_active ? core_debug.mem_req_addr :
                                                   lsu_req_addr;
   assign dmem_req_write_o = debug_mem_req_active ? core_debug.mem_req_write :
