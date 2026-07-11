@@ -32,6 +32,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | OpenOCD smoke | Check external debugger server compatibility | Run OpenOCD remote_bitbang against `Vwasp1` and require TAP, DTM, hart, XLEN, and `misa` discovery. |
 | GDB smoke | Check external GDB debug access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs/PC, execute native `stepi`, hit an execute-address hardware breakpoint, detach, and exit. |
 | GDB stress | Check repeated external debugger operations | Reuse the OpenOCD/GDB harness to write/read a GPR, single-step the OTP loop, delete/reinstall hardware triggers, and hit two hardware breakpoints at `0x0` and `0x4`. |
+| GDB long stress | Check longer debugger stability with both triggers resident | Reuse the OpenOCD/GDB harness to write/read multiple GPRs, single-step the OTP loop, keep two hardware breakpoints installed simultaneously, continue through six breakpoint hits, reset-halt, and recheck GPR access. |
 | Cache/runtime metrics | Measure cache hit rate and execution efficiency | Run all generated OTP C firmware images with `+WASP1_METRICS` and summarize cycles, retired instructions, IPC/CPI, and I/D cache hit rates. |
 | Idle peripheral stability | Check inactive peripherals stay benign | Run additional cycles and ensure WDG reset and I2C OE remain deasserted. |
 
@@ -58,9 +59,10 @@ handler, that the
 SoC JTAG pins reach the integrated Debug Module, and that an automated external
 OpenOCD/GDB process can complete the debug smoke, including halt, register
 read, PC memory disassembly through Access Memory, native GDB `stepi`, and an
-execute-address hardware breakpoint. It also verifies a longer GDB stress path
-with GPR write/read, trigger delete/reinstall, and two hardware breakpoints at
-separate OTP addresses.
+execute-address hardware breakpoint. It also verifies GDB stress paths with GPR
+write/read, trigger delete/reinstall, two hardware breakpoints at separate OTP
+addresses, simultaneous two-trigger residency, repeated breakpoint hits, and
+post-reset GPR access.
 The metrics run records cache hit rates and runtime efficiency for each current
 generated C firmware image so regressions can be compared against a stable
 baseline.
@@ -75,7 +77,7 @@ the DMA copy firmware simulation,
 the UART IRQ firmware simulation, the UART RX IRQ firmware simulation,
 the DMA IRQ firmware simulation,
 the GPIO IRQ firmware simulation, the timer IRQ firmware simulation,
-remote-bitbang smoke, OpenOCD smoke, GDB smoke, and GDB stress must pass
+remote-bitbang smoke, OpenOCD smoke, GDB smoke, GDB stress, and GDB long stress must pass
 without `$error`, `$fatal`, or debugger command failure. The cache/runtime
 metrics target must complete every selected firmware image and emit one metrics
 row per image.

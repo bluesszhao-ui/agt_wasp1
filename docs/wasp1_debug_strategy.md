@@ -30,9 +30,10 @@ debug
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
 | 2 | abstract command, DPC readback, DCSR.step single-step |
 | 3 | physical Access Memory through halted core and native GDB `stepi` smoke |
-| 4 | one execute-address hardware breakpoint through Debug Spec trigger CSRs |
-| 5 | FT2232H external debugger pinout/OpenOCD config, schematic/PCB, FPGA/board bring-up |
-| 6 | longer debugger stress, multiple triggers, optional system bus or program-buffer memory access |
+| 4 | two execute-address hardware breakpoints through Debug Spec trigger CSRs |
+| 5 | longer debugger stress with simultaneous two-trigger residency |
+| 6 | FT2232H external debugger pinout/OpenOCD config, schematic/PCB, FPGA/board bring-up |
+| 7 | optional system bus, program-buffer memory access, and data/load/store triggers |
 
 ## 4. Core Interaction
 

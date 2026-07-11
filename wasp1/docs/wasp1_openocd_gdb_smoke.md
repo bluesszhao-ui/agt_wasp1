@@ -58,8 +58,14 @@ The longer debugger stress regression is:
 make -C wasp1 sim-openocd-gdb-stress
 ```
 
-It uses the same simulator/OpenOCD harness with a different GDB script and log
-prefix.
+The longest current debugger stress regression is:
+
+```text
+make -C wasp1 sim-openocd-gdb-long-stress
+```
+
+Both stress targets use the same simulator/OpenOCD harness with different GDB
+scripts and log prefixes.
 
 ## 3. Local Remote-Bitbang Smoke
 
@@ -114,19 +120,26 @@ The stress script additionally writes and reads one GPR through GDB, checks one
 known `stepi` PC transition on the two-instruction OTP loop, deletes/reinstalls
 hardware breakpoints, and hits both `hbreak *0x0` and `hbreak *0x4`.
 
+The long-stress script writes and reads multiple GPRs, checks the same known
+`stepi` transition, keeps `hbreak *0x0` and `hbreak *0x4` installed at the same
+time, continues through six breakpoint hits, reset-halts again, verifies a
+post-reset GPR write/read, and detaches.
+
 ## 6. Current Status
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
 are verified. The current debug implementation can connect, halt, read GPRs and
 PC, disassemble through Access Memory, execute native `stepi`, use one
 OpenOCD/GDB hardware breakpoint in the smoke script, and use two hardware
-breakpoints in the stress script.
+breakpoints in the stress and long-stress scripts.
 
 Native GDB `stepi` is now part of the automated process smoke. The checked
 script reads the current PC, disassembles the instruction through physical
 Access Memory, executes `stepi`, rereads PC, and fails if PC did not change.
 The stress script additionally installs `hbreak *0x0` and `hbreak *0x4`,
-continues, and fails unless GDB stops with the expected PC each time. Program
+continues, and fails unless GDB stops with the expected PC each time. The
+long-stress script keeps both hardware breakpoints resident simultaneously and
+checks repeated hits at `0x4`, `0x0`, `0x4`, `0x0`, `0x4`, and `0x0`. Program
 buffer execution, System Bus Access, and data/load/store trigger workflows
 remain later debug milestones.
 
@@ -161,5 +174,21 @@ Hardware assisted breakpoint 1 at 0x0
 wasp1_gdb_stress_hbreak0_pass
 Hardware assisted breakpoint 2 at 0x4
 wasp1_gdb_stress_hbreak4_pass
+[Inferior 1 (Remote target) detached]
+```
+
+Observed GDB long stress:
+
+```text
+t0             0x11112222
+t1             0x33334444
+t2             0x55556666
+wasp1_gdb_long_reg_pass
+wasp1_gdb_long_step_pass
+Hardware assisted breakpoint 1 at 0x0
+Hardware assisted breakpoint 2 at 0x4
+wasp1_gdb_long_dual_hbreak_pass
+s0             0x77778888
+wasp1_gdb_long_post_reset_pass
 [Inferior 1 (Remote target) detached]
 ```

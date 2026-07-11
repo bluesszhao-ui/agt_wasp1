@@ -20,7 +20,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress clean
 
 all: lint
 
@@ -206,6 +206,24 @@ sim-openocd-gdb-stress: sim-rbb-build
 		--expect-token wasp1_gdb_stress_hbreak4_pass \
 		> logs/sim_openocd_gdb_stress.log 2>&1
 	@cat logs/sim_openocd_gdb_stress.log
+
+sim-openocd-gdb-long-stress: sim-rbb-build
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p logs
+	python3 dv/wasp1_openocd_gdb_smoke.py \
+		--sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
+		--openocd-cfg dv/openocd/wasp1_remote_bitbang.cfg \
+		--gdb-script dv/gdb/wasp1_debug_long_stress.gdb \
+		--otp-hex $(GDB_OTP_HEX) \
+		--rbb-port $(RBB_PORT) \
+		--log-prefix sim_openocd_gdb_long_stress \
+		--pass-label wasp1_openocd_gdb_long_stress \
+		--expect-token wasp1_gdb_long_reg_pass \
+		--expect-token wasp1_gdb_long_step_pass \
+		--expect-token wasp1_gdb_long_dual_hbreak_pass \
+		--expect-token wasp1_gdb_long_post_reset_pass \
+		> logs/sim_openocd_gdb_long_stress.log 2>&1
+	@cat logs/sim_openocd_gdb_long_stress.log
 
 lint-ic:
 	@mkdir -p build logs

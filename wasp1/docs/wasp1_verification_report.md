@@ -21,6 +21,7 @@ make -C wasp1 sim-timer-irq
 make -C wasp1 sim-rbb-smoke
 make -C wasp1 sim-openocd-gdb-smoke
 make -C wasp1 sim-openocd-gdb-stress
+make -C wasp1 sim-openocd-gdb-long-stress
 make -C wasp1 sim-cache-metrics
 ```
 
@@ -46,6 +47,7 @@ make -C wasp1 sim-cache-metrics
 | Remote-bitbang socket smoke | PASS |
 | Automated OpenOCD/GDB process smoke | PASS |
 | Automated OpenOCD/GDB stress | PASS |
+| Automated OpenOCD/GDB long stress | PASS |
 | Cache/runtime metrics sweep | PASS |
 
 Simulation output:
@@ -81,6 +83,8 @@ GDB: registers read, PC visible, stepi PASS, hbreak PASS, detach PASS
 wasp1_openocd_gdb_smoke PASS
 GDB stress: register write/read PASS, stepi PASS, hbreak 0x0 PASS, hbreak 0x4 PASS
 wasp1_openocd_gdb_stress PASS
+GDB long stress: multi-register PASS, stepi PASS, dual-resident hbreak PASS, post-reset GPR PASS
+wasp1_openocd_gdb_long_stress PASS
 WASP1_CACHE_METRICS_ROW label=system_stress cycles=73727 retired=9027 ipc=0.122 cpi=8.167 ic_hit_pct=87.2 dc_hit_pct=92.7
 ```
 
@@ -97,6 +101,7 @@ WASP1_CACHE_METRICS_ROW label=system_stress cycles=73727 retired=9027 ipc=0.122 
 | Remote-bitbang run | Launch `Vwasp1` socket harness and connect Python remote-bitbang client | TCP JTAG path returns IDCODE/DTMCS and DMI `dmstatus` success | PASS |
 | OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, two triggers discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
 | OpenOCD/GDB stress run | Reuse the remote-bitbang process harness with `wasp1_debug_stress.gdb` | GDB writes/reads `t0=0x12345678`, single-steps from `0x4` to `0x0`, deletes/reinstalls breakpoints, and hits hardware breakpoints at `0x0` and `0x4` | PASS |
+| OpenOCD/GDB long-stress run | Reuse the remote-bitbang process harness with `wasp1_debug_long_stress.gdb` | GDB writes/reads `t0/t1/t2`, single-steps from `0x4` to `0x0`, installs breakpoints at `0x0` and `0x4` simultaneously, continues through six alternating hits, reset-halts, writes/reads `s0`, and detaches | PASS |
 | Cache metrics sweep | Build `tb_wasp1` once and run each generated C OTP image with `+WASP1_METRICS` | `logs/cache_metrics.csv` and `logs/cache_metrics.md` contain one metrics row per firmware image with cycles, retired count, IPC/CPI, and I/D cache hit rates | PASS |
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
@@ -118,9 +123,10 @@ This is an integration smoke test, not a full system software test. The
 OpenOCD/GDB process path is now automated and verified for connect, halt,
 register read, PC read, PC disassembly through Access Memory, native GDB
 `stepi` with PC-change assertion, an execute-address hardware breakpoint
-through `hbreak`, and detach over remote-bitbang JTAG. A longer GDB stress
-target now also covers GPR write/read, hardware breakpoint delete/reinstall, and
-two hardware breakpoint hits at separate OTP addresses.
+through `hbreak`, and detach over remote-bitbang JTAG. GDB stress targets now
+also cover GPR write/read, hardware breakpoint delete/reinstall, two hardware
+breakpoint hits at separate OTP addresses, simultaneous two-breakpoint
+residency, repeated alternating hits, and post-reset GPR access.
 The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
@@ -137,5 +143,5 @@ The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
 interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes richer debug
-operations such as multiple simultaneous breakpoints, data/load/store triggers,
+operations such as data/load/store triggers, optional SBA/program-buffer flows,
 longer randomized software stress, and interrupt-heavy stress regressions.

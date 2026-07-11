@@ -16,7 +16,7 @@ behavior.
 | JTAG idle levels | Scope TCK/TMS/TDI/TDO/TRST/SRST | Idle levels match schematic and OpenOCD reset config |
 | TAP scan | Run OpenOCD target probe | IDCODE `0x100001cf` is detected |
 | DTM/DM discovery | Run OpenOCD RISC-V examine | hart 0, XLEN=32, and `misa=0x40000100` are detected |
-| GDB attach | Run wasp1 GDB smoke | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, then detaches |
+| GDB attach | Run wasp1 GDB smoke/stress | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, and the stress flow hits simultaneous `hbreak *0x0` / `hbreak *0x4`, then detaches |
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
 | Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A schematic input, netlist, BOM, and docs remain mutually consistent |
 
@@ -27,7 +27,7 @@ behavior.
 | 0s-5s | Plug debugger into host with target disconnected | USB enumerates; target drivers remain high-Z | TBD |
 | 5s-15s | Power target and connect VREF | level shifters enable; reset pins idle high | TBD |
 | 15s-30s | Start OpenOCD | TAP/DTM/hart detected | TBD |
-| 30s-60s | Run GDB smoke | register packet, PC read, `stepi`, and `hbreak` pass | TBD |
+| 30s-60s | Run GDB smoke/stress | register packet, PC read, `stepi`, one `hbreak`, and dual-resident `hbreak` stress pass | TBD |
 | 60s-90s | Open UART channel | console or OTP programming transaction passes | TBD |
 | offline | Run collateral checker | config, documentation, Rev A netlist, and BOM checks pass | PASS before hardware |
 
