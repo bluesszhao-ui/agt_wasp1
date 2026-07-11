@@ -24,6 +24,7 @@ make -C wasp1 sim-rbb-smoke
 make -C wasp1 sim-openocd-gdb-smoke
 make -C wasp1 sim-openocd-gdb-stress
 make -C wasp1 sim-openocd-gdb-long-stress
+make -C wasp1 sim-openocd-gdb-watchpoint
 make -C wasp1 sim-cache-metrics
 ```
 
@@ -52,6 +53,7 @@ make -C wasp1 sim-cache-metrics
 | Automated OpenOCD/GDB process smoke | PASS |
 | Automated OpenOCD/GDB stress | PASS |
 | Automated OpenOCD/GDB long stress | PASS |
+| Automated OpenOCD/GDB load/store watchpoints | PASS |
 | Cache/runtime metrics sweep | PASS |
 
 Simulation output:
@@ -97,6 +99,8 @@ GDB stress: register write/read PASS, stepi PASS, hbreak 0x0 PASS, hbreak 0x4 PA
 wasp1_openocd_gdb_stress PASS
 GDB long stress: multi-register PASS, stepi PASS, dual-resident hbreak PASS, post-reset GPR PASS
 wasp1_openocd_gdb_long_stress PASS
+GDB watchpoints: rwatch observed memory=0, watch observed old=0/new=0x55, detach PASS
+wasp1_openocd_gdb_watchpoint PASS
 WASP1_CACHE_METRICS_ROW label=system_stress cycles=73727 retired=9027 ipc=0.122 cpi=8.167 ic_hit_pct=87.2 dc_hit_pct=92.7
 WASP1_CACHE_METRICS_ROW label=random_irq_stress cycles=111920 retired=9999 ipc=0.089 cpi=11.193 ic_hit_pct=77.9 dc_hit_pct=91.4
 ```
@@ -115,6 +119,8 @@ WASP1_CACHE_METRICS_ROW label=random_irq_stress cycles=111920 retired=9999 ipc=0
 | OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, two triggers discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
 | OpenOCD/GDB stress run | Reuse the remote-bitbang process harness with `wasp1_debug_stress.gdb` | GDB writes/reads `t0=0x12345678`, single-steps from `0x4` to `0x0`, deletes/reinstalls breakpoints, and hits hardware breakpoints at `0x0` and `0x4` | PASS |
 | OpenOCD/GDB long-stress run | Reuse the remote-bitbang process harness with `wasp1_debug_long_stress.gdb` | GDB writes/reads `t0/t1/t2`, single-steps from `0x4` to `0x0`, installs breakpoints at `0x0` and `0x4` simultaneously, continues through six alternating hits, reset-halts, writes/reads `s0`, and detaches | PASS |
+| OpenOCD/GDB watchpoint phase 1 | Load the register-gated watchpoint OTP image, halt at PC `0x0`, clear D-SRAM base through Access Memory, write `t0=0x20000000`, install `rwatch`, and continue | GDB reports the read watchpoint while the target word is still zero; raw trigger or GDB step-normalized DCSR cause is accepted | PASS |
+| OpenOCD/GDB watchpoint phase 2 | Remove `rwatch`, reach the store, install `watch`, and continue | GDB reports `Old value=0`, `New value=85`; D-SRAM reads back `0x00000055`, the watchpoint is deleted, and GDB detaches cleanly | PASS |
 | Cache metrics sweep | Build `tb_wasp1` once and run each generated C OTP image with `+WASP1_METRICS` | `logs/cache_metrics.csv` and `logs/cache_metrics.md` contain one metrics row per firmware image with cycles, retired count, IPC/CPI, and I/D cache hit rates | PASS |
 | 3us-3.2us | Continue idle peripheral window | WDG reset remains low; I2C drive enables remain low | PASS |
 | 105ns-16.705us | Software-loaded run waits for UART TX FIFO push | OTP firmware fetches from OTP, initializes UART, and writes first byte while JTAG smoke is also checked | PASS |
@@ -142,6 +148,12 @@ through `hbreak`, and detach over remote-bitbang JTAG. GDB stress targets now
 also cover GPR write/read, hardware breakpoint delete/reinstall, two hardware
 breakpoint hits at separate OTP addresses, simultaneous two-breakpoint
 residency, repeated alternating hits, and post-reset GPR access.
+The dedicated watchpoint regression now covers OpenOCD/GDB `rwatch` and
+`watch` commands against D-SRAM, including a clean pre-access gate, load/store
+trigger installation, read-before-write ordering, and the observed zero-to-85
+memory transition. GDB may hide the raw timing-before stop by single-stepping;
+the core datapath report separately proves that the raw matched access issues
+no request or architectural side effect before Debug Mode entry.
 The CPU-controlled OTP programming
 register flow is now covered by a directed firmware smoke test. End-to-end DMA
 memory-copy through real D-SRAM contents is also covered by generated firmware.
@@ -163,6 +175,6 @@ external sources and verifies DMA-before-GPIO priority order in software.
 The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
 interrupt paths are covered through INTC claim/complete and MEIP. The machine
 timer interrupt path is covered by a generated firmware image that returns
-through the C trap handler. Remaining top-level work includes richer debug
-operations such as data/load/store triggers, optional SBA/program-buffer flows,
-and longer-duration randomized software campaigns beyond the four-seed baseline.
+through the C trap handler. Remaining top-level work includes optional
+SBA/program-buffer flows and longer-duration randomized software campaigns
+beyond the four-seed baseline.

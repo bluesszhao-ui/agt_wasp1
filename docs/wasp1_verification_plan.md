@@ -82,7 +82,7 @@ DMA memory copy
 OTP programming routine running from I-SRAM
 I-cache refill from OTP
 D-cache load/store to D-SRAM
-OpenOCD/GDB debug attach smoke test
+OpenOCD/GDB debug attach, breakpoint, and load/store watchpoint tests
 ```
 
 ## 6. Coverage Intent

@@ -77,12 +77,13 @@ the RISC-V Debug Module and then to the tile `debug_if` channel.
 
 OpenOCD/GDB process-level validation is part of the top-level smoke
 verification and uses the remote-bitbang JTAG path. The current debug path
-supports native GDB `stepi` and one execute-address hardware breakpoint through
-the Debug Spec trigger CSR path.
+supports native GDB `stepi`, two execute-address hardware breakpoints, and
+exact-address load/store watchpoints through the Debug Spec trigger CSR path.
 
 ## 7. Verification Requirements
 
 Verification must cover SoC elaboration, reset defaults, core-side fetch
 activity through the OTP/fabric path, JTAG Debug Module smoke access,
-OpenOCD/GDB connect/register/step/hardware-breakpoint smoke, benign idle IO
-behavior, and target macro lint for IC and Xilinx Virtex-7 FPGA builds.
+OpenOCD/GDB connect/register/step/hardware-breakpoint/load-store-watchpoint
+smoke, benign idle IO behavior, and target macro lint for IC and Xilinx
+Virtex-7 FPGA builds.

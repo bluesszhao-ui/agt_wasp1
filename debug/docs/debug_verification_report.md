@@ -68,7 +68,8 @@ debug_jtag_verification_report.md
 OpenOCD/GDB end-to-end smoke, including native GDB `stepi` over remote-bitbang,
 and two hardware breakpoint `hbreak` locations, is covered by the wasp1
 top-level verification report. Precise core-side load/store trigger behavior is
-covered by the core datapath verification report. End-to-end OpenOCD/GDB
-watchpoint regression, program buffer, System Bus Access, debug ROM,
+covered by the core datapath verification report. OpenOCD/GDB `rwatch` and
+`watch` are covered by the wasp1 top-level report. Program buffer, System Bus
+Access, debug ROM,
 architectural CSR side effects beyond debugger probes, and multi-hart behavior
 beyond nonexistent-hart reporting remain future work.

@@ -35,6 +35,7 @@ elaboration, reset connectivity, and first fetch-path activity.
 | GDB smoke | Check external GDB debug access | Connect `riscv64-elf-gdb` through OpenOCD, reset-halt, read GPRs/PC, execute native `stepi`, hit an execute-address hardware breakpoint, detach, and exit. |
 | GDB stress | Check repeated external debugger operations | Reuse the OpenOCD/GDB harness to write/read a GPR, single-step the OTP loop, delete/reinstall hardware triggers, and hit two hardware breakpoints at `0x0` and `0x4`. |
 | GDB long stress | Check longer debugger stability with both triggers resident | Reuse the OpenOCD/GDB harness to write/read multiple GPRs, single-step the OTP loop, keep two hardware breakpoints installed simultaneously, continue through six breakpoint hits, reset-halt, and recheck GPR access. |
+| GDB data watchpoints | Check external load/store trigger workflows | Run a register-gated OTP load/store loop, arm GDB `rwatch` and `watch` at D-SRAM base, require both stops, verify read-watchpoint memory remains zero before the store, and verify the write changes the word from zero to `0x55`. |
 | Cache/runtime metrics | Measure cache hit rate and execution efficiency | Run all generated OTP C firmware images with `+WASP1_METRICS` and summarize cycles, retired instructions, IPC/CPI, and I/D cache hit rates. |
 | Idle peripheral stability | Check inactive peripherals stay benign | Run additional cycles and ensure WDG reset and I2C OE remain deasserted. |
 
@@ -69,10 +70,14 @@ execute-address hardware breakpoint. It also verifies GDB stress paths with GPR
 write/read, trigger delete/reinstall, two hardware breakpoints at separate OTP
 addresses, simultaneous two-trigger residency, repeated breakpoint hits, and
 post-reset GPR access.
+The data-watchpoint run additionally proves OpenOCD/GDB can configure and hit
+load-only and store-only trigger modes against a deterministic D-SRAM address.
+It checks the user-visible GDB stop semantics and memory transition; the raw
+pre-request halt/DPC/cause contract remains directly checked by the core
+datapath testbench because GDB may internally step over timing-before triggers.
 The metrics run records cache hit rates and runtime efficiency for each current
 generated C firmware image so regressions can be compared against a stable
 baseline.
-Data/load/store breakpoint workflows remain later scope.
 
 ## 4. Pass Criteria
 
@@ -85,7 +90,8 @@ the DMA copy firmware simulation,
 the UART IRQ firmware simulation, the UART RX IRQ firmware simulation,
 the DMA IRQ firmware simulation,
 the GPIO IRQ firmware simulation, the timer IRQ firmware simulation,
-remote-bitbang smoke, OpenOCD smoke, GDB smoke, GDB stress, and GDB long stress must pass
+remote-bitbang smoke, OpenOCD smoke, GDB smoke, GDB stress, GDB long stress,
+and GDB data-watchpoint regression must pass
 without `$error`, `$fatal`, or debugger command failure. The cache/runtime
 metrics target must complete every selected firmware image and emit one metrics
 row per image.

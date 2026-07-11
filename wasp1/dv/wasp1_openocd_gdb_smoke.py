@@ -64,23 +64,38 @@ def terminate_process(proc: subprocess.Popen[str], timeout_s: float = 5.0) -> st
     return proc.stdout.read()
 
 
-def run_checked(cmd: list[str], cwd: Path, log_path: Path) -> subprocess.CompletedProcess[str]:
-    """Run a foreground tool, tee its output to a log file, and require success."""
-    completed = subprocess.run(
-        cmd,
-        cwd=cwd,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-    log_path.write_text(completed.stdout, encoding="utf-8")
+def run_checked(
+    cmd: list[str], cwd: Path, log_path: Path, timeout_s: float
+) -> subprocess.CompletedProcess[str]:
+    """Run a foreground tool, stream its log to disk, and require success."""
+    try:
+        with log_path.open("w", encoding="utf-8") as log_out:
+            completed = subprocess.run(
+                cmd,
+                cwd=cwd,
+                text=True,
+                stdout=log_out,
+                stderr=subprocess.STDOUT,
+                check=False,
+                timeout=timeout_s,
+            )
+    except subprocess.TimeoutExpired as exc:
+        tail = log_path.read_text(encoding="utf-8", errors="replace")[-4000:]
+        raise TimeoutError(
+            f"{cmd[0]} exceeded {timeout_s:.0f}s; see {log_path}\n{tail}"
+        ) from exc
+    output = log_path.read_text(encoding="utf-8", errors="replace")
     if completed.returncode != 0:
         raise RuntimeError(
             f"{cmd[0]} exited with {completed.returncode}; see {log_path}\n"
-            f"{completed.stdout}"
+            f"{output}"
         )
-    return completed
+    return subprocess.CompletedProcess(
+        args=completed.args,
+        returncode=completed.returncode,
+        stdout=output,
+        stderr=None,
+    )
 
 
 def main() -> int:
@@ -94,6 +109,7 @@ def main() -> int:
     parser.add_argument("--gdb-port", type=int, default=3333)
     parser.add_argument("--openocd", default="openocd")
     parser.add_argument("--gdb", default="riscv64-elf-gdb")
+    parser.add_argument("--gdb-timeout", type=float, default=60.0)
     parser.add_argument("--logs-dir", default="logs")
     parser.add_argument("--log-prefix", default="sim_openocd_gdb")
     parser.add_argument(
@@ -171,6 +187,7 @@ def main() -> int:
             ],
             repo_module_dir,
             gdb_log,
+            args.gdb_timeout,
         )
 
         openocd_text = openocd_log.read_text(encoding="utf-8", errors="replace")

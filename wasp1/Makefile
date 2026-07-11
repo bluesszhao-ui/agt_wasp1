@@ -5,6 +5,7 @@ TB_WASP1_FILELIST := filelists/tb_wasp1.f
 WASP1_TOP := tb_wasp1
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
 GDB_OTP_HEX ?= dv/gdb/wasp1_debug_step_otp.hex
+GDB_WATCH_OTP_HEX ?= dv/gdb/wasp1_debug_watchpoint_otp.hex
 OTP_PROGRAM_HEX ?= ../llvm_s1/build/smoke/otp_program_otp.hex
 DMA_COPY_HEX ?= ../llvm_s1/build/smoke/dma_copy_otp.hex
 DMA_IRQ_HEX ?= ../llvm_s1/build/smoke/dma_irq_otp.hex
@@ -23,7 +24,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress sim-openocd-gdb-watchpoint clean
 
 all: lint
 
@@ -253,6 +254,22 @@ sim-openocd-gdb-long-stress: sim-rbb-build
 		--expect-token wasp1_gdb_long_post_reset_pass \
 		> logs/sim_openocd_gdb_long_stress.log 2>&1
 	@cat logs/sim_openocd_gdb_long_stress.log
+
+sim-openocd-gdb-watchpoint: sim-rbb-build
+	@mkdir -p logs
+	python3 dv/wasp1_openocd_gdb_smoke.py \
+		--sim $(RBB_OBJ_DIR)/V$(RBB_TOP) \
+		--openocd-cfg dv/openocd/wasp1_remote_bitbang.cfg \
+		--gdb-script dv/gdb/wasp1_debug_watchpoint.gdb \
+		--otp-hex $(GDB_WATCH_OTP_HEX) \
+		--rbb-port $(RBB_PORT) \
+		--gdb-timeout 30 \
+		--log-prefix sim_openocd_gdb_watchpoint \
+		--pass-label wasp1_openocd_gdb_watchpoint \
+		--expect-token wasp1_gdb_rwatch_pass \
+		--expect-token wasp1_gdb_watch_pass \
+		> logs/sim_openocd_gdb_watchpoint.log 2>&1
+	@cat logs/sim_openocd_gdb_watchpoint.log
 
 lint-ic:
 	@mkdir -p build logs

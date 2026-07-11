@@ -64,8 +64,16 @@ The longest current debugger stress regression is:
 make -C wasp1 sim-openocd-gdb-long-stress
 ```
 
-Both stress targets use the same simulator/OpenOCD harness with different GDB
-scripts and log prefixes.
+The load/store watchpoint regression is:
+
+```text
+make -C wasp1 sim-openocd-gdb-watchpoint
+```
+
+All debug targets use the same simulator/OpenOCD harness with different OTP
+images, GDB scripts, expected tokens, and log prefixes. The harness streams GDB
+output directly to its log and enforces a finite GDB timeout so a missed stop
+cannot leave the regression running indefinitely.
 
 ## 3. Local Remote-Bitbang Smoke
 
@@ -125,6 +133,12 @@ The long-stress script writes and reads multiple GPRs, checks the same known
 time, continues through six breakpoint hits, reset-halts again, verifies a
 post-reset GPR write/read, and detaches.
 
+The watchpoint script uses a dedicated register-gated OTP loop. Before GDB
+writes `t0`, the hart spins at PC `0x0` without touching D-SRAM. GDB then clears
+D-SRAM base, writes `t0=0x20000000`, installs `rwatch` for the load and `watch`
+for the store, and verifies the word changes from zero to `0x55` only during
+the store phase.
+
 ## 6. Current Status
 
 The checked-in remote-bitbang smoke and the external OpenOCD/GDB process smoke
@@ -139,9 +153,16 @@ Access Memory, executes `stepi`, rereads PC, and fails if PC did not change.
 The stress script additionally installs `hbreak *0x0` and `hbreak *0x4`,
 continues, and fails unless GDB stops with the expected PC each time. The
 long-stress script keeps both hardware breakpoints resident simultaneously and
-checks repeated hits at `0x4`, `0x0`, `0x4`, `0x0`, `0x4`, and `0x0`. Program
-buffer execution, System Bus Access, and data/load/store trigger workflows
+checks repeated hits at `0x4`, `0x0`, `0x4`, `0x0`, `0x4`, and `0x0`. The
+watchpoint script checks OpenOCD/GDB read and write watchpoint workflows over
+the same remote-bitbang path. Program buffer execution and System Bus Access
 remain later debug milestones.
+
+GDB may internally single-step over a RISC-V timing-before data trigger before
+presenting the stop. Consequently the script accepts the raw trigger cause or
+the normalized step cause and validates the associated PC/memory state. The
+core datapath testbench separately checks the raw contract: matched load/store
+requests are suppressed and DPC captures the matching instruction PC.
 
 Observed OpenOCD probe:
 
@@ -191,4 +212,17 @@ wasp1_gdb_long_dual_hbreak_pass
 s0             0x77778888
 wasp1_gdb_long_post_reset_pass
 [Inferior 1 (Remote target) detached]
+```
+
+Observed GDB watchpoints:
+
+```text
+Hardware read watchpoint 1: *(unsigned int *)$watch_addr
+Value = 0
+wasp1_gdb_rwatch_pass
+Hardware watchpoint 2: *(unsigned int *)$watch_addr
+Old value = 0
+New value = 85
+wasp1_gdb_watch_pass
+wasp1_openocd_gdb_watchpoint PASS
 ```
