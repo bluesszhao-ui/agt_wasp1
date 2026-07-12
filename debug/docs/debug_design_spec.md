@@ -9,22 +9,26 @@ debug_dmi_regs
 debug_halt_ctrl
 debug_abstract_cmd
 debug_reg_access
+debug_progbuf_exec
 ```
 
-`debug_progbuf` storage is now owned by `debug_dmi_regs`, which routes its four
-DMI addresses and exports the full array internally. `debug_progbuf_exec`
-sequencing remains a verified standalone leaf. This wrapper keeps
-`abstractcs.progbufsize=0` until debugger-supplied instructions can execute in
-the halted core.
+`debug_progbuf` storage is owned by `debug_dmi_regs`, which routes four DMI
+words to `debug_progbuf_exec`. Access Register postexec keeps abstract busy,
+sequences words to the core execution channel, consumes EBREAK locally, and
+returns executor cmderr. The wrapper advertises `abstractcs.progbufsize=4`.
 
 The wrapper adds no new architectural register state. Its local logic consists
 of explicit channel wiring, top-level output assignment, and an internal
 abstract-access `debug_if` instance used to satisfy leaf modport ownership.
 
+Editable source: `debug/docs/diagrams/debug_block.graffle`
+Generator: `debug/dv/generate_debug_block_diagram.py`
+Detail level: L3; clock domain: `clk_i/rst_ni` on every SEQ block.
+
 ## 2. Block Diagram
 
 ```text
-       IF DMI from future JTAG DTM
+       IF DMI from JTAG DTM wrapper
               |
               v
    +------------------------+
@@ -32,25 +36,24 @@ abstract-access `debug_if` instance used to satisfy leaf modport ownership.
    | debug_dmi_regs         |
    | DMI regs/response slot |
    +-----+-------------+----+
-         |             |
-         | halt/resume | command/data0/cmderr
-         v             v
-+----------------+   +-----------------------+
-| SEQ clk_i      |   | SEQ clk_i rst_ni      |
-| debug_halt_ctrl|   | debug_abstract_cmd    |
-| hart request   |   | Access Register decode|
-| sticky status  |   +-----------+-----------+
-+-------+--------+               |
-        |                        | decoded GPR command
-        v                        v
- IF core_debug             +----------------------+
- halt/resume/status        | SEQ clk_i rst_ni     |
-                           | debug_reg_access     |
-                           | GPR ready/valid FSM  |
-                           +----------+-----------+
-                                      |
-                                      v
-                              IF core_debug GPR
+         | halt/resume    | command/data0/cmderr    | progbuf0..3
+         v                v                         v
++----------------+  +-----------------------+  +-----------------------+
+| SEQ clk_i      |  | SEQ clk_i rst_ni      |  | SEQ clk_i rst_ni     |
+| debug_halt_ctrl|  | debug_abstract_cmd    |  | debug_progbuf_exec   |
+| hart request   |  | transfer/postexec FSM |->| ordered instruction  |
+| sticky status  |  +-----------+-----------+  | execution FSM        |
++-------+--------+              |              +-----------+-----------+
+        |                       | decoded GPR              |
+        v                       v                          v
+ IF core_debug           +----------------------+   IF core_debug execute
+ halt/resume/status      | SEQ clk_i rst_ni     |   request/response
+                         | debug_reg_access     |
+                         | GPR ready/valid FSM  |
+                         +----------+-----------+
+                                    |
+                                    v
+                            IF core_debug GPR
 ```
 
 Timing-class labels:
@@ -84,6 +87,13 @@ transaction into `debug_reg_access`. It also consumes `core_debug.dpc` for
 abstract CSR reads of `dpc`, consumes `core_debug.dcsr_cause` for `dcsr`
 readback, owns the local `dcsr.step` bit and two trigger CSR images, and
 returns successful read data or cmderr updates to `debug_dmi_regs`.
+
+For Access Register `postexec`, `debug_abstract_cmd` pulses
+`debug_progbuf_exec.start_i` only after any required transfer succeeds. The
+executor reads the parallel Program Buffer image, issues one word at a time on
+`core_debug.exec_req_*`, waits for `core_debug.exec_rsp_*`, and consumes an
+explicit EBREAK locally. Completion error returns to the same abstract command
+before `abstract_busy` clears.
 
 Single-step is a small wrapper-level combinational path:
 
@@ -129,6 +139,7 @@ The top wrapper has no named FSM. Sequential behavior is inherited from:
 | `debug_halt_ctrl` | Halt/resume transaction FSM, resumeack/havereset sticky bits |
 | `debug_abstract_cmd` | Abstract command issue/wait/complete FSM |
 | `debug_reg_access` | Core GPR request/wait/local-response/drop-response FSM |
+| `debug_progbuf_exec` | Program Buffer check/issue/wait/complete FSM |
 
 The wrapper-level state diagram is therefore the leaf FSM composition rather
 than a new independent machine.

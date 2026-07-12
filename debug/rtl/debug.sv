@@ -1,16 +1,16 @@
 `timescale 1ns/1ps
 `include "wasp1_target_defs.svh"
 
-// Stage-1 single-hart RISC-V Debug Module top.
+// Single-hart RISC-V Debug Module top.
 //
 // This wrapper connects the verified DMI register file, halt/resume
 // controller, Access Register abstract-command decoder, and halted-core GPR
-// access sequencer. The external JTAG DTM/TAP is intentionally not included in
-// this boundary; it will drive the DMI ready/valid interface in a later stage.
+// access and Program Buffer execution sequencers. The external JTAG DTM/TAP is
+// intentionally a separate wrapper that drives this DMI ready/valid boundary.
 module debug (
   input  logic       clk_i,              // Debug Module clock shared with DMI/core-debug channels.
   input  logic       rst_ni,             // Active-low asynchronous Debug Module reset.
-  debug_dmi_if.dm    dmi,                // DMI request/response channel from the future JTAG DTM.
+  debug_dmi_if.dm    dmi,                // DMI request/response channel from the external JTAG DTM wrapper.
   debug_if.dm        core_debug,         // Halt/resume and GPR debug channel to the single core.
   input  logic       hart_reset_event_i, // One-cycle hart reset observation for dmstatus.havereset.
   output logic       dmactive_o,         // Debug Module active state, useful for SoC reset/debug glue.
@@ -33,7 +33,7 @@ module debug (
   logic [31:0] command;              // Raw abstract command register value.
   logic [31:0] data0;                // Shared abstract data register value.
   logic [31:0] data1;                // Shared abstract memory address register.
-  logic [debug_dmi_pkg::PROGBUF_WORD_COUNT-1:0][31:0] progbuf_words; // Stored future Program Buffer image.
+  logic [debug_dmi_pkg::PROGBUF_WORD_COUNT-1:0][31:0] progbuf_words; // Stored Program Buffer image for execution.
   logic        abstract_busy;        // Abstract command executor is not idle.
   logic        command_error_valid;  // Abstract executor has nonzero cmderr update.
   logic [2:0]  command_error;        // cmderr value from abstract executor.
@@ -64,6 +64,14 @@ module debug (
   logic [31:0] mem_rsp_rdata;        // Halted core memory response data.
   logic        mem_rsp_error;        // Halted core memory response error.
   logic        mem_flush;            // Abort/drain memory command on DM/hart loss.
+  logic        progbuf_start;         // Abstract command starts Program Buffer execution.
+  logic        progbuf_exec_busy;     // Program Buffer executor is sequencing words.
+  logic        progbuf_done;          // One-cycle Program Buffer completion pulse.
+  logic [2:0]  progbuf_error;         // Program Buffer completion cmderr encoding.
+  logic        progbuf_instr_valid;   // Current Program Buffer word request is valid.
+  logic [31:0] progbuf_instr;         // Current Program Buffer RV32 instruction word.
+  logic [1:0]  progbuf_instr_index;   // Current Program Buffer word index.
+  logic        progbuf_rsp_ready;     // Executor accepts the core completion response.
   logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid; // Per-slot execute compare enables.
   logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr; // Per-slot execute compare addresses.
   logic [debug_dmi_pkg::ABSTRACT_TRIGGER_COUNT-1:0] trigger_load_valid; // Per-slot load compare enables.
@@ -105,13 +113,13 @@ module debug (
   assign core_debug.mem_req_wdata = mem_cmd_wdata;
   assign core_debug.mem_req_wstrb = mem_cmd_wstrb;
   assign core_debug.mem_rsp_ready = mem_rsp_ready;
-  // Program Buffer execution is connected in the following debug-top
-  // milestone. Keep the new core execution channel quiescent until the
-  // verified debug_progbuf_exec sequencer owns these signals.
-  assign core_debug.exec_req_valid = 1'b0;
-  assign core_debug.exec_req_instr = 32'h0000_0013;
-  assign core_debug.exec_req_index = 2'd0;
-  assign core_debug.exec_rsp_ready = 1'b0;
+  // The Program Buffer executor owns the halted-core instruction channel.
+  // Abstract-command busy remains asserted from postexec start through the
+  // executor's registered completion, so DMI payload writes stay protected.
+  assign core_debug.exec_req_valid = progbuf_instr_valid;
+  assign core_debug.exec_req_instr = progbuf_instr;
+  assign core_debug.exec_req_index = progbuf_instr_index;
+  assign core_debug.exec_rsp_ready = progbuf_rsp_ready;
   assign core_debug.trigger_execute_valid = trigger_execute_valid;
   assign core_debug.trigger_execute_addr = trigger_execute_addr;
   assign core_debug.trigger_load_valid = trigger_load_valid;
@@ -201,6 +209,9 @@ module debug (
     .mem_rsp_ready_o(mem_rsp_ready),
     .mem_rsp_rdata_i(mem_rsp_rdata),
     .mem_rsp_error_i(mem_rsp_error),
+    .progbuf_start_o(progbuf_start),
+    .progbuf_done_i(progbuf_done),
+    .progbuf_error_i(progbuf_error),
     .dcsr_step_o(dcsr_step),
     .trigger_execute_valid_o(trigger_execute_valid),
     .trigger_execute_addr_o(trigger_execute_addr),
@@ -209,6 +220,25 @@ module debug (
     .trigger_data_addr_o(trigger_data_addr),
     .reg_flush_o(reg_flush),
     .mem_flush_o(mem_flush)
+  );
+
+  debug_progbuf_exec u_debug_progbuf_exec (
+    .clk_i(clk_i),
+    .rst_ni(rst_ni),
+    .dmactive_i(dmactive),
+    .hart_halted_i(hart_halted),
+    .start_i(progbuf_start),
+    .words_i(progbuf_words),
+    .busy_o(progbuf_exec_busy),
+    .done_o(progbuf_done),
+    .error_o(progbuf_error),
+    .instr_valid_o(progbuf_instr_valid),
+    .instr_ready_i(core_debug.exec_req_ready),
+    .instr_o(progbuf_instr),
+    .instr_index_o(progbuf_instr_index),
+    .instr_rsp_valid_i(core_debug.exec_rsp_valid),
+    .instr_rsp_ready_o(progbuf_rsp_ready),
+    .instr_rsp_error_i(core_debug.exec_rsp_error)
   );
 
   debug_reg_access u_debug_reg_access (

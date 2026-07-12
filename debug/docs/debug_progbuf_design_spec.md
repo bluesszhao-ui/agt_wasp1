@@ -14,7 +14,7 @@ detail level: L1
 clock domain: `clk_i/rst_ni`
 
 The OmniGraffle diagram separates storage-control inputs, combinational index
-selection, the sequential word array, and DMI/future-executor outputs into
+selection, the sequential word array, and DMI/executor outputs into
 distinct `IF`, `COMB`, and `SEQ` blocks. The visible 5 pt grid, native line
 segments, V-shaped arrows, endpoint alignment, and element spacing pass the
 repository coordinate/overlap audit.
@@ -50,13 +50,10 @@ of DMI response timing and executor sequencing stays outside this leaf.
 
 ## 5. Integration Boundary
 
-The storage leaf is now instantiated in `debug_dmi_regs`, where DMI
-`progbuf0..3` reads/writes and busy protection are verified. The standalone
-`debug_progbuf_exec` sequencer is also independently verified. The next
-integration milestone will route postexec and add the halted-core instruction
-endpoint. Until that complete path passes,
-`debug_dmi_regs.abstractcs.progbufsize` remains zero and OpenOCD continues using
-the already verified abstract memory path.
+The storage leaf is instantiated in `debug_dmi_regs`, where DMI `progbuf0..3`
+reads/writes, busy protection, `progbufsize=4`, and WARL-zero `abstractauto`
+are verified. `debug_progbuf_exec`, Access Register postexec, and the
+halted-core execution endpoint are integrated and covered by debug/wasp1 tests.
 
 ## 6. Target Behavior
 

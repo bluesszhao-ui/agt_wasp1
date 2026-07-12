@@ -4,9 +4,8 @@
 // Four-word RISC-V Debug Module Program Buffer storage.
 //
 // This leaf owns only debugger-visible instruction words. Abstract-command
-// execution is intentionally outside this storage milestone, so the array has
-// one DMI-side write port, one combinational read port, and a future executor
-// view of all words.
+// execution remains outside the storage leaf itself, so the array has one
+// DMI-side write port, one combinational read port, and a full executor view.
 module debug_progbuf #(
   parameter int unsigned WORD_COUNT = debug_dmi_pkg::PROGBUF_WORD_COUNT
 ) (
@@ -18,7 +17,7 @@ module debug_progbuf #(
   input  logic [31:0]                   write_data_i,// RV32 instruction word written by debugger.
   input  logic [$clog2(WORD_COUNT)-1:0] read_index_i,// Combinational DMI read word index.
   output logic [31:0]                   read_data_o, // Current selected Program Buffer word.
-  output logic [WORD_COUNT-1:0][31:0]   words_o     // Full future abstract-executor instruction view.
+  output logic [WORD_COUNT-1:0][31:0]   words_o     // Full abstract-executor instruction view.
 );
   // Program Buffer words are ordinary flops in this minimal four-word design.
   logic [WORD_COUNT-1:0][31:0] words_q;

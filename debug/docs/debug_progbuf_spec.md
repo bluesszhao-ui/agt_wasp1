@@ -2,11 +2,10 @@
 
 ## 1. Purpose
 
-`debug_progbuf` stores four RV32 instruction words for the future RISC-V Debug
-Module Program Buffer execution path. This milestone verifies storage only. It
-does not itself decode DMI addresses, advertise Program Buffer capability
-through `abstractcs`, or execute debugger-supplied instructions. The later
-`debug_dmi_regs` integration owns verified `progbuf0..3` address routing.
+`debug_progbuf` stores four RV32 instruction words for the integrated RISC-V
+Debug Module Program Buffer execution path. This leaf verifies storage only;
+`debug_dmi_regs` owns DMI routing/capability and `debug_progbuf_exec` owns
+sequencing toward the core.
 
 ## 2. External Contract
 
@@ -20,7 +19,7 @@ through `abstractcs`, or execute debugger-supplied instructions. The later
 | `write_data_i` | input | 32-bit RV32 instruction payload |
 | `read_index_i` | input | Selects the combinational DMI-side read word |
 | `read_data_o` | output | Current selected word, without a registered response stage |
-| `words_o` | output | Full four-word view reserved for the future executor |
+| `words_o` | output | Full four-word view for the integrated executor |
 
 ## 3. Functional Requirements
 
@@ -38,18 +37,18 @@ Update priority is:
 
 `clear_i` and `write_valid_i` may be asserted together; clear must win.
 
-## 4. Unsupported Scope
+## 4. External Integration Scope
 
 ```text
 DMI address routing inside this leaf (provided by debug_dmi_regs integration)
-abstractcs.progbufsize advertisement
-Access Register postexec behavior
-implicit ebreak execution
-core instruction injection and exception reporting
+abstractcs.progbufsize advertisement: debug_dmi_regs
+Access Register postexec behavior: debug_abstract_cmd
+explicit EBREAK termination: debug_progbuf_exec
+core instruction injection and exception reporting: core_int_datapath
 ```
 
-Those functions must be added and verified together so external debuggers are
-never told that Program Buffer execution exists when only storage is present.
+Those functions are verified at their owning module and the debug/wasp1
+integration levels.
 
 ## 5. Target Support
 

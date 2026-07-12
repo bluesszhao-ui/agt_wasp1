@@ -45,10 +45,9 @@ and 64 deterministic-random legal programs are covered. The three accepted
 requests without responses are intentional outstanding-transaction abort cases:
 halt loss, DM abort, and reset.
 
-## 5. Residual Integration Scope
+## 5. Integration Coverage
 
-The mock core validates the sequencer contract but does not execute RV32
-instructions. DMI storage routing is now verified separately in
-`debug_dmi_regs_verification_report.md`; postexec dispatch, halted-core
-instruction injection, architectural side-effect checks, and OpenOCD/GDB
-Program Buffer regression remain gated until the complete path is integrated.
+This leaf test uses a mock core to isolate sequencing. DMI storage routing,
+postexec dispatch, halted-core instruction injection, architectural side-effect
+isolation, and OpenOCD/GDB Program Buffer behavior are now covered by the DMI,
+abstract-command, debug-top, core, and wasp1 verification reports.

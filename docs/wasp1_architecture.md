@@ -110,7 +110,8 @@ The debug implementation is staged:
 | 1 | JTAG DTM, DMI, dmcontrol, dmstatus, halt/resume, basic GPR access |
 | 2 | abstract command, DPC readback, DCSR.step single-step |
 | 3 | halted-core Access Memory, native GDB `stepi`, two execute-address hardware breakpoints, and load/store watchpoints |
-| 4 | FT2232H external debugger collateral and later FPGA/board bring-up |
+| 4 | four-word Program Buffer, Access Register `postexec`, and halted-core instruction execution |
+| 5 | FT2232H external debugger collateral and later FPGA/board bring-up; optional System Bus Access |
 
 ## 7. Design Flow
 

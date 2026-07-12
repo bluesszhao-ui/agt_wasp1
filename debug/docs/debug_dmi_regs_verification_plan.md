@@ -16,6 +16,8 @@ semantics, abstract payload protection, and four-word Program Buffer routing.
 | Random access | Seeded random address/data writes and reads | DMI and full-array views match a software model |
 | DMI backpressure | Hold every response for one cycle | Response and Program Buffer state remain stable |
 | dmactive clear | Clear `dmactive` after filling all words | All words clear and inactive writes have no effect |
+| Capability image | Read `abstractcs` | `datacount=2` and `progbufsize=4` |
+| Abstractauto WARL | Read, write all ones, and reread `abstractauto` | Every access succeeds and readback remains zero |
 
 ## 3. Existing Regression Cases
 

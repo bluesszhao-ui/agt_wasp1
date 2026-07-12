@@ -21,6 +21,7 @@ debug
   debug_abstract_cmd
   debug_trigger
   debug_progbuf
+  debug_progbuf_exec
 ```
 
 ## 3. Implementation Stages
@@ -33,7 +34,8 @@ debug
 | 4 | two execute-address hardware breakpoints through Debug Spec trigger CSRs |
 | 5 | longer debugger stress with simultaneous two-trigger residency |
 | 6 | FT2232H external debugger pinout/OpenOCD config, schematic/PCB, FPGA/board bring-up |
-| 7 | load/store trigger configuration, precise core LSU action, and end-to-end OpenOCD/GDB watchpoints, followed by optional system bus and program-buffer memory access |
+| 7 | load/store trigger configuration, precise core LSU action, end-to-end OpenOCD/GDB watchpoints, and Program Buffer postexec |
+| 8 | optional System Bus Access plus FT2232H/FPGA hardware validation |
 
 ## 4. Core Interaction
 
@@ -71,14 +73,15 @@ breakpoints are now part of the automated remote-bitbang OpenOCD/GDB smoke and
 stress flow. The stress target also covers GPR write/read and breakpoint
 delete/reinstall at two OTP addresses. Load/store trigger CSR configuration,
 filtered debug-to-core outputs, precise core-side LSU match/halt behavior, and
-end-to-end OpenOCD/GDB `rwatch`/`watch` regression are implemented. System Bus
-Access and program-buffer execution remain later-stage targets.
+end-to-end OpenOCD/GDB `rwatch`/`watch` regression are implemented. Program
+Buffer postexec is also integrated through the real halted-core instruction
+channel. System Bus Access remains an optional later-stage target.
 
 The four-word `debug_progbuf` storage leaf is DMI-routable through
 `debug_dmi_regs`, including busy protection and dmactive clear. The
-one-instruction-outstanding `debug_progbuf_exec` sequencing leaf is separately
-verified. `abstractcs.progbufsize` remains zero until postexec dispatch and
-halted-core instruction execution are complete.
+one-instruction-outstanding `debug_progbuf_exec` sequencing leaf is integrated
+with Access Register `postexec` and the halted-core execution channel.
+`abstractcs.progbufsize=4`; `abstractauto` is implemented as WARL zero.
 
 ## 6. External FTDI Debugger
 

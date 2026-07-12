@@ -131,6 +131,9 @@ module tb_debug_jtag;
       core_debug.mem_rsp_valid = 1'b0;
       core_debug.mem_rsp_rdata = '0;
       core_debug.mem_rsp_err = 1'b0;
+      core_debug.exec_req_ready = 1'b0;
+      core_debug.exec_rsp_valid = 1'b0;
+      core_debug.exec_rsp_error = 1'b0;
       hart_reset_event = 1'b0;
     end
   endtask

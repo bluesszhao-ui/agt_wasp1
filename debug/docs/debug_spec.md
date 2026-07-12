@@ -40,12 +40,13 @@ testbench.
 
 | Function | Requirement |
 | --- | --- |
-| DMI registers | Implement `data0`, `data1`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, and `command` |
+| DMI registers | Implement `data0`, `data1`, `dmcontrol`, `dmstatus`, `hartinfo`, `abstractcs`, `command`, `abstractauto`, and `progbuf0..3` |
 | Hart control | Convert `haltreq/resumereq` register fields into core Debug Mode requests |
 | Hart status | Report halted, running, resumeack, havereset, and nonexistent hart status |
 | Abstract commands | Support RV32 integer Access Register commands for x0-x31, OpenOCD CSR probes, and physical Access Memory byte/half/word commands |
 | GPR transport | Sequence one core GPR request and one response per abstract transfer |
 | Memory transport | Sequence one halted-core memory request and one response per Access Memory command |
+| Program Buffer | Advertise four words and execute Access Register postexec instructions through the halted core |
 | Single-step | Convert `dcsr.step=1` plus `dmcontrol.resumereq` into `core_debug.step_req` |
 | Hardware breakpoint | Provide two RV32 `mcontrol` execute-address trigger slots for OpenOCD/GDB `hbreak` |
 | Data-trigger configuration | Accept and expose per-slot exact-address load/store `mcontrol` modes for precise core-side LSU halt action |
@@ -56,16 +57,14 @@ testbench.
 The following are intentionally outside this module:
 
 ```text
-program buffer
 debug ROM
 architectural CSR side effects beyond `dcsr.step`
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 
-The `debug_progbuf` storage leaf is instantiated in `debug_dmi_regs`; its four
-DMI addresses, busy protection, and clear behavior are verified. The
-`debug_progbuf_exec` sequencing leaf remains standalone. `progbufsize` stays
-zero until postexec and halted-core instruction execution are complete.
+`debug_progbuf` storage and `debug_progbuf_exec` sequencing are integrated.
+`abstractcs.progbufsize=4`; `abstractauto=0`, so automatic execution on
+data/progbuf access remains unsupported.
 
 ## 5. Target Support
 

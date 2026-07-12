@@ -92,6 +92,7 @@ tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/timer_irq_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 wasp1_rbb_smoke PASS
 OpenOCD: hart 0: XLEN=32, misa=0x40000100
+OpenOCD: datacount=2 progbufsize=4
 OpenOCD: [wasp1.cpu] Found 2 triggers
 GDB: registers read, PC visible, stepi PASS, hbreak PASS, detach PASS
 wasp1_openocd_gdb_smoke PASS
@@ -116,7 +117,7 @@ WASP1_CACHE_METRICS_ROW label=random_irq_stress cycles=111920 retired=9999 ipc=0
 | 95ns-105ns | Wait for debug status | Core debug status reports running or halted | PASS |
 | 105ns-3us | Bit-bang JTAG IDCODE, DTMCS, `dmcontrol.dmactive`, and `dmstatus` | JTAG pins reach integrated Debug Module; `dbg_dmactive_o=1` | PASS |
 | Remote-bitbang run | Launch `Vwasp1` socket harness and connect Python remote-bitbang client | TCP JTAG path returns IDCODE/DTMCS and DMI `dmstatus` success | PASS |
-| OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, two triggers discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
+| OpenOCD/GDB process run | Launch `Vwasp1 +rbb-keepalive +WASP1_OTP_HEX`, start OpenOCD remote_bitbang, and run `riscv64-elf-gdb` script | TAP IDCODE, DTM, hart XLEN/misa discovery, `datacount=2`, `progbufsize=4`, two triggers discovered, GDB reset-halt, register reads, PC read, native `stepi`, hardware breakpoint at `0x4`, and detach all complete without OpenOCD/GDB errors | PASS |
 | OpenOCD/GDB stress run | Reuse the remote-bitbang process harness with `wasp1_debug_stress.gdb` | GDB writes/reads `t0=0x12345678`, single-steps from `0x4` to `0x0`, deletes/reinstalls breakpoints, and hits hardware breakpoints at `0x0` and `0x4` | PASS |
 | OpenOCD/GDB long-stress run | Reuse the remote-bitbang process harness with `wasp1_debug_long_stress.gdb` | GDB writes/reads `t0/t1/t2`, single-steps from `0x4` to `0x0`, installs breakpoints at `0x0` and `0x4` simultaneously, continues through six alternating hits, reset-halts, writes/reads `s0`, and detaches | PASS |
 | OpenOCD/GDB watchpoint phase 1 | Load the register-gated watchpoint OTP image, halt at PC `0x0`, clear D-SRAM base through Access Memory, write `t0=0x20000000`, install `rwatch`, and continue | GDB reports the read watchpoint while the target word is still zero; raw trigger or GDB step-normalized DCSR cause is accepted | PASS |
@@ -173,8 +174,11 @@ cycles/retired/IPC/CPI for all generated C firmware images.
 The mixed IRQ/DMA firmware image now combines DMA master activity with two INTC
 external sources and verifies DMA-before-GPIO priority order in software.
 The UART TX-empty, UART RX-available/RX-overrun, DMA, and GPIO external
-interrupt paths are covered through INTC claim/complete and MEIP. The machine
+interrupt paths are covered through INTC claim/complete and MEIP. Program
+Buffer postexec is covered from DMI storage and abstract-command dispatch
+through real halted-core instruction execution, including backpressure and
+executor error mapping. The machine
 timer interrupt path is covered by a generated firmware image that returns
 through the C trap handler. Remaining top-level work includes optional
-SBA/program-buffer flows and longer-duration randomized software campaigns
+optional SBA flows and longer-duration randomized software campaigns
 beyond the four-seed baseline.

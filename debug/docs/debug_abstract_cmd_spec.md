@@ -19,13 +19,14 @@ trigger slots with independently selectable execute, load, and store modes.
 | reserved bit 23 | zero |
 | `aarsize[22:20]` | `2`: 32-bit, when transfer is set |
 | `aarpostincrement[19]` | zero |
-| `postexec[18]` | zero; no program buffer yet |
+| `postexec[18]` | optional Program Buffer execution after a successful/local transfer |
 | `transfer[17]` | zero for no-op or one for GPR/CSR transfer |
 | `write[16]` | zero reads; one writes GPR, `dcsr.step`, or supported trigger CSRs |
 | `regno[15:0]` | `0x1000..0x101F` for x0-x31, read-only `0x0301` `misa`, read-only `0x0300` `mstatus`, read/write-step `0x07B0` `dcsr`, read-only `0x07B1` `dpc`, trigger CSRs `0x07A0..0x07A5`, or OpenOCD probe CSRs |
 
 A command with `transfer=0`, supported command type, and no unsupported option
-is a successful no-op; size, register number, and write direction are ignored.
+is a successful no-op when `postexec=0`; with `postexec=1` it starts Program
+Buffer execution directly. Size, register number, and write direction are ignored.
 The selected hart must still be halted for every accepted Access Register
 command, including this transfer-disabled no-op.
 
@@ -86,6 +87,7 @@ unsupported command type/field/register/size -> CMDERR_NOTSUP
 hart not halted before or during transfer    -> CMDERR_HALT_RESUME
 downstream register-access error             -> CMDERR_EXCEPTION
 downstream memory-access error               -> CMDERR_BUS
+Program Buffer/core execution error           -> executor-supplied cmderr
 ```
 
 DM deactivation aborts silently because `debug_dmi_regs` resets abstract state
@@ -101,6 +103,12 @@ For local CSR reads, the controller generates the same data0 write pulse
 without issuing a downstream register command. A supported `dcsr.step` write
 updates the local step bit and does not update data0. Failed, unsupported,
 aborted, GPR write, and no-op commands must not update data0.
+
+For Access Register `postexec=1`, a GPR transfer must complete successfully
+before Program Buffer start. Local CSR transfer results are captured before
+start. Any transfer error suppresses Program Buffer execution. Successful read
+data is reported only after Program Buffer success; an executor error
+suppresses the data0 update and becomes the command cmderr.
 
 For Access Memory reads, successful memory data generates one `data0_we_o`
 pulse with lane-extracted data. For Access Memory writes, `data0_i` is captured
@@ -120,6 +128,10 @@ command write while `abstractcs.busy` is set.
 
 `reg_flush_o` and `mem_flush_o` assert on DM deactivation or loss of halted
 state while a downstream transaction is active.
+
+`progbuf_start_o` pulses for one registered state. `busy_o` remains asserted
+through `progbuf_done_i` and the final completion cycle. Loss of halted state
+during postexec maps to `CMDERR_HALT_RESUME`; DM deactivation aborts silently.
 
 ## 7. Reset and Targets
 

@@ -1,11 +1,11 @@
 `timescale 1ns/1ps
 `include "wasp1_target_defs.svh"
 
-// Stage-1 RISC-V Debug Module register file and one-entry DMI response buffer.
+// RISC-V Debug Module register file and one-entry DMI response buffer.
 module debug_dmi_regs (
   input  logic              clk_i,                 // Debug clock for all local sequential state.
   input  logic              rst_ni,                // Asynchronous active-low reset for the Debug Module.
-  debug_dmi_if.dm            dmi,                   // DMI request/response channel from the future JTAG DTM.
+  debug_dmi_if.dm            dmi,                   // DMI request/response channel from the external JTAG DTM wrapper.
   input  logic              hart_halted_i,         // Selected hart reports that it is halted in Debug Mode.
   input  logic              hart_running_i,        // Selected hart reports normal instruction execution.
   input  logic              hart_resumeack_i,      // Selected hart acknowledges the outstanding resume request.
@@ -27,7 +27,7 @@ module debug_dmi_regs (
   output logic [31:0]       data0_o,               // Abstract data register 0 shared with the executor.
   output logic [31:0]       data1_o,               // Abstract data register 1, used as Access Memory address.
   output logic [debug_dmi_pkg::PROGBUF_WORD_COUNT-1:0][31:0]
-                            progbuf_words_o        // Full Program Buffer image for the later executor path.
+                            progbuf_words_o        // Full Program Buffer image for the integrated executor path.
 );
   import debug_dmi_pkg::*;
 
@@ -113,6 +113,7 @@ module debug_dmi_regs (
       DMI_ADDR_HARTINFO,
       DMI_ADDR_ABSTRACTCS,
       DMI_ADDR_COMMAND,
+      DMI_ADDR_ABSTRACTAUTO,
       DMI_ADDR_PROGBUF0,
       DMI_ADDR_PROGBUF1,
       DMI_ADDR_PROGBUF2,
@@ -170,10 +171,11 @@ module debug_dmi_regs (
     end
   end
 
-  // Program Buffer storage is internally accessible but progbufsize remains
-  // zero until the later postexec/core execution path is fully integrated.
+  // Four words are advertised only after storage, postexec sequencing, and the
+  // halted-core execution path are integrated and verified together.
   always_comb begin
     abstractcs_rdata = '0;
+    abstractcs_rdata[28:24] = 5'(PROGBUF_WORD_COUNT);
     abstractcs_rdata[12] = abstract_busy_i;
     abstractcs_rdata[10:8] = cmderr_q;
     abstractcs_rdata[3:0] = 4'd2;
@@ -191,6 +193,10 @@ module debug_dmi_regs (
       DMI_ADDR_HARTINFO:   read_data = 32'h0000_0000;
       DMI_ADDR_ABSTRACTCS: read_data = abstractcs_rdata;
       DMI_ADDR_COMMAND:    read_data = command_q;
+      // Autoexec is not implemented; all fields are WARL-zero. Accepting the
+      // register lets OpenOCD explicitly disable autoexec after discovering a
+      // nonzero Program Buffer size without receiving a DMI transport error.
+      DMI_ADDR_ABSTRACTAUTO: read_data = 32'h0000_0000;
       DMI_ADDR_PROGBUF0,
       DMI_ADDR_PROGBUF1,
       DMI_ADDR_PROGBUF2,
@@ -200,7 +206,7 @@ module debug_dmi_regs (
   end
 
   // The verified storage leaf owns reset/clear/write priority and exposes both
-  // indexed DMI readback and the full future-executor array view.
+  // indexed DMI readback and the full integrated-executor array view.
   debug_progbuf u_debug_progbuf (
     .clk_i(clk_i),
     .rst_ni(rst_ni),

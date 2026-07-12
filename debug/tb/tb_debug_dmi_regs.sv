@@ -351,7 +351,13 @@ module tb_debug_dmi_regs;
     int unsigned before_command;
     begin
       dmi_read(DMI_ADDR_HARTINFO, 32'h0000_0000, 32'hFFFF_FFFF, "hartinfo minimal image");
-      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h1F00_1F0F, "abstractcs reset image");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0400_0002, 32'h1F00_1F0F, "abstractcs reset image");
+      dmi_read(DMI_ADDR_ABSTRACTAUTO, 32'h0000_0000, 32'hffff_ffff,
+               "abstractauto reset zero");
+      dmi_write(DMI_ADDR_ABSTRACTAUTO, 32'hffff_ffff,
+                "abstractauto WARL write accepted");
+      dmi_read(DMI_ADDR_ABSTRACTAUTO, 32'h0000_0000, 32'hffff_ffff,
+               "abstractauto remains zero");
       dmi_write(DMI_ADDR_DATA0, 32'h1234_5678, "data0 dmi write");
       dmi_read(DMI_ADDR_DATA0, 32'h1234_5678, 32'hFFFF_FFFF, "data0 dmi read");
       dmi_write(DMI_ADDR_DATA1, 32'h2000_0010, "data1 dmi write");

@@ -116,6 +116,10 @@ The Program Buffer read index is `dmi.req_addr - DMI_ADDR_PROGBUF0`. The same
 index drives the storage leaf read port and the accepted-write port. The full
 parallel array is exported without another register stage.
 
+`abstractcs.progbufsize` is the constant four and `datacount` is two.
+`abstractauto` participates in known-address decode, reads as zero, and has no
+write side effect; this is the explicit no-autoexec WARL implementation.
+
 ## 7. No Explicit FSM
 
 There is no encoded FSM. The sequential behavior is represented by the

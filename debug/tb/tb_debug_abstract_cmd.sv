@@ -46,6 +46,9 @@ module tb_debug_abstract_cmd;
   logic        mem_rsp_ready;
   logic [31:0] mem_rsp_rdata;
   logic        mem_rsp_error;
+  logic        progbuf_start;
+  logic        progbuf_done;
+  logic [2:0]  progbuf_error;
   logic        dcsr_step;
   logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid;
   logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr;
@@ -74,6 +77,7 @@ module tb_debug_abstract_cmd;
   int unsigned busy_ignore_count;
   int unsigned reset_abort_count;
   int unsigned random_count;
+  int unsigned postexec_count;
 
   debug_abstract_cmd u_debug_abstract_cmd (
     .clk_i(clk),
@@ -113,6 +117,9 @@ module tb_debug_abstract_cmd;
     .mem_rsp_ready_o(mem_rsp_ready),
     .mem_rsp_rdata_i(mem_rsp_rdata),
     .mem_rsp_error_i(mem_rsp_error),
+    .progbuf_start_o(progbuf_start),
+    .progbuf_done_i(progbuf_done),
+    .progbuf_error_i(progbuf_error),
     .dcsr_step_o(dcsr_step),
     .trigger_execute_valid_o(trigger_execute_valid),
     .trigger_execute_addr_o(trigger_execute_addr),
@@ -195,6 +202,8 @@ module tb_debug_abstract_cmd;
       mem_rsp_valid = 1'b0;
       mem_rsp_rdata = '0;
       mem_rsp_error = 1'b0;
+      progbuf_done = 1'b0;
+      progbuf_error = CMDERR_NONE;
     end
   endtask
 
@@ -202,7 +211,8 @@ module tb_debug_abstract_cmd;
   task automatic expect_idle(input string label);
     begin
       if (busy || command_error_valid || data0_we || data1_we ||
-          reg_cmd_valid || reg_rsp_ready || mem_cmd_valid || mem_rsp_ready) begin
+          reg_cmd_valid || reg_rsp_ready || mem_cmd_valid || mem_rsp_ready ||
+          progbuf_start) begin
         $error("%s: idle mismatch busy=%0b err=%0b data0_we=%0b data1_we=%0b reg_cmd=%0b mem_cmd=%0b",
                label, busy, command_error_valid, data0_we, data1_we,
                reg_cmd_valid, mem_cmd_valid);
@@ -513,6 +523,120 @@ module tb_debug_abstract_cmd;
     end
   endtask
 
+  // Complete the Program Buffer phase and check that abstract-command result
+  // pulses are deferred until executor completion.
+  task automatic complete_postexec(
+    input logic [2:0]  error_value,
+    input logic        expect_data0,
+    input logic [31:0] expected_data0,
+    input string       label
+  );
+    begin
+      if (!busy || !progbuf_start || command_error_valid || data0_we) begin
+        $error("%s: postexec start mismatch busy=%0b start=%0b err=%0b data0_we=%0b",
+               label, busy, progbuf_start, command_error_valid, data0_we);
+        $fatal(1);
+      end
+      step_clock();
+      if (!busy || progbuf_start || command_error_valid || data0_we) begin
+        $error("%s: postexec wait mismatch", label);
+        $fatal(1);
+      end
+
+      // Hold completion off for two cycles to cover executor latency.
+      repeat (2) begin
+        step_clock();
+        if (!busy || progbuf_start || command_error_valid || data0_we) begin
+          $error("%s: postexec wait changed before done", label);
+          $fatal(1);
+        end
+        wait_count++;
+      end
+
+      @(negedge clk);
+      progbuf_done = 1'b1;
+      progbuf_error = error_value;
+      step_clock();
+      progbuf_done = 1'b0;
+      progbuf_error = CMDERR_NONE;
+
+      if (!busy) begin
+        $error("%s: postexec COMPLETE did not keep busy asserted", label);
+        $fatal(1);
+      end
+      if (error_value != CMDERR_NONE) begin
+        if (!command_error_valid || (command_error !== error_value) || data0_we) begin
+          $error("%s: postexec error mapping mismatch", label);
+          $fatal(1);
+        end
+      end else if (command_error_valid ||
+                   (data0_we !== expect_data0) ||
+                   (expect_data0 && (data0_wdata !== expected_data0))) begin
+        $error("%s: postexec success completion mismatch", label);
+        $fatal(1);
+      end
+
+      pass_count++;
+      postexec_count++;
+      step_clock();
+      expect_idle({label, " idle"});
+    end
+  endtask
+
+  // Cover no-transfer postexec, local CSR postexec, ordered GPR transfer then
+  // postexec, transfer-error suppression, and executor-error propagation.
+  task automatic check_postexec_paths;
+    logic [31:0] command_value;
+    begin
+      command_value = make_access_command(
+          3'd7, 1'b0, 1'b1, 1'b0, 1'b0, 16'hffff);
+      pulse_command(command_value, 32'h0000_0000);
+      complete_postexec(CMDERR_NONE, 1'b0, 32'h0000_0000,
+                        "postexec no transfer");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0,
+          ABSTRACT_CSR_DPC);
+      hart_dpc = 32'h1000_0088;
+      pulse_command(command_value, 32'h0000_0000);
+      complete_postexec(CMDERR_NONE, 1'b1, 32'h1000_0088,
+                        "postexec local CSR read");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0,
+          ABSTRACT_GPR_BASE + 16'd7);
+      pulse_command(command_value, 32'h0000_0000);
+      accept_reg_command("postexec GPR accepted");
+      @(negedge clk);
+      reg_rsp_valid = 1'b1;
+      reg_rsp_rdata = 32'h7777_1234;
+      reg_rsp_error = 1'b0;
+      step_clock();
+      reg_rsp_valid = 1'b0;
+      complete_postexec(CMDERR_NONE, 1'b1, 32'h7777_1234,
+                        "postexec after GPR read");
+
+      command_value = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0,
+          ABSTRACT_GPR_BASE + 16'd8);
+      pulse_command(command_value, 32'h0000_0000);
+      accept_reg_command("postexec transfer error accepted");
+      send_reg_response(32'h0000_0000, 1'b1, 1'b0,
+                        "postexec transfer error suppresses executor");
+      if (progbuf_start) begin
+        $error("postexec started after failed register transfer");
+        $fatal(1);
+      end
+      postexec_count++;
+
+      command_value = make_access_command(
+          3'd0, 1'b0, 1'b1, 1'b0, 1'b0, 16'h0000);
+      pulse_command(command_value, 32'h0000_0000);
+      complete_postexec(CMDERR_EXCEPTION, 1'b0, 32'h0000_0000,
+                        "postexec executor exception");
+    end
+  endtask
+
   // Exercise every unsupported field and the transfer-disabled no-op.
   task automatic check_decode_errors_and_noop;
     logic [31:0] command_value;
@@ -533,8 +657,6 @@ module tb_debug_abstract_cmd;
       expect_immediate_error(command_value, CMDERR_NOTSUP, "unsupported aarsize");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b1, 1'b0, 1'b1, 1'b0, 16'h1002);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "postincrement unsupported");
-      command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b1, 1'b1, 1'b0, 16'h1003);
-      expect_immediate_error(command_value, CMDERR_NOTSUP, "postexec unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1020);
       expect_immediate_error(command_value, CMDERR_NOTSUP, "non-GPR unsupported");
       command_value = make_access_command(ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 1'b1, 1'b0, 16'h1004);
@@ -1099,6 +1221,7 @@ module tb_debug_abstract_cmd;
     busy_ignore_count = 0;
     reset_abort_count = 0;
     random_count = 0;
+    postexec_count = 0;
     rst_n = 1'b1;
 
     $display("phase reset start=%0t", $time);
@@ -1128,6 +1251,8 @@ module tb_debug_abstract_cmd;
     hart_dcsr_cause = ABSTRACT_DCSR_CAUSE_HALTREQ;
     check_csr_write_noop(ABSTRACT_CSR_TCONTROL, "tcontrol write no-op");
     check_trigger_csrs();
+    $display("phase postexec start=%0t", $time);
+    check_postexec_paths();
     $display("phase memory start=%0t", $time);
     check_memory_paths();
     $display("phase decode start=%0t", $time);
@@ -1141,12 +1266,12 @@ module tb_debug_abstract_cmd;
     check_random_commands(20);
     $display("phase complete=%0t", $time);
 
-    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d trigger=%0d mem_read=%0d mem_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d",
+    $display("tb_debug_abstract_cmd coverage: pass=%0d read=%0d write=%0d csr_read=%0d csr_write=%0d trigger=%0d mem_read=%0d mem_write=%0d noop=%0d unsupported=%0d halt_error=%0d downstream_error=%0d issue_hold=%0d wait=%0d flush=%0d busy_ignore=%0d reset_abort=%0d random=%0d postexec=%0d",
              pass_count, read_count, write_count, csr_read_count,
              csr_write_count, trigger_count, mem_read_count, mem_write_count, noop_count,
              unsupported_count, halt_error_count, downstream_error_count,
              issue_hold_count, wait_count, flush_count, busy_ignore_count,
-             reset_abort_count, random_count);
+             reset_abort_count, random_count, postexec_count);
     $display("tb_debug_abstract_cmd PASS");
     $finish;
   end

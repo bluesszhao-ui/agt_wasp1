@@ -6,9 +6,9 @@ The block decodes and executes the RV32 GPR subset of Access Register commands,
 physical Access Memory commands, local CSR reads for debugger discovery, the
 minimal `dcsr.step` write used for single-step, and two RV32 `mcontrol`
 exact-address trigger configuration slots. Each slot exports independent
-execute, load, and store qualifiers. The integrated core owns the downstream
-load/store trigger action. FPR access, program-buffer execution, virtual memory
-access, and System Bus Access remain explicitly unsupported at this boundary.
+execute, load, and store qualifiers. It now sequences Access Register
+`postexec` through `debug_progbuf_exec`. FPR access, virtual memory access, and
+System Bus Access remain explicitly unsupported at this boundary.
 
 ## 2. Editable FSM/Block Diagram
 
@@ -31,6 +31,8 @@ timing-class blocks. The historical PNG
 | `IDLE` | Decode a one-cycle command pulse |
 | `ISSUE` | Hold decoded GPR or memory request until accepted |
 | `WAIT` | Wait for `debug_reg_access` or halted-memory response |
+| `POSTEXEC_START` | Pulse the Program Buffer executor start input |
+| `POSTEXEC_WAIT` | Hold abstract busy until executor completion |
 | `COMPLETE` | Pulse cmderr, successful read data0 update, or postincrement data1 update |
 
 ```text
@@ -45,10 +47,23 @@ IDLE -> COMPLETE:
 ISSUE -> WAIT:
   (reg_cmd_valid && reg_cmd_ready) || (mem_cmd_valid && mem_cmd_ready)
 
-WAIT -> COMPLETE:
-  (reg_rsp_valid && reg_rsp_ready) || (mem_rsp_valid && mem_rsp_ready)
+WAIT -> POSTEXEC_START:
+  reg_rsp_fire && !reg_rsp_error && captured_postexec
 
-ISSUE/WAIT -> COMPLETE:
+IDLE -> POSTEXEC_START:
+  supported halted Access Register command with postexec and
+  (transfer=0 || local CSR transfer)
+
+POSTEXEC_START -> POSTEXEC_WAIT:
+  unconditional one-cycle start pulse
+
+POSTEXEC_WAIT -> COMPLETE:
+  progbuf_done, capturing progbuf_error
+
+WAIT -> COMPLETE:
+  memory response, register error, or register success without postexec
+
+ISSUE/WAIT/POSTEXEC_START/POSTEXEC_WAIT -> COMPLETE:
   !hart_halted, with CMDERR_HALT_RESUME and reg_flush/mem_flush
 
 ISSUE/WAIT -> IDLE:
@@ -67,6 +82,10 @@ write, or a supported trigger CSR access. Access Memory commands use the
 Debug Spec `cmdtype=2` encoding, physical addressing, byte/half/word sizes, and
 optional postincrement. Hart halted policy is checked separately and therefore
 still applies to transfer-disabled no-op commands.
+
+`postexec_q` captures the Access Register postexec bit. Access Memory does not
+use this path. The state machine never starts Program Buffer execution after a
+failed GPR transfer.
 
 ## 5. Request Registers
 
@@ -94,6 +113,10 @@ successful completion.
 successful supported CSR read sets the same completion registers locally during
 command capture. The `COMPLETE` state converts these registers into one-cycle
 pulses for `debug_dmi_regs`.
+
+Read results remain registered across `POSTEXEC_START/WAIT`. They are emitted
+only when executor completion has `CMDERR_NONE`; otherwise `completion_error_q`
+suppresses data0 and reports the Program Buffer failure.
 
 Successful GPR writes, supported `dcsr.step` writes, trigger CSR writes,
 transfer-disabled commands, and unsupported CSR writes report no data0 pulse

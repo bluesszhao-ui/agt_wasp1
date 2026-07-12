@@ -41,6 +41,9 @@ module debug_abstract_cmd (
   output logic        mem_rsp_ready_o,       // Abstract controller accepts the memory result.
   input  logic [31:0] mem_rsp_rdata_i,       // Raw 32-bit memory read data.
   input  logic        mem_rsp_error_i,       // Memory path reported access/bus error.
+  output logic        progbuf_start_o,        // One-cycle request to execute Program Buffer word zero.
+  input  logic        progbuf_done_i,         // Program Buffer executor completed this command.
+  input  logic [2:0]  progbuf_error_i,        // Executor completion encoded as debug_dmi_pkg cmderr.
   output logic        dcsr_step_o,           // Latched DCSR.step bit used by resume single-step.
   output logic [ABSTRACT_TRIGGER_COUNT-1:0] trigger_execute_valid_o, // Per-slot execute trigger enables.
   output logic [ABSTRACT_TRIGGER_COUNT-1:0][31:0] trigger_execute_addr_o, // Per-slot execute compare values.
@@ -58,6 +61,8 @@ module debug_abstract_cmd (
     ABSTRACT_IDLE,
     ABSTRACT_ISSUE,
     ABSTRACT_WAIT,
+    ABSTRACT_POSTEXEC_START,
+    ABSTRACT_POSTEXEC_WAIT,
     ABSTRACT_COMPLETE
   } abstract_state_e;
 
@@ -110,6 +115,7 @@ module debug_abstract_cmd (
   logic [31:0] mem_wdata_q;
   logic [3:0]  mem_wstrb_q;
   logic        mem_postincrement_q;
+  logic        postexec_q;
   logic        read_result_valid_q;
   logic [31:0] read_result_q;
   logic        data1_update_valid_q;
@@ -157,7 +163,7 @@ module debug_abstract_cmd (
                                       command_csr_supported;
   assign command_access_reg_supported =
       (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
-      !command_reserved_bit && !command_postincrement && !command_postexec &&
+      !command_reserved_bit && !command_postincrement &&
       (!command_transfer ||
        ((command_aarsize == ABSTRACT_AARSIZE_32) && command_transfer_supported));
   assign command_access_mem_supported =
@@ -284,6 +290,8 @@ module debug_abstract_cmd (
   assign mem_cmd_wdata_o = mem_wdata_q;
   assign mem_cmd_wstrb_o = mem_wstrb_q;
   assign mem_rsp_ready_o = (state_q == ABSTRACT_WAIT) && op_is_mem_q;
+  assign progbuf_start_o = (state_q == ABSTRACT_POSTEXEC_START) &&
+                           dmactive_i && hart_halted_i;
   assign dcsr_step_o = dcsr_step_q;
   for (genvar trig_idx = 0; trig_idx < TRIGGER_COUNT; trig_idx++) begin : gen_trigger_outputs
     assign trigger_common_valid[trig_idx] =
@@ -330,9 +338,14 @@ module debug_abstract_cmd (
     unique case (state_q)
       ABSTRACT_IDLE: begin
         if (command_valid_i && dmactive_i) begin
-          if (!command_encoding_supported || !hart_halted_i ||
-              ((command_type == ABSTRACT_CMD_ACCESS_REGISTER) && !command_transfer) ||
-              command_csr_supported) begin
+          if (!command_encoding_supported || !hart_halted_i) begin
+            state_d = ABSTRACT_COMPLETE;
+          end else if ((command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
+                       command_postexec &&
+                       (!command_transfer || command_csr_supported)) begin
+            state_d = ABSTRACT_POSTEXEC_START;
+          end else if (((command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
+                        !command_transfer) || command_csr_supported) begin
             state_d = ABSTRACT_COMPLETE;
           end else begin
             state_d = ABSTRACT_ISSUE;
@@ -355,7 +368,31 @@ module debug_abstract_cmd (
           state_d = ABSTRACT_IDLE;
         end else if (!hart_halted_i) begin
           state_d = ABSTRACT_COMPLETE;
-        end else if (reg_rsp_fire || mem_rsp_fire) begin
+        end else if (reg_rsp_fire) begin
+          state_d = (!reg_rsp_error_i && postexec_q) ?
+                    ABSTRACT_POSTEXEC_START : ABSTRACT_COMPLETE;
+        end else if (mem_rsp_fire) begin
+          state_d = ABSTRACT_COMPLETE;
+        end
+      end
+
+      ABSTRACT_POSTEXEC_START: begin
+        if (!dmactive_i) begin
+          state_d = ABSTRACT_IDLE;
+        end else if (!hart_halted_i) begin
+          state_d = ABSTRACT_COMPLETE;
+        end else begin
+          // debug_progbuf_exec samples start_i on the edge leaving this state.
+          state_d = ABSTRACT_POSTEXEC_WAIT;
+        end
+      end
+
+      ABSTRACT_POSTEXEC_WAIT: begin
+        if (!dmactive_i) begin
+          state_d = ABSTRACT_IDLE;
+        end else if (!hart_halted_i) begin
+          state_d = ABSTRACT_COMPLETE;
+        end else if (progbuf_done_i) begin
           state_d = ABSTRACT_COMPLETE;
         end
       end
@@ -382,6 +419,7 @@ module debug_abstract_cmd (
       mem_wdata_q <= '0;
       mem_wstrb_q <= '0;
       mem_postincrement_q <= 1'b0;
+      postexec_q <= 1'b0;
       read_result_valid_q <= 1'b0;
       read_result_q <= '0;
       data1_update_valid_q <= 1'b0;
@@ -397,6 +435,7 @@ module debug_abstract_cmd (
       state_q <= state_d;
 
       if (!dmactive_i) begin
+        postexec_q <= 1'b0;
         read_result_valid_q <= 1'b0;
         data1_update_valid_q <= 1'b0;
         completion_error_q <= CMDERR_NONE;
@@ -419,6 +458,8 @@ module debug_abstract_cmd (
         mem_wdata_q <= command_mem_wdata;
         mem_wstrb_q <= command_mem_wstrb;
         mem_postincrement_q <= command_mem_postincrement;
+        postexec_q <= (command_type == ABSTRACT_CMD_ACCESS_REGISTER) &&
+                      command_postexec;
         read_result_valid_q <= 1'b0;
         read_result_q <= '0;
         data1_update_valid_q <= 1'b0;
@@ -453,7 +494,9 @@ module debug_abstract_cmd (
           completion_error_q <= CMDERR_NONE;
         end
       end else if (((state_q == ABSTRACT_ISSUE) ||
-                    (state_q == ABSTRACT_WAIT)) && !hart_halted_i) begin
+                    (state_q == ABSTRACT_WAIT) ||
+                    (state_q == ABSTRACT_POSTEXEC_START) ||
+                    (state_q == ABSTRACT_POSTEXEC_WAIT)) && !hart_halted_i) begin
         read_result_valid_q <= 1'b0;
         completion_error_q <= CMDERR_HALT_RESUME;
       end else if ((state_q == ABSTRACT_WAIT) && reg_rsp_fire) begin
@@ -466,6 +509,8 @@ module debug_abstract_cmd (
         read_result_q <= command_mem_rdata;
         data1_update_valid_q <= mem_postincrement_q && !mem_rsp_error_i;
         data1_update_q <= command_mem_next_addr;
+      end else if ((state_q == ABSTRACT_POSTEXEC_WAIT) && progbuf_done_i) begin
+        completion_error_q <= progbuf_error_i;
       end
     end
   end

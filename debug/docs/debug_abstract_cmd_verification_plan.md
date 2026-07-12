@@ -27,7 +27,11 @@ unsupported cmdtype
 reserved bit 23
 unsupported aarsize
 aarpostincrement
-postexec
+postexec without transfer
+local CSR read followed by postexec
+GPR transfer success followed by postexec
+GPR transfer error suppresses postexec
+Program Buffer exception propagation
 unsupported CSR writes other than `dcsr.step` and trigger CSRs, other CSR addresses, and out-of-range register numbers
 command pulse while busy ignored defensively
 reset during active command

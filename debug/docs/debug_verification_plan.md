@@ -17,14 +17,18 @@ own verification plans and reports.
 | Resume | Write resume request, then assert core running | `core_debug.resume_req` asserts then retires; resumeack reads back |
 | GPR write | Write `data0`, issue Access Register write x5 | GPR request writes x5 with the data0 payload |
 | GPR read | Issue Access Register read x6 and return core data | data0 reads back the core response |
+| Program Buffer discovery | Read `abstractcs`, write/read `abstractauto` | Four words are advertised; autoexec remains WARL-zero |
+| Postexec no transfer | Program two instructions plus EBREAK and issue postexec-only command | Core requests preserve word order and abstract busy lasts through completion |
+| Transfer then postexec | Complete GPR read before accepting Program Buffer request | Executor starts only after transfer success and data0 updates after final success |
+| Postexec error | Return core execution error | Executor terminates and sticky `cmderr=EXCEPTION` |
 | Abstract error | Issue unsupported Access Register size | `abstractcs.cmderr=NOTSUP`, then W1C clear works |
 | Reset sticky | Pulse `hart_reset_event_i` and acknowledge it | `dmstatus.havereset` sets and clears through `dmcontrol.ackhavereset` |
 
 ## 3. Coverage Intent
 
-The top-level test must cover at least one halt, one resume, one GPR write, one
-GPR read, one abstract command error, one sticky reset event, DMI read/write
-transactions, and clean reset behavior.
+The top-level test must cover at least one halt, resume, GPR write/read,
+postexec-only command, transfer-plus-postexec command, core execution error,
+sticky reset event, DMI read/write transaction, and clean reset behavior.
 
 ## 4. Target Matrix
 

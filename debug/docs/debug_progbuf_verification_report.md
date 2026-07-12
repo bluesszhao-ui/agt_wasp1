@@ -36,15 +36,13 @@ Coverage includes all indices, asynchronous reset, synchronous clear,
 clear-over-write priority, independent word retention, combinational read
 selection, full executor-view comparison, and 64 deterministic-random writes.
 
-The complete debug regression also passes. The external OpenOCD smoke reports
-`datacount=2 progbufsize=0` and passes its existing register, step, and hardware
-breakpoint checks, confirming that standalone storage did not create a false
-Program Buffer execution claim.
+The complete debug regression also passes. External OpenOCD reports
+`datacount=2 progbufsize=4`; smoke, stress, and watchpoint runs pass through the
+integrated postexec/core execution path.
 
 ## 5. Residual Scope
 
-This report covers standalone storage only. DMI routing is now covered by
-`debug_dmi_regs_verification_report.md`, and standalone sequencing is covered
-by `debug_progbuf_exec_verification_report.md`. `progbufsize` advertisement,
-postexec dispatch, core execution, architectural exception integration, and
-OpenOCD/GDB Program Buffer use remain future integration work.
+This report covers standalone storage only. DMI routing is covered by
+`debug_dmi_regs_verification_report.md`, sequencing by
+`debug_progbuf_exec_verification_report.md`, and integrated postexec/core/
+OpenOCD behavior by the debug and wasp1 verification reports.

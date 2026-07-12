@@ -155,8 +155,9 @@ continues, and fails unless GDB stops with the expected PC each time. The
 long-stress script keeps both hardware breakpoints resident simultaneously and
 checks repeated hits at `0x4`, `0x0`, `0x4`, `0x0`, `0x4`, and `0x0`. The
 watchpoint script checks OpenOCD/GDB read and write watchpoint workflows over
-the same remote-bitbang path. Program buffer execution and System Bus Access
-remain later debug milestones.
+the same remote-bitbang path. OpenOCD now observes `progbufsize=4` and uses the
+integrated postexec/halted-core execution path. System Bus Access remains a
+later debug milestone.
 
 GDB may internally single-step over a RISC-V timing-before data trigger before
 presenting the stop. Consequently the script accepts the raw trigger cause or
@@ -170,6 +171,7 @@ Observed OpenOCD probe:
 JTAG tap: wasp1.cpu tap/device found: 0x100001cf
 Examined RISC-V core; found 1 harts
 hart 0: XLEN=32, misa=0x40000100
+datacount=2 progbufsize=4
 [wasp1.cpu] Found 2 triggers
 ```
 

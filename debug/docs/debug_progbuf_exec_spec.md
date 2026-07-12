@@ -2,8 +2,8 @@
 
 ## 1. Purpose
 
-`debug_progbuf_exec` sequences the four stored Program Buffer words toward a
-future halted-core instruction execution port. It is a protocol controller;
+`debug_progbuf_exec` sequences the four stored Program Buffer words toward the
+halted-core instruction execution port. It is a protocol controller;
 the storage array, DMI register routing, and core datapath are separate blocks.
 
 ## 2. External Contract

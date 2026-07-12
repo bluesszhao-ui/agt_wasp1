@@ -12,7 +12,7 @@
 	<key>CanvasOrigin</key>
 	<string>{0, 0}</string>
 	<key>CanvasSize</key>
-	<string>{1600, 720}</string>
+	<string>{1600, 760}</string>
 	<key>BackgroundGraphic</key>
 	<dict>
 		<key>Class</key>
@@ -20,7 +20,7 @@
 		<key>ID</key>
 		<integer>2</integer>
 		<key>Bounds</key>
-		<string>{{0, 0}, {1600, 720}}</string>
+		<string>{{0, 0}, {1600, 760}}</string>
 		<key>Style</key>
 		<dict>
 			<key>stroke</key>
@@ -40,7 +40,7 @@
 			<key>Name</key>
 			<string>title</string>
 			<key>Bounds</key>
-			<string>{{40, 20}, {900, 30}}</string>
+			<string>{{40, 20}, {1050, 30}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -87,7 +87,7 @@
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\b\fs18 \cf0 debug_abstract_cmd editable L3 FSM/block diagram}</string>
+\f0\b\fs16 \cf0 debug top / DMI, abstract command, Program Buffer, and core Debug Mode integration}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -96,9 +96,9 @@
 			<key>ID</key>
 			<integer>101</integer>
 			<key>Name</key>
-			<string>if-command</string>
+			<string>if-dmi</string>
 			<key>Bounds</key>
-			<string>{{40, 95}, {230, 95}}</string>
+			<string>{{40, 280}, {200, 90}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -145,9 +145,9 @@
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 IF command/data0\
-command_valid_i\
-data0_i dmactive_i}</string>
+\f0\fs16 \cf0 IF DMI\
+request/response\
+from JTAG DTM}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -156,9 +156,9 @@ data0_i dmactive_i}</string>
 			<key>ID</key>
 			<integer>102</integer>
 			<key>Name</key>
-			<string>comb-decode</string>
+			<string>seq-dmi-regs</string>
 			<key>Bounds</key>
-			<string>{{330, 95}, {260, 105}}</string>
+			<string>{{300, 270}, {250, 110}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -166,11 +166,11 @@ data0_i dmactive_i}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>1.0</real>
+						<real>0.78</real>
 						<key>g</key>
-						<real>0.9</real>
+						<real>0.95</real>
 						<key>b</key>
-						<real>0.66</real>
+						<real>0.82</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
@@ -205,10 +205,9 @@ data0_i dmactive_i}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 COMB decode/policy\
-Access Register only\
-aarsize=2 GPR regno\
-halted/transfer checks}</string>
+\f0\fs16 \cf0 SEQ debug_dmi_regs\
+clk=clk_i rst=rst_ni\
+control/data/cmderr/progbuf}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -217,9 +216,9 @@ halted/transfer checks}</string>
 			<key>ID</key>
 			<integer>103</integer>
 			<key>Name</key>
-			<string>seq-fsm</string>
+			<string>seq-halt</string>
 			<key>Bounds</key>
-			<string>{{660, 90}, {260, 120}}</string>
+			<string>{{650, 70}, {240, 100}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -266,10 +265,9 @@ halted/transfer checks}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 SEQ abstract FSM\
+\f0\fs16 \cf0 SEQ debug_halt_ctrl\
 clk=clk_i rst=rst_ni\
-IDLE ISSUE WAIT\
-POSTEXEC_START/WAIT COMPLETE}</string>
+halt/resume/sticky status}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -278,9 +276,9 @@ POSTEXEC_START/WAIT COMPLETE}</string>
 			<key>ID</key>
 			<integer>104</integer>
 			<key>Name</key>
-			<string>seq-req</string>
+			<string>seq-abstract</string>
 			<key>Bounds</key>
-			<string>{{660, 270}, {260, 95}}</string>
+			<string>{{650, 270}, {260, 120}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -327,10 +325,9 @@ POSTEXEC_START/WAIT COMPLETE}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 SEQ request regs\
+\f0\fs16 \cf0 SEQ debug_abstract_cmd\
 clk=clk_i rst=rst_ni\
-write addr wdata\
-stable under stall}</string>
+transfer + POSTEXEC_START/WAIT}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -339,9 +336,129 @@ stable under stall}</string>
 			<key>ID</key>
 			<integer>105</integer>
 			<key>Name</key>
-			<string>if-reg</string>
+			<string>seq-reg</string>
 			<key>Bounds</key>
-			<string>{{990, 270}, {230, 95}}</string>
+			<string>{{1000, 70}, {240, 100}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.95</real>
+						<key>b</key>
+						<real>0.82</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 SEQ debug_reg_access\
+clk=clk_i rst=rst_ni\
+GPR request/response}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>106</integer>
+			<key>Name</key>
+			<string>seq-progbuf</string>
+			<key>Bounds</key>
+			<string>{{650, 480}, {260, 110}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.95</real>
+						<key>b</key>
+						<real>0.82</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 SEQ debug_progbuf_exec\
+clk=clk_i rst=rst_ni\
+CHECK/ISSUE/WAIT/COMPLETE}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>107</integer>
+			<key>Name</key>
+			<string>if-core</string>
+			<key>Bounds</key>
+			<string>{{1300, 230}, {250, 180}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -388,81 +505,22 @@ stable under stall}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 IF reg access\
-reg_cmd_valid/ready\
-reg_rsp_valid/ready}</string>
+\f0\fs16 \cf0 IF core_debug\
+halt/resume/status\
+GPR + memory\
+trigger configuration\
+exec request/response}</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>ID</key>
-			<integer>106</integer>
+			<integer>108</integer>
 			<key>Name</key>
-			<string>seq-complete</string>
+			<string>comb-bridge</string>
 			<key>Bounds</key>
-			<string>{{990, 90}, {260, 115}}</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.78</real>
-						<key>g</key>
-						<real>0.95</real>
-						<key>b</key>
-						<real>0.82</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red0\green0\blue0;}
-\pard\qc\partightenfactor0
-
-\f0\fs16 \cf0 SEQ completion regs\
-clk=clk_i rst=rst_ni\
-cmderr/read_result\
-silent dmactive abort}</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>ID</key>
-			<integer>107</integer>
-			<key>Name</key>
-			<string>comb-report</string>
-			<key>Bounds</key>
-			<string>{{1320, 90}, {230, 105}}</string>
+			<string>{{1000, 270}, {240, 120}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -509,70 +567,9 @@ silent dmactive abort}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 COMB report pulses\
-cmd_done/error\
-data0_we/wdata\
-reg_flush}</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>ID</key>
-			<integer>108</integer>
-			<key>Name</key>
-			<string>if-dmi</string>
-			<key>Bounds</key>
-			<string>{{1320, 270}, {230, 95}}</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.79</real>
-						<key>g</key>
-						<real>0.9</real>
-						<key>b</key>
-						<real>1.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red0\green0\blue0;}
-\pard\qc\partightenfactor0
-
-\f0\fs16 \cf0 IF DMI regs\
-completion pulses\
-data0 update}</string>
+\f0\fs16 \cf0 COMB wrapper ownership bridges\
+step/trigger/GPR/memory/exec\
+no wrapper-owned state}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -583,7 +580,7 @@ data0 update}</string>
 			<key>Name</key>
 			<string>note</string>
 			<key>Bounds</key>
-			<string>{{40, 600}, {1300, 70}}</string>
+			<string>{{130, 680}, {1350, 60}}</string>
 			<key>Style</key>
 			<dict>
 				<key>fill</key>
@@ -630,8 +627,8 @@ data0 update}</string>
 {\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 Postexec ordering: local/no-transfer commands enter POSTEXEC_START directly; successful GPR response enters it after WAIT.\
-Transfer error suppresses start. Executor done/error is captured before COMPLETE emits data0 or cmderr.}</string>
+\f0\fs16 \cf0 Postexec path: DMI progbuf words -&gt; debug_dmi_regs storage -&gt; abstract start -&gt; progbuf executor -&gt; core_debug exec channel.\
+abstractcs.busy protects payload until EBREAK success or executor cmderr; abstractauto is WARL-zero.}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -640,11 +637,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>110</integer>
 			<key>Name</key>
-			<string>manual-conn-line-cmd-to-decode-s0</string>
+			<string>manual-conn-line-dmi-to-regs-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{270, 145}</string>
-				<string>{330, 145}</string>
+				<string>{240, 325}</string>
+				<string>{300, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -677,11 +674,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>111</integer>
 			<key>Name</key>
-			<string>manual-conn-line-cmd-to-decode-arrow-a</string>
+			<string>manual-conn-line-dmi-to-regs-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{320, 140}</string>
-				<string>{330, 145}</string>
+				<string>{290, 320}</string>
+				<string>{300, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -714,11 +711,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>112</integer>
 			<key>Name</key>
-			<string>manual-conn-line-cmd-to-decode-arrow-b</string>
+			<string>manual-conn-line-dmi-to-regs-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{320, 150}</string>
-				<string>{330, 145}</string>
+				<string>{290, 330}</string>
+				<string>{300, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -751,11 +748,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>113</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-fsm-s0</string>
+			<string>manual-conn-line-regs-to-halt-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{590, 145}</string>
-				<string>{660, 145}</string>
+				<string>{425, 270}</string>
+				<string>{425, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -788,11 +785,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>114</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-fsm-arrow-a</string>
+			<string>manual-conn-line-regs-to-halt-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{650, 140}</string>
-				<string>{660, 145}</string>
+				<string>{425, 120}</string>
+				<string>{650, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -825,11 +822,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>115</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-fsm-arrow-b</string>
+			<string>manual-conn-line-regs-to-halt-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{650, 150}</string>
-				<string>{660, 145}</string>
+				<string>{640, 115}</string>
+				<string>{650, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -862,11 +859,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>116</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-req-s0</string>
+			<string>manual-conn-line-regs-to-halt-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{460, 200}</string>
-				<string>{460, 315}</string>
+				<string>{640, 125}</string>
+				<string>{650, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -899,11 +896,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>117</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-req-s1</string>
+			<string>manual-conn-line-regs-to-abstract-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{460, 315}</string>
-				<string>{660, 315}</string>
+				<string>{550, 325}</string>
+				<string>{650, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -936,11 +933,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>118</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-req-arrow-a</string>
+			<string>manual-conn-line-regs-to-abstract-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{650, 310}</string>
-				<string>{660, 315}</string>
+				<string>{640, 320}</string>
+				<string>{650, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -973,11 +970,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>119</integer>
 			<key>Name</key>
-			<string>manual-conn-line-decode-to-req-arrow-b</string>
+			<string>manual-conn-line-regs-to-abstract-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{650, 320}</string>
-				<string>{660, 315}</string>
+				<string>{640, 330}</string>
+				<string>{650, 325}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1010,11 +1007,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>120</integer>
 			<key>Name</key>
-			<string>manual-conn-line-req-to-reg-s0</string>
+			<string>manual-conn-line-abstract-to-reg-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{920, 315}</string>
-				<string>{990, 315}</string>
+				<string>{910, 300}</string>
+				<string>{960, 300}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1047,11 +1044,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>121</integer>
 			<key>Name</key>
-			<string>manual-conn-line-req-to-reg-arrow-a</string>
+			<string>manual-conn-line-abstract-to-reg-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{980, 310}</string>
-				<string>{990, 315}</string>
+				<string>{960, 300}</string>
+				<string>{960, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1084,11 +1081,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>122</integer>
 			<key>Name</key>
-			<string>manual-conn-line-req-to-reg-arrow-b</string>
+			<string>manual-conn-line-abstract-to-reg-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{980, 320}</string>
-				<string>{990, 315}</string>
+				<string>{960, 120}</string>
+				<string>{1000, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1121,11 +1118,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>123</integer>
 			<key>Name</key>
-			<string>manual-conn-line-reg-to-complete-s0</string>
+			<string>manual-conn-line-abstract-to-reg-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1105, 270}</string>
-				<string>{1105, 235}</string>
+				<string>{990, 115}</string>
+				<string>{1000, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1158,11 +1155,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>124</integer>
 			<key>Name</key>
-			<string>manual-conn-line-reg-to-complete-s1</string>
+			<string>manual-conn-line-abstract-to-reg-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1105, 235}</string>
-				<string>{1120, 235}</string>
+				<string>{990, 125}</string>
+				<string>{1000, 120}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1195,11 +1192,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>125</integer>
 			<key>Name</key>
-			<string>manual-conn-line-reg-to-complete-s2</string>
+			<string>manual-conn-line-regs-words-to-progbuf-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{1120, 235}</string>
-				<string>{1120, 205}</string>
+				<string>{425, 380}</string>
+				<string>{425, 535}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1232,11 +1229,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>126</integer>
 			<key>Name</key>
-			<string>manual-conn-line-reg-to-complete-arrow-a</string>
+			<string>manual-conn-line-regs-words-to-progbuf-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{1115, 215}</string>
-				<string>{1120, 205}</string>
+				<string>{425, 535}</string>
+				<string>{650, 535}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1269,11 +1266,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>127</integer>
 			<key>Name</key>
-			<string>manual-conn-line-reg-to-complete-arrow-b</string>
+			<string>manual-conn-line-regs-words-to-progbuf-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1125, 215}</string>
-				<string>{1120, 205}</string>
+				<string>{640, 530}</string>
+				<string>{650, 535}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1306,11 +1303,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>128</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-complete-s0</string>
+			<string>manual-conn-line-regs-words-to-progbuf-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{920, 150}</string>
-				<string>{990, 150}</string>
+				<string>{640, 540}</string>
+				<string>{650, 535}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1343,11 +1340,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>129</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-complete-arrow-a</string>
+			<string>manual-conn-line-abstract-to-progbuf-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{980, 145}</string>
-				<string>{990, 150}</string>
+				<string>{780, 390}</string>
+				<string>{780, 480}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1380,11 +1377,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>130</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-complete-arrow-b</string>
+			<string>manual-conn-line-abstract-to-progbuf-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{980, 155}</string>
-				<string>{990, 150}</string>
+				<string>{775, 470}</string>
+				<string>{780, 480}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1417,11 +1414,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>131</integer>
 			<key>Name</key>
-			<string>manual-conn-line-complete-to-report-s0</string>
+			<string>manual-conn-line-abstract-to-progbuf-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1250, 150}</string>
-				<string>{1320, 150}</string>
+				<string>{785, 470}</string>
+				<string>{780, 480}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1454,11 +1451,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>132</integer>
 			<key>Name</key>
-			<string>manual-conn-line-complete-to-report-arrow-a</string>
+			<string>manual-conn-line-halt-to-bridge-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{1310, 145}</string>
-				<string>{1320, 150}</string>
+				<string>{770, 70}</string>
+				<string>{770, 60}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1491,11 +1488,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>133</integer>
 			<key>Name</key>
-			<string>manual-conn-line-complete-to-report-arrow-b</string>
+			<string>manual-conn-line-halt-to-bridge-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{1310, 155}</string>
-				<string>{1320, 150}</string>
+				<string>{770, 60}</string>
+				<string>{1425, 60}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1528,11 +1525,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>134</integer>
 			<key>Name</key>
-			<string>manual-conn-line-report-to-dmi-s0</string>
+			<string>manual-conn-line-halt-to-bridge-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{1435, 195}</string>
-				<string>{1435, 270}</string>
+				<string>{1425, 60}</string>
+				<string>{1425, 230}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1565,11 +1562,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>135</integer>
 			<key>Name</key>
-			<string>manual-conn-line-report-to-dmi-arrow-a</string>
+			<string>manual-conn-line-halt-to-bridge-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1430, 260}</string>
-				<string>{1435, 270}</string>
+				<string>{1420, 220}</string>
+				<string>{1425, 230}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1602,108 +1599,11 @@ Transfer error suppresses start. Executor done/error is captured before COMPLETE
 			<key>ID</key>
 			<integer>136</integer>
 			<key>Name</key>
-			<string>manual-conn-line-report-to-dmi-arrow-b</string>
+			<string>manual-conn-line-halt-to-bridge-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1440, 260}</string>
-				<string>{1435, 270}</string>
-			</array>
-			<key>Style</key>
-			<dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.0</real>
-						<key>g</key>
-						<real>0.0</real>
-						<key>b</key>
-						<real>0.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>Class</key>
-			<string>ShapedGraphic</string>
-			<key>ID</key>
-			<integer>200</integer>
-			<key>Name</key>
-			<string>if-progbuf-exec</string>
-			<key>Bounds</key>
-			<string>{{330, 430}, {260, 95}}</string>
-			<key>Style</key>
-			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.79</real>
-						<key>g</key>
-						<real>0.9</real>
-						<key>b</key>
-						<real>1.0</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-				</dict>
-				<key>shadow</key>
-				<dict>
-					<key>Draws</key>
-					<string>NO</string>
-				</dict>
-				<key>stroke</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>r</key>
-						<real>0.18</real>
-						<key>g</key>
-						<real>0.18</real>
-						<key>b</key>
-						<real>0.18</real>
-						<key>space</key>
-						<string>srgb</string>
-					</dict>
-					<key>Width</key>
-					<real>1.5</real>
-				</dict>
-			</dict>
-			<key>Text</key>
-			<dict>
-				<key>Text</key>
-				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red0\green0\blue0;}
-\pard\qc\partightenfactor0
-
-\f0\fs16 \cf0 IF Program Buffer executor\
-start / done / cmderr\
-registered request-response boundary}</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>Class</key>
-			<string>LineGraphic</string>
-			<key>ID</key>
-			<integer>201</integer>
-			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-s0</string>
-			<key>Points</key>
-			<array>
-				<string>{790, 90}</string>
-				<string>{790, 60}</string>
+				<string>{1430, 220}</string>
+				<string>{1425, 230}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1734,13 +1634,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>202</integer>
+			<integer>137</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-s1</string>
+			<string>manual-conn-line-reg-to-bridge-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{790, 60}</string>
-				<string>{20, 60}</string>
+				<string>{1120, 170}</string>
+				<string>{1120, 270}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1771,13 +1671,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>203</integer>
+			<integer>138</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-s2</string>
+			<string>manual-conn-line-reg-to-bridge-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{20, 60}</string>
-				<string>{20, 475}</string>
+				<string>{1115, 260}</string>
+				<string>{1120, 270}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1808,13 +1708,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>204</integer>
+			<integer>139</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-s3</string>
+			<string>manual-conn-line-reg-to-bridge-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{20, 475}</string>
-				<string>{330, 475}</string>
+				<string>{1125, 260}</string>
+				<string>{1120, 270}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1845,13 +1745,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>205</integer>
+			<integer>140</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-arrow-a</string>
+			<string>manual-conn-line-abstract-to-bridge-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{320, 470}</string>
-				<string>{330, 475}</string>
+				<string>{910, 350}</string>
+				<string>{1000, 350}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1882,13 +1782,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>206</integer>
+			<integer>141</integer>
 			<key>Name</key>
-			<string>manual-conn-line-fsm-to-progbuf-start-arrow-b</string>
+			<string>manual-conn-line-abstract-to-bridge-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{320, 480}</string>
-				<string>{330, 475}</string>
+				<string>{990, 345}</string>
+				<string>{1000, 350}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1919,13 +1819,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>207</integer>
+			<integer>142</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-s0</string>
+			<string>manual-conn-line-abstract-to-bridge-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{590, 500}</string>
-				<string>{620, 500}</string>
+				<string>{990, 355}</string>
+				<string>{1000, 350}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1956,13 +1856,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>208</integer>
+			<integer>143</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-s1</string>
+			<string>manual-conn-line-progbuf-to-bridge-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{620, 500}</string>
-				<string>{620, 560}</string>
+				<string>{910, 530}</string>
+				<string>{960, 530}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -1993,13 +1893,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>209</integer>
+			<integer>144</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-s2</string>
+			<string>manual-conn-line-progbuf-to-bridge-s1</string>
 			<key>Points</key>
 			<array>
-				<string>{620, 560}</string>
-				<string>{1280, 560}</string>
+				<string>{960, 530}</string>
+				<string>{960, 420}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2030,13 +1930,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>210</integer>
+			<integer>145</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-s3</string>
+			<string>manual-conn-line-progbuf-to-bridge-s2</string>
 			<key>Points</key>
 			<array>
-				<string>{1280, 560}</string>
-				<string>{1280, 160}</string>
+				<string>{960, 420}</string>
+				<string>{1120, 420}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2067,13 +1967,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>211</integer>
+			<integer>146</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-s4</string>
+			<string>manual-conn-line-progbuf-to-bridge-s3</string>
 			<key>Points</key>
 			<array>
-				<string>{1280, 160}</string>
-				<string>{1250, 160}</string>
+				<string>{1120, 420}</string>
+				<string>{1120, 390}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2104,13 +2004,13 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>212</integer>
+			<integer>147</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-arrow-a</string>
+			<string>manual-conn-line-progbuf-to-bridge-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1260, 155}</string>
-				<string>{1250, 160}</string>
+				<string>{1115, 400}</string>
+				<string>{1120, 390}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2141,13 +2041,124 @@ registered request-response boundary}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>213</integer>
+			<integer>148</integer>
 			<key>Name</key>
-			<string>manual-conn-line-progbuf-done-to-complete-arrow-b</string>
+			<string>manual-conn-line-progbuf-to-bridge-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1260, 165}</string>
-				<string>{1250, 160}</string>
+				<string>{1125, 400}</string>
+				<string>{1120, 390}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>149</integer>
+			<key>Name</key>
+			<string>manual-conn-line-bridge-to-core-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{1240, 330}</string>
+				<string>{1300, 330}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>150</integer>
+			<key>Name</key>
+			<string>manual-conn-line-bridge-to-core-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1290, 325}</string>
+				<string>{1300, 330}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>151</integer>
+			<key>Name</key>
+			<string>manual-conn-line-bridge-to-core-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1290, 335}</string>
+				<string>{1300, 330}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2208,6 +2219,6 @@ registered request-response boundary}</string>
 	<key>GuidesLocked</key>
 	<string>NO</string>
 	<key>UniqueID</key>
-	<string>debug-abstract-cmd-editable-l3</string>
+	<string>debug-reg-access-editable-l3</string>
 </dict>
 </plist>

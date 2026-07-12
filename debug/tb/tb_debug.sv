@@ -26,6 +26,7 @@ module tb_debug;
   int unsigned step_count;
   int unsigned error_count;
   int unsigned reset_count;
+  int unsigned postexec_count;
 
   debug u_debug (
     .clk_i(clk),
@@ -86,6 +87,9 @@ module tb_debug;
       core_debug.mem_rsp_valid = 1'b0;
       core_debug.mem_rsp_rdata = '0;
       core_debug.mem_rsp_err = 1'b0;
+      core_debug.exec_req_ready = 1'b0;
+      core_debug.exec_rsp_valid = 1'b0;
+      core_debug.exec_rsp_error = 1'b0;
       hart_reset_event = 1'b0;
     end
   endtask
@@ -99,12 +103,136 @@ module tb_debug;
       step_clock();
       if (dmactive || ndmreset || core_debug.halt_req || core_debug.resume_req ||
           core_debug.step_req || dmi.rsp_valid || core_debug.gpr_req_valid ||
-          core_debug.gpr_rsp_ready) begin
+          core_debug.gpr_rsp_ready || core_debug.exec_req_valid ||
+          core_debug.exec_rsp_ready) begin
         $error("reset integration state mismatch");
         $fatal(1);
       end
       reset_count++;
       pass_count++;
+    end
+  endtask
+
+  // Accept one Program Buffer word from the integrated executor, apply
+  // request and response backpressure, and return the requested core result.
+  task automatic complete_exec_word(
+    input logic [31:0] expected_instr,
+    input logic [1:0]  expected_index,
+    input logic        response_error,
+    input string       label
+  );
+    int unsigned timeout;
+    begin
+      timeout = 0;
+      while (!core_debug.exec_req_valid && timeout < 24) begin
+        step_clock();
+        timeout++;
+      end
+      if (!core_debug.exec_req_valid ||
+          (core_debug.exec_req_instr !== expected_instr) ||
+          (core_debug.exec_req_index !== expected_index)) begin
+        $error("%s: execution request mismatch valid=%0b instr=%08x index=%0d",
+               label, core_debug.exec_req_valid, core_debug.exec_req_instr,
+               core_debug.exec_req_index);
+        $fatal(1);
+      end
+
+      repeat (2) begin
+        step_clock();
+        if (!core_debug.exec_req_valid ||
+            (core_debug.exec_req_instr !== expected_instr) ||
+            (core_debug.exec_req_index !== expected_index)) begin
+          $error("%s: execution request changed under backpressure", label);
+          $fatal(1);
+        end
+      end
+
+      @(negedge clk);
+      core_debug.exec_req_ready = 1'b1;
+      step_clock();
+      core_debug.exec_req_ready = 1'b0;
+      if (core_debug.exec_req_valid || !core_debug.exec_rsp_ready) begin
+        $error("%s: executor did not enter response wait", label);
+        $fatal(1);
+      end
+
+      repeat (2) begin
+        step_clock();
+        if (!core_debug.exec_rsp_ready || core_debug.exec_req_valid) begin
+          $error("%s: execution response wait changed", label);
+          $fatal(1);
+        end
+      end
+
+      @(negedge clk);
+      core_debug.exec_rsp_valid = 1'b1;
+      core_debug.exec_rsp_error = response_error;
+      step_clock();
+      core_debug.exec_rsp_valid = 1'b0;
+      core_debug.exec_rsp_error = 1'b0;
+      pass_count++;
+    end
+  endtask
+
+  // Program through DMI, dispatch postexec with and without a preceding GPR
+  // transfer, and prove core execution errors become sticky abstract cmderr.
+  task automatic check_postexec;
+    logic [31:0] command_word;
+    begin
+      dmi_write(DMI_ADDR_PROGBUF0, 32'h0090_0713, "progbuf addi word 0");
+      dmi_write(DMI_ADDR_PROGBUF1, 32'h0017_0713, "progbuf addi word 1");
+      dmi_write(DMI_ADDR_PROGBUF2, PROGBUF_EBREAK_INSN, "progbuf terminator");
+      dmi_write(DMI_ADDR_PROGBUF3, PROGBUF_EBREAK_INSN, "progbuf spare terminator");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0400_0002, 32'h1f00_000f,
+               "advertise four-word program buffer");
+
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 16'h0000);
+      command_word[18] = 1'b1;
+      dmi_write(DMI_ADDR_COMMAND, command_word, "postexec without transfer");
+      complete_exec_word(32'h0090_0713, 2'd0, 1'b0, "postexec word 0");
+      complete_exec_word(32'h0017_0713, 2'd1, 1'b0, "postexec word 1");
+      wait_abstract_idle("postexec no-transfer idle");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0400_0002, 32'h1f00_1f0f,
+               "postexec no-transfer clean");
+      postexec_count++;
+
+      dmi_write(DMI_ADDR_PROGBUF0, 32'h0000_0013, "postexec transfer nop");
+      dmi_write(DMI_ADDR_PROGBUF1, PROGBUF_EBREAK_INSN,
+                "postexec transfer terminator");
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b1, 1'b0, ABSTRACT_GPR_BASE + 16'd6);
+      command_word[18] = 1'b1;
+      dmi_write(DMI_ADDR_COMMAND, command_word, "GPR read then postexec");
+      repeat (2) begin
+        step_clock();
+        if (core_debug.exec_req_valid) begin
+          $error("postexec started before GPR transfer completed");
+          $fatal(1);
+        end
+      end
+      complete_gpr_access(1'b0, 5'd6, 32'h0000_0000, 32'h6b6b_5678, 1'b0,
+                          "complete x6 before postexec");
+      complete_exec_word(32'h0000_0013, 2'd0, 1'b0,
+                         "postexec after GPR read");
+      wait_abstract_idle("GPR postexec idle");
+      dmi_read(DMI_ADDR_DATA0, 32'h6b6b_5678, 32'hffff_ffff,
+               "GPR postexec deferred data0");
+      postexec_count++;
+
+      command_word = make_access_command(
+          ABSTRACT_AARSIZE_32, 1'b0, 1'b0, 16'h0000);
+      command_word[18] = 1'b1;
+      dmi_write(DMI_ADDR_COMMAND, command_word, "postexec core error");
+      complete_exec_word(32'h0000_0013, 2'd0, 1'b1,
+                         "postexec error word");
+      wait_abstract_idle("postexec error idle");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0400_0302, 32'h1f00_1f0f,
+               "postexec exception cmderr");
+      dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0700,
+                "clear postexec exception");
+      postexec_count++;
+      error_count++;
     end
   endtask
 
@@ -405,26 +533,37 @@ module tb_debug;
     step_count = 0;
     error_count = 0;
     reset_count = 0;
+    postexec_count = 0;
 
+    $display("tb_debug phase reset start=%0t", $time);
     apply_reset();
+    $display("tb_debug phase discovery start=%0t", $time);
     dmi_read(DMI_ADDR_DMSTATUS, 32'h0000_0082, 32'h000F_FFFF, "inactive dmstatus");
+    $display("tb_debug phase halt_resume start=%0t", $time);
     check_halt_resume();
+    $display("tb_debug phase gpr start=%0t", $time);
     check_gpr_write();
     check_gpr_read();
+    $display("tb_debug phase csr start=%0t", $time);
     check_csr_read();
+    $display("tb_debug phase postexec start=%0t", $time);
+    check_postexec();
+    $display("tb_debug phase step start=%0t", $time);
     check_single_step();
+    $display("tb_debug phase error_reset start=%0t", $time);
     check_errors_and_reset_status();
+    $display("tb_debug phase complete=%0t", $time);
 
     if ((halt_count != 1) || (resume_count != 1) || (gpr_write_count != 1) ||
         (gpr_read_count != 1) || (csr_read_count != 1) || (step_count != 1) ||
-        (error_count != 1) || (reset_count < 2)) begin
+        (error_count != 2) || (reset_count < 2) || (postexec_count != 3)) begin
       $error("coverage counters missed expected top-level classes");
       $fatal(1);
     end
-    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d step=%0d errors=%0d resets=%0d",
+    $display("tb_debug coverage: pass_count=%0d dmi_reads=%0d dmi_writes=%0d halt=%0d resume=%0d gpr_write=%0d gpr_read=%0d csr_read=%0d step=%0d errors=%0d resets=%0d postexec=%0d",
              pass_count, dmi_read_count, dmi_write_count, halt_count,
              resume_count, gpr_write_count, gpr_read_count, csr_read_count,
-             step_count, error_count, reset_count);
+             step_count, error_count, reset_count, postexec_count);
     $display("tb_debug PASS");
     $finish;
   end
