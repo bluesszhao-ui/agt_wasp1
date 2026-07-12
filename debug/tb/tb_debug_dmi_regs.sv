@@ -36,6 +36,8 @@ module tb_debug_dmi_regs;
   logic [31:0] command;
   logic [31:0] data0;
   logic [31:0] data1;
+  logic [PROGBUF_WORD_COUNT-1:0][31:0] progbuf_words; // Full DUT Program Buffer array view.
+  logic [31:0] progbuf_model [PROGBUF_WORD_COUNT]; // Software reference model per word.
 
   // Explicit coverage counters document which behavior classes were observed.
   int unsigned pass_count;
@@ -48,6 +50,8 @@ module tb_debug_dmi_regs;
   int unsigned backpressure_count;
   int unsigned zero_bubble_count;
   int unsigned random_count;
+  int unsigned progbuf_count;
+  int unsigned progbuf_random_count;
   int unsigned command_pulse_count;
   int unsigned ack_pulse_count;
 
@@ -74,7 +78,8 @@ module tb_debug_dmi_regs;
     .command_valid_o(command_valid),
     .command_o(command),
     .data0_o(data0),
-    .data1_o(data1)
+    .data1_o(data1),
+    .progbuf_words_o(progbuf_words)
   );
 
   // The project-wide verification clock is 100 MHz.
@@ -124,11 +129,78 @@ module tb_debug_dmi_regs;
       #1ns;
       if (dmactive || ndmreset || haltreq || resumereq || command_valid ||
           ackhavereset || (command !== '0) || (data0 !== '0) ||
-          (data1 !== '0) || dmi.rsp_valid) begin
+          (data1 !== '0) || (progbuf_words !== '0) || dmi.rsp_valid) begin
         $error("reset state mismatch");
         $fatal(1);
       end
       pass_count++;
+    end
+  endtask
+
+  // Compare the full Program Buffer output against the software model.
+  task automatic check_progbuf_array(input string label);
+    begin
+      for (int unsigned idx = 0; idx < PROGBUF_WORD_COUNT; idx++) begin
+        if (progbuf_words[idx] !== progbuf_model[idx]) begin
+          $fatal(1, "%s word%0d full-array mismatch actual=0x%08x expected=0x%08x",
+                 label, idx, progbuf_words[idx], progbuf_model[idx]);
+        end
+      end
+      pass_count++;
+    end
+  endtask
+
+  // Verify all four DMI addresses, busy protection on reads and writes, and a
+  // deterministic-random index/data scoreboard.
+  task automatic check_progbuf_registers;
+    logic [DMI_ADDR_WIDTH-1:0] addr;
+    logic [31:0] value;
+    begin
+      for (int unsigned idx = 0; idx < PROGBUF_WORD_COUNT; idx++) begin
+        addr = DMI_ADDR_PROGBUF0 + DMI_ADDR_WIDTH'(idx);
+        dmi_read(addr, 32'h0000_0000, 32'hFFFF_FFFF, "progbuf reset word");
+        value = 32'h0010_0093 + (idx << 7);
+        dmi_write(addr, value, "progbuf directed write");
+        progbuf_model[idx] = value;
+        dmi_read(addr, value, 32'hFFFF_FFFF, "progbuf directed read");
+        progbuf_count++;
+      end
+      check_progbuf_array("directed progbuf");
+
+      abstract_busy = 1'b1;
+      dmi_write(DMI_ADDR_PROGBUF2, 32'hDEAD_BEEF, "busy progbuf write ignored");
+      dmi_read(DMI_ADDR_PROGBUF2, progbuf_model[2], 32'hFFFF_FFFF,
+               "busy progbuf payload preserved");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_1102, 32'h0000_1F0F,
+               "busy progbuf write cmderr");
+      dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0100, "clear progbuf write busy cmderr");
+
+      dmi_read(DMI_ADDR_PROGBUF0, progbuf_model[0], 32'hFFFF_FFFF,
+               "busy progbuf read returns data");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_1102, 32'h0000_1F0F,
+               "busy progbuf read cmderr");
+      dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0100, "clear progbuf read busy cmderr");
+
+      dmi_read(DMI_ADDR_DATA0, data0, 32'hFFFF_FFFF, "busy data0 read returns data");
+      dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_1102, 32'h0000_1F0F,
+               "busy data0 read cmderr");
+      dmi_write(DMI_ADDR_ABSTRACTCS, 32'h0000_0100, "clear data0 read busy cmderr");
+      abstract_busy = 1'b0;
+      check_progbuf_array("busy progbuf preserved");
+      busy_count += 3;
+
+      void'($urandom(32'h5042_5546));
+      for (int unsigned iter = 0; iter < 32; iter++) begin
+        int unsigned index;
+        index = $urandom_range(PROGBUF_WORD_COUNT - 1, 0);
+        value = $urandom();
+        addr = DMI_ADDR_PROGBUF0 + DMI_ADDR_WIDTH'(index);
+        dmi_write(addr, value, "random progbuf write");
+        progbuf_model[index] = value;
+        dmi_read(addr, value, 32'hFFFF_FFFF, "random progbuf read");
+        check_progbuf_array("random progbuf array");
+        progbuf_random_count++;
+      end
     end
   endtask
 
@@ -419,7 +491,7 @@ module tb_debug_dmi_regs;
     begin
       dmi_write(DMI_ADDR_DMCONTROL, 32'h0000_0000, "clear dmactive");
       if (dmactive || ndmreset || haltreq || resumereq || (command !== '0) ||
-          (data0 !== '0) || (data1 !== '0)) begin
+          (data0 !== '0) || (data1 !== '0) || (progbuf_words !== '0)) begin
         $error("dmactive clear did not reset Debug Module state");
         $fatal(1);
       end
@@ -438,6 +510,13 @@ module tb_debug_dmi_regs;
         $error("inactive DM accepted a stale executor data write");
         $fatal(1);
       end
+      for (int unsigned idx = 0; idx < PROGBUF_WORD_COUNT; idx++) begin
+        progbuf_model[idx] = '0;
+      end
+      dmi_write(DMI_ADDR_PROGBUF1, 32'hFFFF_FFFF, "inactive progbuf write ignored");
+      dmi_read(DMI_ADDR_PROGBUF1, 32'h0000_0000, 32'hFFFF_FFFF,
+               "inactive progbuf remains clear");
+      check_progbuf_array("dmactive clear progbuf");
       dmi_read(DMI_ADDR_DMCONTROL, 32'h0000_0000, 32'hFFFF_FFFF, "inactive dmcontrol");
       dmi_read(DMI_ADDR_DMSTATUS, 32'h0000_0082, 32'h000F_FFFF, "inactive dmstatus identity");
       dmi_read(DMI_ADDR_ABSTRACTCS, 32'h0000_0002, 32'h0000_070F, "inactive executor error ignored");
@@ -456,8 +535,13 @@ module tb_debug_dmi_regs;
     backpressure_count = 0;
     zero_bubble_count = 0;
     random_count = 0;
+    progbuf_count = 0;
+    progbuf_random_count = 0;
     command_pulse_count = 0;
     ack_pulse_count = 0;
+    for (int unsigned idx = 0; idx < PROGBUF_WORD_COUNT; idx++) begin
+      progbuf_model[idx] = '0;
+    end
     rst_n = 1'b1;
 
     $display("phase reset start=%0t", $time);
@@ -470,6 +554,8 @@ module tb_debug_dmi_regs;
     check_dmstatus();
     $display("phase abstract start=%0t", $time);
     check_abstract_registers();
+    $display("phase progbuf start=%0t", $time);
+    check_progbuf_registers();
     $display("phase transport start=%0t", $time);
     check_transport_errors();
     $display("phase zero_bubble start=%0t", $time);
@@ -480,9 +566,10 @@ module tb_debug_dmi_regs;
     check_dmactive_clear();
     $display("phase complete=%0t", $time);
 
-    $display("tb_debug_dmi_regs coverage: pass=%0d read=%0d write=%0d status=%0d pulse=%0d busy=%0d error=%0d backpressure=%0d zero_bubble=%0d random=%0d",
+    $display("tb_debug_dmi_regs coverage: pass=%0d read=%0d write=%0d status=%0d pulse=%0d busy=%0d error=%0d backpressure=%0d zero_bubble=%0d random=%0d progbuf=%0d progbuf_random=%0d",
              pass_count, read_count, write_count, status_count, pulse_count,
-             busy_count, error_count, backpressure_count, zero_bubble_count, random_count);
+             busy_count, error_count, backpressure_count, zero_bubble_count,
+             random_count, progbuf_count, progbuf_random_count);
     $display("tb_debug_dmi_regs PASS");
     $finish;
   end

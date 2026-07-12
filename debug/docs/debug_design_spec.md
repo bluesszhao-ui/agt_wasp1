@@ -11,10 +11,11 @@ debug_abstract_cmd
 debug_reg_access
 ```
 
-`debug_progbuf` storage and `debug_progbuf_exec` sequencing are verified as
-standalone leaves but are not yet part of this wrapper. This keeps
-`abstractcs.progbufsize=0` until debugger-supplied instructions can actually
-execute in the halted core.
+`debug_progbuf` storage is now owned by `debug_dmi_regs`, which routes its four
+DMI addresses and exports the full array internally. `debug_progbuf_exec`
+sequencing remains a verified standalone leaf. This wrapper keeps
+`abstractcs.progbufsize=0` until debugger-supplied instructions can execute in
+the halted core.
 
 The wrapper adds no new architectural register state. Its local logic consists
 of explicit channel wiring, top-level output assignment, and an internal

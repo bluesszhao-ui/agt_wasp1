@@ -25,9 +25,13 @@ module debug_dmi_regs (
   output logic              command_valid_o,       // One-cycle pulse for an accepted abstract command write.
   output logic [31:0]       command_o,             // Most recently accepted abstract command word.
   output logic [31:0]       data0_o,               // Abstract data register 0 shared with the executor.
-  output logic [31:0]       data1_o                // Abstract data register 1, used as Access Memory address.
+  output logic [31:0]       data1_o,               // Abstract data register 1, used as Access Memory address.
+  output logic [debug_dmi_pkg::PROGBUF_WORD_COUNT-1:0][31:0]
+                            progbuf_words_o        // Full Program Buffer image for the later executor path.
 );
   import debug_dmi_pkg::*;
+
+  localparam int PROGBUF_INDEX_WIDTH = $clog2(PROGBUF_WORD_COUNT);
 
   // Debug Module control state. Only hart 0 exists, but hartsel is retained so
   // debuggers can probe a non-existent hart and receive architectural status.
@@ -58,6 +62,13 @@ module debug_dmi_regs (
   logic [31:0] read_data;
   logic        hart_halted_visible;
   logic        hart_resumeack_visible;
+  logic        req_abstract_payload; // Request addresses data0/data1 or one Program Buffer word.
+
+  // Program Buffer storage controls are derived from the accepted DMI request.
+  logic        progbuf_clear;       // Reset/DM-deactivation clear request to the storage leaf.
+  logic        progbuf_write_valid; // Accepted idle DMI write to one Program Buffer word.
+  logic [PROGBUF_INDEX_WIDTH-1:0] progbuf_index; // Address-derived read/write word index.
+  logic [31:0] progbuf_read_data;   // Selected Program Buffer readback word.
 
   // The output requests are suppressed whenever the Debug Module is inactive
   // or software selected a hart number other than the implemented hart 0.
@@ -71,6 +82,18 @@ module debug_dmi_regs (
   assign data1_o = data1_q;
   assign hart_halted_visible = hart_halted_i && !resumereq_q;
   assign hart_resumeack_visible = hart_resumeack_i && !resumereq_q;
+  assign progbuf_index = dmi.req_addr[PROGBUF_INDEX_WIDTH-1:0];
+
+  // Inactive DM state continuously clears storage. An accepted dmactive-clear
+  // write also clears on that same edge rather than waiting for dmactive_q.
+  assign progbuf_clear = !dmactive_q ||
+      (dmi.req_valid && dmi.req_ready && req_supported &&
+       (dmi.req_op == DMI_OP_WRITE) &&
+       (dmi.req_addr == DMI_ADDR_DMCONTROL) && !dmi.req_data[0]);
+  assign progbuf_write_valid = dmi.req_valid && dmi.req_ready && req_supported &&
+      (dmi.req_op == DMI_OP_WRITE) && dmactive_q && !abstract_busy_i &&
+      (dmi.req_addr >= DMI_ADDR_PROGBUF0) &&
+      (dmi.req_addr <= DMI_ADDR_PROGBUF3);
 
   // The response slot can accept a request when empty or when its current
   // response is consumed on this edge, allowing bubble-free DMI transfers.
@@ -89,8 +112,22 @@ module debug_dmi_regs (
       DMI_ADDR_DMSTATUS,
       DMI_ADDR_HARTINFO,
       DMI_ADDR_ABSTRACTCS,
-      DMI_ADDR_COMMAND: req_known_addr = 1'b1;
+      DMI_ADDR_COMMAND,
+      DMI_ADDR_PROGBUF0,
+      DMI_ADDR_PROGBUF1,
+      DMI_ADDR_PROGBUF2,
+      DMI_ADDR_PROGBUF3: req_known_addr = 1'b1;
       default:          req_known_addr = 1'b0;
+    endcase
+
+    unique case (dmi.req_addr)
+      DMI_ADDR_DATA0,
+      DMI_ADDR_DATA1,
+      DMI_ADDR_PROGBUF0,
+      DMI_ADDR_PROGBUF1,
+      DMI_ADDR_PROGBUF2,
+      DMI_ADDR_PROGBUF3: req_abstract_payload = 1'b1;
+      default:           req_abstract_payload = 1'b0;
     endcase
 
     req_supported = (dmi.req_op == DMI_OP_NOP) ||
@@ -133,8 +170,8 @@ module debug_dmi_regs (
     end
   end
 
-  // This first implementation provides one abstract data register and no
-  // program buffer. The executor owns the busy input; cmderr is stored here.
+  // Program Buffer storage is internally accessible but progbufsize remains
+  // zero until the later postexec/core execution path is fully integrated.
   always_comb begin
     abstractcs_rdata = '0;
     abstractcs_rdata[12] = abstract_busy_i;
@@ -154,9 +191,27 @@ module debug_dmi_regs (
       DMI_ADDR_HARTINFO:   read_data = 32'h0000_0000;
       DMI_ADDR_ABSTRACTCS: read_data = abstractcs_rdata;
       DMI_ADDR_COMMAND:    read_data = command_q;
+      DMI_ADDR_PROGBUF0,
+      DMI_ADDR_PROGBUF1,
+      DMI_ADDR_PROGBUF2,
+      DMI_ADDR_PROGBUF3:   read_data = progbuf_read_data;
       default:             read_data = 32'h0000_0000;
     endcase
   end
+
+  // The verified storage leaf owns reset/clear/write priority and exposes both
+  // indexed DMI readback and the full future-executor array view.
+  debug_progbuf u_debug_progbuf (
+    .clk_i(clk_i),
+    .rst_ni(rst_ni),
+    .clear_i(progbuf_clear),
+    .write_valid_i(progbuf_write_valid),
+    .write_index_i(progbuf_index),
+    .write_data_i(dmi.req_data),
+    .read_index_i(progbuf_index),
+    .read_data_o(progbuf_read_data),
+    .words_o(progbuf_words_o)
+  );
 
   // All architectural state and the DMI response slot update in this single
   // clock domain. Reset dominates; dmactive clear resets Debug Module state;
@@ -210,6 +265,16 @@ module debug_dmi_regs (
         rsp_resp_q <= req_supported ? DMI_RESP_SUCCESS : DMI_RESP_FAILED;
         rsp_data_q <= (dmi.req_op == DMI_OP_READ) ? read_data : 32'h0000_0000;
 
+        // Debug Spec busy protection applies to reads and writes of all
+        // abstract payload registers. Reads still return their sampled data;
+        // writes are suppressed by their address-specific logic below.
+        if (req_supported && dmactive_q && abstract_busy_i &&
+            req_abstract_payload &&
+            ((dmi.req_op == DMI_OP_READ) || (dmi.req_op == DMI_OP_WRITE)) &&
+            (cmderr_q == CMDERR_NONE)) begin
+          cmderr_q <= CMDERR_BUSY;
+        end
+
         if (req_supported && (dmi.req_op == DMI_OP_WRITE)) begin
           unique case (dmi.req_addr)
             DMI_ADDR_DMCONTROL: begin
@@ -244,19 +309,23 @@ module debug_dmi_regs (
             end
 
             DMI_ADDR_DATA0: begin
-              if (dmactive_q && abstract_busy_i) begin
-                if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
-              end else if (dmactive_q) begin
+              if (dmactive_q && !abstract_busy_i) begin
                 data0_q <= dmi.req_data;
               end
             end
 
             DMI_ADDR_DATA1: begin
-              if (dmactive_q && abstract_busy_i) begin
-                if (cmderr_q == CMDERR_NONE) cmderr_q <= CMDERR_BUSY;
-              end else if (dmactive_q) begin
+              if (dmactive_q && !abstract_busy_i) begin
                 data1_q <= dmi.req_data;
               end
+            end
+
+            DMI_ADDR_PROGBUF0,
+            DMI_ADDR_PROGBUF1,
+            DMI_ADDR_PROGBUF2,
+            DMI_ADDR_PROGBUF3: begin
+              // debug_progbuf consumes accepted idle writes directly through
+              // progbuf_write_valid; busy and inactive writes have no effect.
             end
 
             DMI_ADDR_ABSTRACTCS: begin

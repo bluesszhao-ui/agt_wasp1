@@ -23,8 +23,8 @@ package debug_dmi_pkg;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_HARTINFO   = 7'h12;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_ABSTRACTCS = 7'h16;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_COMMAND    = 7'h17;
-  // Canonical Program Buffer addresses are reserved now for the standalone
-  // storage leaf; debug_dmi_regs does not route them until execution exists.
+  // Canonical Program Buffer addresses route to internal storage. Capability
+  // advertisement remains zero until the complete execution path exists.
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF0   = 7'h20;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF1   = 7'h21;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF2   = 7'h22;

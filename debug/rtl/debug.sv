@@ -33,6 +33,7 @@ module debug (
   logic [31:0] command;              // Raw abstract command register value.
   logic [31:0] data0;                // Shared abstract data register value.
   logic [31:0] data1;                // Shared abstract memory address register.
+  logic [debug_dmi_pkg::PROGBUF_WORD_COUNT-1:0][31:0] progbuf_words; // Stored future Program Buffer image.
   logic        abstract_busy;        // Abstract command executor is not idle.
   logic        command_error_valid;  // Abstract executor has nonzero cmderr update.
   logic [2:0]  command_error;        // cmderr value from abstract executor.
@@ -133,7 +134,8 @@ module debug (
     .command_valid_o(command_valid),
     .command_o(command),
     .data0_o(data0),
-    .data1_o(data1)
+    .data1_o(data1),
+    .progbuf_words_o(progbuf_words)
   );
 
   debug_halt_ctrl u_debug_halt_ctrl (

@@ -48,6 +48,7 @@ halt loss, DM abort, and reset.
 ## 5. Residual Integration Scope
 
 The mock core validates the sequencer contract but does not execute RV32
-instructions. DMI routing, postexec dispatch, halted-core instruction injection,
-architectural side-effect checks, and OpenOCD/GDB Program Buffer regression
-remain gated until the complete path is integrated.
+instructions. DMI storage routing is now verified separately in
+`debug_dmi_regs_verification_report.md`; postexec dispatch, halted-core
+instruction injection, architectural side-effect checks, and OpenOCD/GDB
+Program Buffer regression remain gated until the complete path is integrated.

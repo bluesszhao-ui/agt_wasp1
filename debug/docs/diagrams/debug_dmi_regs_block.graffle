@@ -12,7 +12,7 @@
 	<key>CanvasOrigin</key>
 	<string>{0, 0}</string>
 	<key>CanvasSize</key>
-	<string>{1680, 640}</string>
+	<string>{1680, 820}</string>
 	<key>BackgroundGraphic</key>
 	<dict>
 		<key>Class</key>
@@ -20,7 +20,7 @@
 		<key>ID</key>
 		<integer>2</integer>
 		<key>Bounds</key>
-		<string>{{0, 0}, {1680, 640}}</string>
+		<string>{{0, 0}, {1680, 820}}</string>
 		<key>Style</key>
 		<dict>
 			<key>stroke</key>
@@ -569,8 +569,8 @@ halted/running}</string>
 
 \f0\fs16 \cf0 SEQ abstract regs\
 clk=clk_i rst=rst_ni\
-command data0 cmderr\
-busy write policy}</string>
+command data0 data1 cmderr\
+busy read/write policy}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -690,7 +690,7 @@ completion/data0}</string>
 
 \f0\fs16 \cf0 COMB read images/mux\
 dmcontrol dmstatus\
-abstractcs data0\
+abstractcs data0 data1 progbuf\
 addr selects image}</string>
 			</dict>
 		</dict>
@@ -2354,6 +2354,631 @@ addr selects image}</string>
 			<array>
 				<string>{770, 210}</string>
 				<string>{765, 200}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>156</integer>
+			<key>Name</key>
+			<string>seq-progbuf</string>
+			<key>Bounds</key>
+			<string>{{640, 650}, {250, 110}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.95</real>
+						<key>b</key>
+						<real>0.82</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 SEQ Program Buffer storage\
+clk=clk_i rst=rst_ni\
+4 x 32-bit words\
+clear &gt; accepted idle write &gt; hold}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>157</integer>
+			<key>Name</key>
+			<string>if-progbuf-exec</string>
+			<key>Bounds</key>
+			<string>{{1240, 655}, {220, 100}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.79</real>
+						<key>g</key>
+						<real>0.9</real>
+						<key>b</key>
+						<real>1.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 IF future Program Buffer executor\
+full four-word array\
+execution not advertised yet}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>158</integer>
+			<key>Name</key>
+			<string>progbuf-note</string>
+			<key>Bounds</key>
+			<string>{{40, 650}, {470, 70}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.94</real>
+						<key>g</key>
+						<real>0.94</real>
+						<key>b</key>
+						<real>0.94</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 DMI progbuf0..3 are internally routed.\
+Busy reads set cmderr=BUSY; busy writes also preserve storage.\
+abstractcs.progbufsize remains zero until core execution passes.}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>159</integer>
+			<key>Name</key>
+			<string>manual-conn-line-abstract-to-progbuf-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{700, 570}</string>
+				<string>{700, 650}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>160</integer>
+			<key>Name</key>
+			<string>manual-conn-line-abstract-to-progbuf-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{695, 640}</string>
+				<string>{700, 650}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>161</integer>
+			<key>Name</key>
+			<string>manual-conn-line-abstract-to-progbuf-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{705, 640}</string>
+				<string>{700, 650}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>162</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-exec-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{890, 705}</string>
+				<string>{1240, 705}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>163</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-exec-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1230, 700}</string>
+				<string>{1240, 705}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>164</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-exec-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1230, 710}</string>
+				<string>{1240, 705}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>165</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{800, 650}</string>
+				<string>{800, 620}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>166</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-s1</string>
+			<key>Points</key>
+			<array>
+				<string>{800, 620}</string>
+				<string>{1530, 620}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>167</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-s2</string>
+			<key>Points</key>
+			<array>
+				<string>{1530, 620}</string>
+				<string>{1530, 150}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>168</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-s3</string>
+			<key>Points</key>
+			<array>
+				<string>{1530, 150}</string>
+				<string>{1500, 150}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>169</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1510, 145}</string>
+				<string>{1500, 150}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>170</integer>
+			<key>Name</key>
+			<string>manual-conn-line-progbuf-to-read-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1510, 155}</string>
+				<string>{1500, 150}</string>
 			</array>
 			<key>Style</key>
 			<dict>

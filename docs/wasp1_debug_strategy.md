@@ -74,10 +74,11 @@ filtered debug-to-core outputs, precise core-side LSU match/halt behavior, and
 end-to-end OpenOCD/GDB `rwatch`/`watch` regression are implemented. System Bus
 Access and program-buffer execution remain later-stage targets.
 
-The four-word `debug_progbuf` storage leaf and one-instruction-outstanding
-`debug_progbuf_exec` sequencing leaf are implemented and verified. They remain
-deliberately disconnected and `abstractcs.progbufsize` remains zero until DMI
-routing, postexec dispatch, and halted-core instruction execution are complete.
+The four-word `debug_progbuf` storage leaf is DMI-routable through
+`debug_dmi_regs`, including busy protection and dmactive clear. The
+one-instruction-outstanding `debug_progbuf_exec` sequencing leaf is separately
+verified. `abstractcs.progbufsize` remains zero until postexec dispatch and
+halted-core instruction execution are complete.
 
 ## 6. External FTDI Debugger
 

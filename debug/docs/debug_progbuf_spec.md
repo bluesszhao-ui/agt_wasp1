@@ -4,8 +4,9 @@
 
 `debug_progbuf` stores four RV32 instruction words for the future RISC-V Debug
 Module Program Buffer execution path. This milestone verifies storage only. It
-does not advertise Program Buffer capability through `abstractcs`, accept DMI
-`progbuf0..3` accesses, or execute debugger-supplied instructions.
+does not itself decode DMI addresses, advertise Program Buffer capability
+through `abstractcs`, or execute debugger-supplied instructions. The later
+`debug_dmi_regs` integration owns verified `progbuf0..3` address routing.
 
 ## 2. External Contract
 
@@ -40,7 +41,7 @@ Update priority is:
 ## 4. Unsupported Scope
 
 ```text
-DMI address routing for progbuf0..progbuf3
+DMI address routing inside this leaf (provided by debug_dmi_regs integration)
 abstractcs.progbufsize advertisement
 Access Register postexec behavior
 implicit ebreak execution

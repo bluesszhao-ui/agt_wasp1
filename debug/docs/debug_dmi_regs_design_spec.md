@@ -9,15 +9,16 @@ Debug Mode implementation.
 ## 2. Editable Register-Transfer Diagram
 
 editable source: `debug/docs/diagrams/debug_dmi_regs_block.graffle`
+Program Buffer extension generator: `debug/dv/generate_debug_dmi_regs_diagram.py`
 preview export: none
 detail level: L3
 clock domains: `clk_i/rst_ni` for every `SEQ` block
 
 The editable OmniGraffle diagram separates DTM request/response interfaces,
 operation/address decode, the one-entry response slot, dmcontrol register bank,
-abstract register bank, hart request gating, abstract-executor interface, and
-read-image mux into explicit `IF`, `COMB`, and `SEQ` timing-class blocks. No
-block combines sequential and combinational logic.
+abstract register bank, Program Buffer storage, hart request gating,
+abstract-executor interface, and read-image mux into explicit `IF`, `COMB`, and
+`SEQ` timing-class blocks. No block combines sequential and combinational logic.
 
 The historical PNG `debug/docs/images/debug_dmi_regs_state.png` remains as a
 reference export.
@@ -74,17 +75,28 @@ overrides `resumereq`; otherwise a written resume request is held until ack.
 
 ## 5. Abstract State
 
-`command_q`, `data0_q`, and `cmderr_q` implement the stage-1 abstract register
-state. `abstract_busy_i` remains owned by the later command executor.
+`command_q`, `data0_q`, `data1_q`, and `cmderr_q` implement the abstract
+register state. `debug_progbuf` owns four additional 32-bit instruction words.
+`abstract_busy_i` remains owned by the command executor.
 
 ```text
 command write && !busy && dmactive:
   command_q       <- DMI write data
   command_valid_o <- 1 for one cycle
 
-command/data0 write && busy:
-  payload ignored
+command write && busy:
+  command ignored
   cmderr_q <- BUSY only when cmderr_q was NONE
+
+data0/data1/progbuf read or write && busy:
+  cmderr_q <- BUSY only when cmderr_q was NONE
+  writes do not modify payload storage
+
+progbuf write && !busy && dmactive:
+  selected word <- DMI write data
+
+reset or accepted dmactive clear:
+  all progbuf words <- 0
 
 executor completion:
   data0_we_i            -> data0_q <- data0_wdata_i
@@ -99,6 +111,10 @@ abstractcs write:
 `dmcontrol`, `dmstatus`, and `abstractcs` are built in independent combinational
 blocks. A final read mux selects one image from the current request address.
 The DMI response slot samples that image on the request handshake edge.
+
+The Program Buffer read index is `dmi.req_addr - DMI_ADDR_PROGBUF0`. The same
+index drives the storage leaf read port and the accepted-write port. The full
+parallel array is exported without another register stage.
 
 ## 7. No Explicit FSM
 

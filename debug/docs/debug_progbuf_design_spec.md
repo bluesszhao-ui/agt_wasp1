@@ -50,10 +50,11 @@ of DMI response timing and executor sequencing stays outside this leaf.
 
 ## 5. Integration Boundary
 
-The standalone `debug_progbuf_exec` sequencer is now independently verified.
-The next integration milestone will instantiate both leaves in the Debug
-Module, connect DMI `progbuf0..3` accesses, route postexec, and add the halted
-core instruction endpoint. Until that complete path passes,
+The storage leaf is now instantiated in `debug_dmi_regs`, where DMI
+`progbuf0..3` reads/writes and busy protection are verified. The standalone
+`debug_progbuf_exec` sequencer is also independently verified. The next
+integration milestone will route postexec and add the halted-core instruction
+endpoint. Until that complete path passes,
 `debug_dmi_regs.abstractcs.progbufsize` remains zero and OpenOCD continues using
 the already verified abstract memory path.
 

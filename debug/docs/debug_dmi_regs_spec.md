@@ -19,6 +19,10 @@ OpenOCD/GDB interoperability.
 | `0x12` | `hartinfo` | R | Zero: no hart-local data window or scratch registers |
 | `0x16` | `abstractcs` | R/W1C | Two data registers, executor busy, sticky `cmderr` |
 | `0x17` | `command` | R/W | Accepted command value and one-cycle executor pulse |
+| `0x20` | `progbuf0` | R/W | Program Buffer instruction word 0 |
+| `0x21` | `progbuf1` | R/W | Program Buffer instruction word 1 |
+| `0x22` | `progbuf2` | R/W | Program Buffer instruction word 2 |
+| `0x23` | `progbuf3` | R/W | Program Buffer instruction word 3 |
 
 Writes to defined read-only registers must succeed without changing state.
 Unsupported addresses and reserved DMI operations must return `FAILED`.
@@ -48,10 +52,18 @@ and have no side effect.
 
 ## 5. Abstract Command Requirements
 
-`abstractcs.datacount` is 2 and `progbufsize` is 0. A command write while the
+`abstractcs.datacount` is 2. `progbufsize` remains 0 during this internal
+integration milestone, so external debuggers are not yet told that Program
+Buffer execution exists. A command write while the
 executor is idle records the command and pulses `command_valid_o` for one
-cycle. A command, data0, or data1 write while busy is ignored and sets sticky
-`cmderr=BUSY` if no earlier error exists.
+cycle. A command write while busy is ignored and sets sticky `cmderr=BUSY` if
+no earlier error exists. Any read or write access to `data0`, `data1`, or
+`progbuf0..3` while busy also sets sticky `cmderr=BUSY`; writes are ignored.
+
+Each accepted idle `progbuf0..3` write updates exactly one 32-bit word. Reads
+return the selected current word. Reset and clearing `dmactive` clear all four
+words. `progbuf_words_o` provides the full stable array to the later Program
+Buffer executor integration.
 
 Executor errors set sticky `cmderr` only while it is zero. Software clears
 selected `cmderr` bits by writing ones to `abstractcs.cmderr`. Executor result
