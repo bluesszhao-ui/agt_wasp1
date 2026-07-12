@@ -49,6 +49,17 @@ interface debug_if #(
   logic [XLEN-1:0] mem_rsp_rdata;  // Raw 32-bit memory response data.
   logic            mem_rsp_err;    // Memory path reported an access/bus error.
 
+  // Program Buffer instruction execution request from the Debug Module.
+  logic            exec_req_valid; // Instruction/index remain stable until the core accepts them.
+  logic            exec_req_ready; // Halted and idle core can accept one injected instruction.
+  logic [XLEN-1:0] exec_req_instr; // Raw RV32 instruction to execute while remaining halted.
+  logic [1:0]      exec_req_index; // Program Buffer word index used to form a synthetic PC.
+
+  // Registered execution completion response from the core to the Debug Module.
+  logic            exec_rsp_valid; // Completion/error remains stable until accepted by the DM.
+  logic            exec_rsp_ready; // Debug Module can consume the execution completion.
+  logic            exec_rsp_error; // Instruction was illegal, faulted, or used disallowed control flow.
+
   // Hart-control-only DM view for the independently owned halt controller.
   modport dm_ctrl (
     input  clk,
@@ -93,6 +104,19 @@ interface debug_if #(
     output mem_rsp_ready
   );
 
+  // Program Buffer executor view is independent from GPR and memory commands.
+  modport dm_exec (
+    input  clk,
+    input  rst_n,
+    input  exec_req_ready,
+    input  exec_rsp_valid,
+    input  exec_rsp_error,
+    output exec_req_valid,
+    output exec_req_instr,
+    output exec_req_index,
+    output exec_rsp_ready
+  );
+
   modport dm (
     input  clk,
     input  rst_n,
@@ -108,6 +132,9 @@ interface debug_if #(
     input  mem_rsp_valid,
     input  mem_rsp_rdata,
     input  mem_rsp_err,
+    input  exec_req_ready,
+    input  exec_rsp_valid,
+    input  exec_rsp_error,
     output halt_req,
     output resume_req,
     output step_req,
@@ -127,7 +154,11 @@ interface debug_if #(
     output mem_req_size,
     output mem_req_wdata,
     output mem_req_wstrb,
-    output mem_rsp_ready
+    output mem_rsp_ready,
+    output exec_req_valid,
+    output exec_req_instr,
+    output exec_req_index,
+    output exec_rsp_ready
   );
 
   modport core (
@@ -153,6 +184,10 @@ interface debug_if #(
     input  mem_req_wdata,
     input  mem_req_wstrb,
     input  mem_rsp_ready,
+    input  exec_req_valid,
+    input  exec_req_instr,
+    input  exec_req_index,
+    input  exec_rsp_ready,
     output halted,
     output running,
     output dpc,
@@ -164,7 +199,10 @@ interface debug_if #(
     output mem_req_ready,
     output mem_rsp_valid,
     output mem_rsp_rdata,
-    output mem_rsp_err
+    output mem_rsp_err,
+    output exec_req_ready,
+    output exec_rsp_valid,
+    output exec_rsp_error
   );
 
   modport monitor (
@@ -201,6 +239,13 @@ interface debug_if #(
     input mem_rsp_valid,
     input mem_rsp_ready,
     input mem_rsp_rdata,
-    input mem_rsp_err
+    input mem_rsp_err,
+    input exec_req_valid,
+    input exec_req_ready,
+    input exec_req_instr,
+    input exec_req_index,
+    input exec_rsp_valid,
+    input exec_rsp_ready,
+    input exec_rsp_error
   );
 endinterface

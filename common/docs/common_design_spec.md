@@ -50,6 +50,7 @@ internal core control path. Its modports separate ownership:
 ```text
 dm_ctrl  halt/resume/step/trigger requests plus running/halted/DCSR cause status
 dm_gpr   GPR request/response channel only
+dm_exec  Program Buffer instruction request/completion channel only
 dm       complete Debug Module view for final integration
 core     complete core-side view
 monitor  passive verification view
@@ -58,6 +59,12 @@ monitor  passive verification view
 The split DM modports allow `debug_halt_ctrl` and `debug_reg_access` to connect
 to the same eventual interface without either submodule driving the other's
 signals.
+
+The Program Buffer execution channel carries one raw RV32 instruction and its
+two-bit word index to the halted core. `exec_req_valid/ready` accepts exactly
+one instruction; `exec_rsp_valid/ready` returns one registered completion with
+`exec_rsp_error`. The index forms a synthetic, non-architectural PC inside the
+core and does not change DPC or normal frontend state.
 
 `debug_if` also carries the exact-address trigger slots programmed through
 Debug Spec trigger CSRs. The Debug Module drives per-slot execute, load, and

@@ -42,6 +42,11 @@ When no target macro is explicitly selected, generic simulation is the default.
 Common interfaces must use synthesizable SystemVerilog `interface` constructs
 and expose modports that preserve directionality.
 
+`debug_if` must provide independently owned hart-control, GPR/memory abstract
+access, and Program Buffer execution channels. The execution request carries a
+32-bit instruction plus a two-bit word index; its completion response carries a
+sticky-until-accepted error indication.
+
 Reset-related utilities must use explicit reset polarity in their port names.
 
 ## 5. Out of Scope

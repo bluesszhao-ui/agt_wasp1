@@ -398,6 +398,10 @@ module tb_core;
     core_debug.gpr_req_addr = 5'd0;
     core_debug.gpr_req_wdata = 32'h0000_0000;
     core_debug.gpr_rsp_ready = 1'b1;
+    core_debug.exec_req_valid = 1'b0;
+    core_debug.exec_req_instr = 32'h0000_0013;
+    core_debug.exec_req_index = 2'd0;
+    core_debug.exec_rsp_ready = 1'b1;
 
     repeat (2) @(posedge clk);
     #1;

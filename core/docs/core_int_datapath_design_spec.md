@@ -28,10 +28,10 @@ a line bundle.
 `core_pipe` supplies the execute/writeback slot. This milestone decodes the EX
 slot directly and reads the register file using the decoded source fields.
 
-`core_pipe` now also contains a verified halted-core debug injection slot and
-ID/EX source tags. This datapath milestone ties the injection request inactive;
-the next Program Buffer integration step will connect `debug_if` and consume
-`ex_debug` for completion/error isolation without changing normal execution.
+`core_pipe` also contains a halted-core debug injection slot and ID/EX source
+tags. `core_int_datapath` now connects that slot to the `debug_if` execution
+channel, tracks one active injected instruction, and returns one registered
+completion response.
 
 ALU operand selection:
 
@@ -131,6 +131,8 @@ debug_running     -> exported through debug_if.core
 debug_next_pc_q   -> tracks the next PC implied by fetch/retire
 debug_dpc_q       -> exported through debug_if.core as captured DPC
 debug_dcsr_cause_q -> exported through debug_if.core as DCSR cause
+debug_exec_active_q -> one injected instruction is in ID/EX or waiting on LSU
+debug_exec_rsp_valid_q -> completion is held until exec_rsp_ready
 ```
 
 The pipeline drains rather than being frozen immediately:
@@ -190,6 +192,40 @@ halted Debug Mode                       -> debug_dpc_q captures debug_next_pc_q
 
 The captured value is a resume PC, not a history trace PC. The Debug Module
 returns it through the abstract `dpc` CSR read path used by OpenOCD/GDB.
+
+### 4.1 Program Buffer Injection
+
+An execution request is accepted only while the hart is halted, the pipeline
+is empty, no LSU transaction is outstanding, and no GPR/memory/execution
+response is pending. The injected PC is:
+
+```text
+0xffff_f000 + (exec_req_index * 4)
+```
+
+This synthetic PC identifies Program Buffer words for AUIPC-style computation;
+it is not exposed as DPC and never redirects the normal frontend. Injection has
+priority over the halted pipeline freeze only for the lifetime of the accepted
+instruction. `debug_stop_fetch` remains asserted, so the frontend cannot supply
+or consume ordinary instructions.
+
+Straight-line RV32I ALU, upper-immediate, GPR, aligned load/store, and legal CSR
+instructions may update architectural state. Branch, JAL, JALR, ECALL, EBREAK,
+and MRET are rejected as execution errors at this boundary. EBREAK termination
+is consumed by `debug_progbuf_exec` and is therefore not injected.
+
+Completion/error isolation is explicit:
+
+```text
+retire_valid && ex_debug -> capture exec_rsp_valid/error and clear active
+ex_debug                 -> suppress trap selection and normal redirect
+ex_debug                 -> suppress DPC/debug_next_pc update
+ex_debug                 -> suppress minstret-style retire accounting
+illegal/CSR/LSU/control error -> suppress register writeback
+```
+
+The response remains stable under `exec_rsp_ready=0`. While active or while a
+response is pending, GPR/memory debug requests and resume are blocked.
 
 DCSR cause state is kept beside DPC state:
 
@@ -258,6 +294,11 @@ Debug halt/resume state:
   halted state captures debug_next_pc_q into debug_dpc_q
   halted state freezes the empty pipeline and enables GPR debug access
   resume exits halted after pending GPR response traffic clears
+  exec request injects one tagged word into the empty IF/ID slot
+  debug_exec_active_q temporarily releases internal decode/execute freeze
+  tagged EX completion creates a registered execution response
+  response backpressure holds error and blocks resume/new debug requests
+  response acceptance clears valid and restores ordinary halted access
 ```
 
 The integrated regfile instance disables same-cycle bypass to avoid a

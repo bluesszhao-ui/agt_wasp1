@@ -44,6 +44,11 @@ each pipeline advance, and checks expected register writeback.
 | Debug store trigger | Match an EX-stage store effective address, prove no write request/retire side effect, check DPC/cause, clear trigger, resume, and execute the store once |
 | Debug trigger isolation | Prove load-only does not match store and store-only does not match load; unmatched addresses execute normally |
 | Debug resume | Resume from halted state and check running status returns |
+| Debug injected ADDI | Execute one tagged ADDI while halted and verify GPR writeback without frontend release |
+| Debug injected load/store | Reuse the normal LSU path and check request address/direction plus load writeback |
+| Debug execution response backpressure | Hold response ready low and prove valid/error/DPC remain stable and a second request is blocked |
+| Debug execution errors | Inject illegal, misaligned LW, and JAL words; require error response with no writeback, trap, redirect, request (for misalignment), or architectural fault output |
+| Debug trap-CSR isolation | Read `mcause` through an injected CSRRS after error cases and prove prior timer-IRQ state was preserved |
 
 ## 3. Exit Criteria
 
@@ -51,4 +56,5 @@ All expected commits and suppressions must match. Coverage counters must show
 ALU-immediate, ALU-register, upper-immediate, branch, link, redirect,
 load, store, LSU fault, data-memory wait state, request backpressure, CSR,
 trap, interrupt, load-use hazard, suppression, frontend-model PC stepping, and
-debug halt/GPR/execute-trigger/load-trigger/store-trigger/isolation/resume coverage.
+debug halt/GPR/injected-execution/backpressure/error/execute-trigger/load-trigger/
+store-trigger/isolation/resume coverage.

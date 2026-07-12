@@ -454,12 +454,12 @@ operand select}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
+{\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs17 \cf0 SEQ CSR/debug state\
+\f0\fs16 \cf0 SEQ CSR/DPC state\
 clk=clk_i rst=rst_ni\
-CSR + halt FSM}</string>
+machine CSR + DPC/cause}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -694,12 +694,12 @@ valid/ready}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
+{\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs17 \cf0 IF IRQ/debug inputs\
+\f0\fs16 \cf0 IF IRQ/control\
 timer external\
-debug_if.core}</string>
+halt/resume/trigger}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -754,12 +754,12 @@ debug_if.core}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
+{\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs17 \cf0 COMB debug controls\
-stall/freeze/trigger compare\
-GPR/memory request gate}</string>
+\f0\fs16 \cf0 COMB debug admission/isolation\
+request arbitration + freeze override\
+trap/redirect/DPC suppression}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -2331,23 +2331,143 @@ GPR/memory request gate}</string>
 				<key>Text</key>
 				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
+{\colortbl;\red0\green0\blue0;}
 \pard\qc\partightenfactor0
 
-\f0\fs16 \cf0 L3 integration diagram: main instruction flow runs left to right; WB-to-regfile and redirect-to-pipe use outer channels to keep state ownership and control feedback explicit.}</string>
+\f0\fs16 \cf0 L3 integration: normal instruction flow is left-to-right. Debug execution stays halted: IF request -&gt; COMB admission -&gt; SEQ active/response -&gt; tagged core_pipe word; ex_debug suppresses normal trap, redirect, DPC, and retire accounting.}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>200</integer>
+			<key>Name</key>
+			<string>if-debug-exec</string>
+			<key>Bounds</key>
+			<string>{{1490, 470}, {240, 90}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.79</real>
+						<key>g</key>
+						<real>0.9</real>
+						<key>b</key>
+						<real>1.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 IF debug execution channel\
+req instr/index valid/ready\
+rsp valid/ready/error}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>ShapedGraphic</string>
+			<key>ID</key>
+			<integer>201</integer>
+			<key>Name</key>
+			<string>seq-debug-exec</string>
+			<key>Bounds</key>
+			<string>{{1790, 460}, {240, 100}}</string>
+			<key>Style</key>
+			<dict>
+				<key>fill</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.78</real>
+						<key>g</key>
+						<real>0.95</real>
+						<key>b</key>
+						<real>0.82</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+				</dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.18</real>
+						<key>g</key>
+						<real>0.18</real>
+						<key>b</key>
+						<real>0.18</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+			<key>Text</key>
+			<dict>
+				<key>Text</key>
+				<string>{\rtf1\ansi\ansicpg936\cocoartf2870
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red0\green0\blue0;}
+\pard\qc\partightenfactor0
+
+\f0\fs16 \cf0 SEQ debug execution state\
+clk=clk_i rst=rst_ni\
+active + response valid/error}</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>169</integer>
+			<integer>202</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-s0</string>
+			<string>manual-conn-line-debug-comb-to-exec-state-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{1790, 375}</string>
-				<string>{1760, 375}</string>
+				<string>{1910, 395}</string>
+				<string>{1910, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2361,16 +2481,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2378,13 +2498,13 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>170</integer>
+			<integer>203</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-s1</string>
+			<string>manual-conn-line-debug-comb-to-exec-state-arrow-a</string>
 			<key>Points</key>
 			<array>
-				<string>{1760, 375}</string>
-				<string>{1760, 650}</string>
+				<string>{1905, 450}</string>
+				<string>{1910, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2398,16 +2518,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2415,13 +2535,13 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>171</integer>
+			<integer>204</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-s2</string>
+			<string>manual-conn-line-debug-comb-to-exec-state-arrow-b</string>
 			<key>Points</key>
 			<array>
-				<string>{1760, 650}</string>
-				<string>{290, 650}</string>
+				<string>{1915, 450}</string>
+				<string>{1910, 460}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2435,16 +2555,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2452,12 +2572,345 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>172</integer>
+			<integer>205</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-s3</string>
+			<string>manual-conn-line-debug-exec-req-s0</string>
 			<key>Points</key>
 			<array>
-				<string>{290, 650}</string>
+				<string>{1730, 490}</string>
+				<string>{1790, 490}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>206</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-exec-req-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1780, 485}</string>
+				<string>{1790, 490}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>207</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-exec-req-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1780, 495}</string>
+				<string>{1790, 490}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>208</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-exec-rsp-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{1790, 530}</string>
+				<string>{1730, 530}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>209</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-exec-rsp-arrow-a</string>
+			<key>Points</key>
+			<array>
+				<string>{1740, 525}</string>
+				<string>{1730, 530}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>210</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-exec-rsp-arrow-b</string>
+			<key>Points</key>
+			<array>
+				<string>{1740, 535}</string>
+				<string>{1730, 530}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>211</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-state-to-pipe-s0</string>
+			<key>Points</key>
+			<array>
+				<string>{1790, 545}</string>
+				<string>{1760, 545}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>212</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-state-to-pipe-s1</string>
+			<key>Points</key>
+			<array>
+				<string>{1760, 545}</string>
+				<string>{1760, 630}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>213</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-state-to-pipe-s2</string>
+			<key>Points</key>
+			<array>
+				<string>{1760, 630}</string>
+				<string>{290, 630}</string>
+			</array>
+			<key>Style</key>
+			<dict>
+				<key>shadow</key>
+				<dict>
+					<key>Draws</key>
+					<string>NO</string>
+				</dict>
+				<key>stroke</key>
+				<dict>
+					<key>Color</key>
+					<dict>
+						<key>r</key>
+						<real>0.0</real>
+						<key>g</key>
+						<real>0.0</real>
+						<key>b</key>
+						<real>0.0</real>
+						<key>space</key>
+						<string>srgb</string>
+					</dict>
+					<key>Width</key>
+					<real>1.5</real>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>Class</key>
+			<string>LineGraphic</string>
+			<key>ID</key>
+			<integer>214</integer>
+			<key>Name</key>
+			<string>manual-conn-line-debug-state-to-pipe-s3</string>
+			<key>Points</key>
+			<array>
+				<string>{290, 630}</string>
 				<string>{290, 180}</string>
 			</array>
 			<key>Style</key>
@@ -2472,16 +2925,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2489,9 +2942,9 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>173</integer>
+			<integer>215</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-s4</string>
+			<string>manual-conn-line-debug-state-to-pipe-s4</string>
 			<key>Points</key>
 			<array>
 				<string>{290, 180}</string>
@@ -2509,16 +2962,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2526,9 +2979,9 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>174</integer>
+			<integer>216</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-arrow-a</string>
+			<string>manual-conn-line-debug-state-to-pipe-arrow-a</string>
 			<key>Points</key>
 			<array>
 				<string>{310, 175}</string>
@@ -2546,16 +2999,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>
@@ -2563,9 +3016,9 @@ GPR/memory request gate}</string>
 			<key>Class</key>
 			<string>LineGraphic</string>
 			<key>ID</key>
-			<integer>175</integer>
+			<integer>217</integer>
 			<key>Name</key>
-			<string>manual-conn-line-debug-to-pipe-arrow-b</string>
+			<string>manual-conn-line-debug-state-to-pipe-arrow-b</string>
 			<key>Points</key>
 			<array>
 				<string>{310, 185}</string>
@@ -2583,16 +3036,16 @@ GPR/memory request gate}</string>
 					<key>Color</key>
 					<dict>
 						<key>r</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>g</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>b</key>
-						<real>0.12</real>
+						<real>0.0</real>
 						<key>space</key>
 						<string>srgb</string>
 					</dict>
 					<key>Width</key>
-					<real>1.25</real>
+					<real>1.5</real>
 				</dict>
 			</dict>
 		</dict>

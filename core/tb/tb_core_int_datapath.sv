@@ -68,6 +68,7 @@ module tb_core_int_datapath;
   integer suppress_count;      // x0/illegal/unsupported suppression coverage.
   integer pc_count;            // Fetch PC stepping coverage.
   integer debug_count;         // Debug halt/resume and GPR access coverage.
+  integer debug_exec_count;    // Halted Program Buffer injection coverage.
   integer trigger_count;       // Execute-address debug trigger coverage.
   integer load_trigger_count;  // Precise load-address debug trigger coverage.
   integer store_trigger_count; // Precise store-address debug trigger coverage.
@@ -288,6 +289,127 @@ module tb_core_int_datapath;
       #1;
       exp_fetch_pc = exp_next_pc;
       pc_count++;
+    end
+  endtask
+
+  // Execute one injected instruction without leaving Debug Mode. This task
+  // checks request/response handshakes, response backpressure, frontend/DPC
+  // isolation, optional register commit, and optional LSU request formatting.
+  task automatic debug_exec_instr(
+    input string       name,
+    input logic [31:0] exec_instr,
+    input logic [1:0]  exec_index,
+    input logic        exp_error,
+    input logic        exp_commit,
+    input logic [4:0]  exp_rd,
+    input logic [31:0] exp_data,
+    input logic        exp_mem_req,
+    input logic        exp_mem_write,
+    input logic [31:0] exp_mem_addr,
+    input logic        hold_response
+  );
+    logic [31:0] saved_dpc;
+    logic        saw_commit;
+    logic        saw_mem_req;
+    begin
+      saved_dpc = core_debug.dpc;
+      saw_commit = 1'b0;
+      saw_mem_req = 1'b0;
+
+      @(negedge clk);
+      core_debug.exec_req_valid = 1'b1;
+      core_debug.exec_req_instr = exec_instr;
+      core_debug.exec_req_index = exec_index;
+      core_debug.exec_rsp_ready = !hold_response;
+      #1;
+      if (!core_debug.exec_req_ready) begin
+        $fatal(1, "%s execution request not ready", name);
+      end
+
+      @(posedge clk);
+      #1;
+      if (!core_debug.halted || core_debug.running || instr_ready) begin
+        $fatal(1, "%s left halted state on request", name);
+      end
+      @(negedge clk);
+      core_debug.exec_req_valid = 1'b0;
+
+      for (int unsigned tries = 0; tries < 16; tries++) begin
+        @(posedge clk);
+        #1;
+        if (!core_debug.halted || core_debug.running || instr_ready ||
+            (core_debug.dpc !== saved_dpc)) begin
+          $fatal(1, "%s debug isolation mismatch halted=%0b running=%0b ready=%0b dpc=%08x exp_dpc=%08x",
+                 name, core_debug.halted, core_debug.running, instr_ready,
+                 core_debug.dpc, saved_dpc);
+        end
+        if (redirect_valid || trap_valid || illegal || lsu_fault) begin
+          $fatal(1, "%s leaked architectural error/redirect redir=%0b trap=%0b illegal=%0b lsu_fault=%0b",
+                 name, redirect_valid, trap_valid, illegal, lsu_fault);
+        end
+        if (commit_valid) begin
+          if (!exp_commit || saw_commit || (commit_rd !== exp_rd) ||
+              (commit_data !== exp_data)) begin
+            $fatal(1, "%s commit mismatch valid=%0b rd=%0d data=%08x exp_valid=%0b exp_rd=%0d exp_data=%08x",
+                   name, commit_valid, commit_rd, commit_data, exp_commit,
+                   exp_rd, exp_data);
+          end
+          saw_commit = 1'b1;
+        end
+        if (dmem_req_valid && dmem_req_ready) begin
+          if (!exp_mem_req || saw_mem_req ||
+              (dmem_req_write !== exp_mem_write) ||
+              (dmem_req_addr !== exp_mem_addr)) begin
+            $fatal(1, "%s memory request mismatch write=%0b addr=%08x exp_req=%0b exp_write=%0b exp_addr=%08x",
+                   name, dmem_req_write, dmem_req_addr, exp_mem_req,
+                   exp_mem_write, exp_mem_addr);
+          end
+          saw_mem_req = 1'b1;
+        end
+
+        if (core_debug.exec_rsp_valid) begin
+          if (core_debug.exec_rsp_error !== exp_error ||
+              (saw_commit !== exp_commit) ||
+              (saw_mem_req !== exp_mem_req)) begin
+            $fatal(1, "%s response mismatch err=%0b commit=%0b mem=%0b exp_err=%0b exp_commit=%0b exp_mem=%0b",
+                   name, core_debug.exec_rsp_error, saw_commit, saw_mem_req,
+                   exp_error, exp_commit, exp_mem_req);
+          end
+          if (core_debug.exec_req_ready) begin
+            $fatal(1, "%s accepted a second request with response pending", name);
+          end
+
+          if (hold_response) begin
+            // A resume request cannot escape Debug Mode while completion is
+            // still owned by the DM and has not handshaken.
+            core_debug.resume_req = 1'b1;
+            repeat (2) begin
+              @(posedge clk);
+              #1;
+              if (!core_debug.exec_rsp_valid ||
+                  (core_debug.exec_rsp_error !== exp_error) ||
+                  !core_debug.halted || instr_ready ||
+                  (core_debug.dpc !== saved_dpc)) begin
+                $fatal(1, "%s response changed under backpressure", name);
+              end
+            end
+            @(negedge clk);
+            core_debug.resume_req = 1'b0;
+            core_debug.exec_rsp_ready = 1'b1;
+          end
+
+          @(posedge clk);
+          #1;
+          if (core_debug.exec_rsp_valid) begin
+            $fatal(1, "%s execution response did not clear", name);
+          end
+          pass_count++;
+          debug_count++;
+          debug_exec_count++;
+          return;
+        end
+      end
+      $fatal(1, "%s execution response timed out", name);
     end
   endtask
 
@@ -968,6 +1090,7 @@ module tb_core_int_datapath;
     suppress_count = 0;
     pc_count = 0;
     debug_count = 0;
+    debug_exec_count = 0;
     trigger_count = 0;
     load_trigger_count = 0;
     store_trigger_count = 0;
@@ -996,6 +1119,10 @@ module tb_core_int_datapath;
     core_debug.gpr_req_addr = 5'd0;
     core_debug.gpr_req_wdata = 32'h0000_0000;
     core_debug.gpr_rsp_ready = 1'b1;
+    core_debug.exec_req_valid = 1'b0;
+    core_debug.exec_req_instr = 32'h0000_0013;
+    core_debug.exec_req_index = 2'd0;
+    core_debug.exec_rsp_ready = 1'b1;
 
     repeat (2) @(posedge clk);
     #1;
@@ -1247,6 +1374,40 @@ module tb_core_int_datapath;
     debug_enter_halt("debug halt after program");
     debug_single_step_addi("debug single-step addi", 5'd12, 12'h123,
                            32'h0000_0123);
+    $display("tb_core_int_datapath phase debug_exec start=%0t", $time);
+    debug_exec_instr("debug inject addi backpressure",
+                     enc_i(12'd9, 5'd0, 3'b000, 5'd14), 2'd0,
+                     1'b0, 1'b1, 5'd14, 32'd9,
+                     1'b0, 1'b0, 32'h0000_0000, 1'b1);
+    debug_exec_instr("debug inject lw",
+                     enc_load(12'd0, 5'd20, 3'b010, 5'd15), 2'd1,
+                     1'b0, 1'b1, 5'd15, 32'h89AB_CDEF,
+                     1'b1, 1'b0, 32'h0000_0300, 1'b0);
+    debug_exec_instr("debug inject sw",
+                     enc_store(12'd4, 5'd14, 5'd20, 3'b010), 2'd2,
+                     1'b0, 1'b0, 5'd0, 32'h0000_0000,
+                     1'b1, 1'b1, 32'h0000_0304, 1'b0);
+    debug_exec_instr("debug inject illegal", 32'hffff_ffff, 2'd3,
+                     1'b1, 1'b0, 5'd0, 32'h0000_0000,
+                     1'b0, 1'b0, 32'h0000_0000, 1'b0);
+    debug_exec_instr("debug inject misaligned lw",
+                     enc_load(12'h301, 5'd0, 3'b010, 5'd16), 2'd0,
+                     1'b1, 1'b0, 5'd16, 32'h0000_0000,
+                     1'b0, 1'b0, 32'h0000_0000, 1'b0);
+    debug_exec_instr("debug inject control flow",
+                     enc_jal(21'd8, 5'd17), 2'd1,
+                     1'b1, 1'b0, 5'd17, 32'h0000_0000,
+                     1'b0, 1'b0, 32'h0000_0000, 1'b0);
+    debug_exec_instr("debug inject read preserved mcause",
+                     enc_csr(CSR_MCAUSE, 5'd0, 3'b010, 5'd18), 2'd2,
+                     1'b0, 1'b1, 5'd18,
+                     {1'b1, 26'h000_0000, TRAP_CAUSE_M_TIMER_IRQ},
+                     1'b0, 1'b0, 32'h0000_0000, 1'b0);
+    debug_read_gpr("debug read injected x14", 5'd14, 32'h0000_0009);
+    debug_read_gpr("debug read injected x15", 5'd15, 32'h89AB_CDEF);
+    debug_read_gpr("debug read preserved mcause", 5'd18,
+                   {1'b1, 26'h000_0000, TRAP_CAUSE_M_TIMER_IRQ});
+    $display("tb_core_int_datapath phase debug_exec end=%0t", $time);
     debug_read_gpr("debug read stepped x12", 5'd12, 32'h0000_0123);
     debug_read_gpr("debug read x26", 5'd26, 32'h0000_0888);
     debug_write_gpr("debug write x10", 5'd10, 32'hCAFE_1234);
@@ -1274,18 +1435,19 @@ module tb_core_int_datapath;
         lsu_fault_count < 1 || dmem_wait_count < 2 || dmem_bp_count < 1 ||
         csr_count < 9 || trap_count < 4 ||
         irq_count < 1 || hazard_count < 1 || suppress_count < 17 ||
-        pc_count < 59 || debug_count < 17 || trigger_count < 4 ||
+        pc_count < 59 || debug_count < 27 || debug_exec_count < 7 ||
+        trigger_count < 4 ||
         load_trigger_count < 2 || store_trigger_count < 1) begin
       $fatal(1, "coverage goal missed");
     end
 
     $display("tb_core_int_datapath phase complete=%0t", $time);
-    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d trigger=%0d load_trigger=%0d store_trigger=%0d",
+    $display("tb_core_int_datapath coverage: pass_count=%0d commit=%0d alu_i=%0d alu_r=%0d upper=%0d link=%0d branch=%0d redirect=%0d load=%0d store=%0d lsu_fault=%0d dmem_wait=%0d dmem_bp=%0d csr=%0d trap=%0d irq=%0d hazard=%0d suppress=%0d pc=%0d debug=%0d debug_exec=%0d trigger=%0d load_trigger=%0d store_trigger=%0d",
              pass_count, commit_count, alu_i_count, alu_r_count,
              upper_count, link_count, branch_count, redirect_count,
              load_count, store_count, lsu_fault_count, dmem_wait_count,
              dmem_bp_count, csr_count, trap_count, irq_count, hazard_count,
-             suppress_count, pc_count, debug_count, trigger_count,
+             suppress_count, pc_count, debug_count, debug_exec_count, trigger_count,
              load_trigger_count, store_trigger_count);
     $display("tb_core_int_datapath PASS");
     $finish;

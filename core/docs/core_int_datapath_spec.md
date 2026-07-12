@@ -43,6 +43,7 @@ Debug Mode halt-pending drain, halted status, resume, single-step re-halt, and p
 halted-core GPR read/write access through `debug_if.core`
 halted Debug PC capture through `debug_if.core.dpc`
 DCSR cause reporting through `debug_if.core.dcsr_cause`
+halted Program Buffer instruction execution through `debug_if.core`
 ```
 
 ## 3. Unsupported Instruction Scope
@@ -128,3 +129,10 @@ access, DPC resume-PC capture, DCSR cause reporting for halt/step/trigger,
 precise execute/load/store address trigger entry before the matched instruction
 retires or issues a data-memory request, normal re-execution from DPC after the
 selected trigger is cleared, and resume back to running state.
+
+Program Buffer execution verification must cover request and response
+handshakes, response backpressure, ALU/GPR writeback, aligned load/store use of
+the normal LSU path, illegal instruction error, disallowed control-flow error,
+and isolation from normal frontend readiness, DPC updates, redirects, traps,
+and ordinary architectural fault outputs. Only one injected instruction may be
+active or have an unconsumed response at a time.

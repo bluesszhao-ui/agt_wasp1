@@ -46,6 +46,7 @@ machine external interrupt
 load-use hazard stall observation
 core-side debug halt/resume/step control hooks
 halted-core GPR read/write request-response channel
+halted-core single-instruction Program Buffer execution channel
 ```
 
 JTAG DTM transport and full Debug Module integration remain later `debug` and
@@ -63,7 +64,8 @@ data side: request valid/address/write/size/wdata/wstrb, response rdata/error
            with req_ready, rsp_valid, and rsp_ready handshake
 interrupt side: timer_irq_i and external_irq_i
 observation side: commit, execute, trap, CSR, hazard, unsupported indicators
-debug side: debug_if.core halt/resume/step status and halted GPR access
+debug side: debug_if.core halt/resume/step status, halted GPR/memory access,
+            and Program Buffer instruction request/completion
 ```
 
 The core does not directly expose TileLink or AHB-Lite. Bus/cache translation is
@@ -103,7 +105,7 @@ CSR read/write/set/clear coverage
 trap and interrupt coverage
 load/store request coverage
 pipeline hazard/stall/flush coverage
-debug halt/resume and halted GPR access coverage
+debug halt/resume, halted GPR access, and injected-instruction coverage
 instruction-level directed programs
 wrapper-level port pass-through and integrated smoke coverage
 ```

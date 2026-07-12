@@ -58,6 +58,7 @@ module core_int_datapath (
   import core_types_pkg::*;
 
   localparam int DEBUG_TRIGGER_COUNT = 2;
+  localparam logic [31:0] DEBUG_EXEC_PC_BASE = 32'hffff_f000;
 
   logic        id_valid;          // IF/ID valid from core_pipe; not decoded here yet.
   logic [31:0] id_pc;             // IF/ID PC from core_pipe.
@@ -193,7 +194,15 @@ module core_int_datapath (
   logic        pipe_fetch_stall;  // Final fetch stall into core_pipe.
   logic        pipe_decode_stall; // Final decode stall into core_pipe.
   logic        pipe_execute_bubble;// Final execute bubble into core_pipe.
-  logic        debug_inject_ready_unused; // Reserved core_pipe injection readiness before integration.
+  logic        debug_inject_valid;  // Qualified Program Buffer injection request into core_pipe.
+  logic        debug_inject_ready;  // Empty core_pipe can capture the injected instruction.
+  logic        debug_exec_req_fire; // Core accepted one Program Buffer instruction.
+  logic        debug_exec_active_q; // Injected instruction is resident in ID/EX or waiting on LSU.
+  logic        debug_exec_complete; // Injected EX instruction reached its terminal cycle.
+  logic        debug_exec_disallowed;// Injected control/system flow is isolated as an execution error.
+  logic        debug_exec_error;    // Terminal injected-instruction error indication.
+  logic        debug_exec_rsp_valid_q;// Registered execution response held for DM backpressure.
+  logic        debug_exec_rsp_error_q;// Registered execution response error payload.
   logic        debug_stop_fetch;   // Debug halt request stops new frontend accepts.
   logic        debug_freeze_pipe;  // Debug halted state freezes the drained pipe.
   logic        debug_halted;       // Core is halted and can accept GPR debug access.
@@ -249,6 +258,9 @@ module core_int_datapath (
   assign debug_gpr_write_fire = debug_gpr_req_fire &&
                                 core_debug.gpr_req_write;
   assign debug_mem_req_active = debug_halted && core_debug.mem_req_valid &&
+                                !core_debug.exec_req_valid &&
+                                !debug_exec_active_q &&
+                                !debug_exec_rsp_valid_q &&
                                 !debug_mem_rsp_valid_q &&
                                 !debug_mem_req_outstanding_q;
   assign debug_mem_req_fire = debug_mem_req_active && dmem_req_ready_i;
@@ -257,7 +269,9 @@ module core_int_datapath (
                                debug_mem_req_fire);
   assign debug_busy = debug_gpr_rsp_valid_q || debug_gpr_req_fire ||
                       debug_mem_rsp_valid_q || debug_mem_req_active ||
-                      debug_mem_req_outstanding_q;
+                      debug_mem_req_outstanding_q ||
+                      core_debug.exec_req_valid || debug_exec_active_q ||
+                      debug_exec_rsp_valid_q;
   assign debug_resume_redirect = debug_halted && core_debug.resume_req &&
                                  !core_debug.halt_req && !debug_busy;
   // Data triggers act on the older EX instruction and therefore own DPC if a
@@ -288,9 +302,9 @@ module core_int_datapath (
   assign pipe_fetch_stall = hazard_fetch_stall || lsu_wait_stall ||
                             debug_stop_fetch;
   assign pipe_decode_stall = hazard_decode_stall || lsu_wait_stall ||
-                             debug_freeze_pipe;
+                             (debug_freeze_pipe && !debug_exec_active_q);
   assign pipe_execute_bubble = hazard_execute_bubble && !lsu_wait_stall &&
-                               !debug_freeze_pipe;
+                               !(debug_freeze_pipe && !debug_exec_active_q);
 
   core_debug_ctrl debug_ctrl_u (
     .clk_i(clk_i),
@@ -312,7 +326,11 @@ module core_int_datapath (
   assign core_debug.running = debug_running;
   assign core_debug.dpc = debug_dpc_q;
   assign core_debug.dcsr_cause = debug_dcsr_cause_q;
-  assign core_debug.gpr_req_ready = debug_halted && !debug_gpr_rsp_valid_q;
+  assign core_debug.gpr_req_ready = debug_halted &&
+                                    !core_debug.exec_req_valid &&
+                                    !debug_exec_active_q &&
+                                    !debug_exec_rsp_valid_q &&
+                                    !debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_valid = debug_gpr_rsp_valid_q;
   assign core_debug.gpr_rsp_rdata = debug_gpr_rsp_rdata_q;
   assign core_debug.gpr_rsp_err = debug_gpr_rsp_err_q;
@@ -320,7 +338,27 @@ module core_int_datapath (
   assign core_debug.mem_rsp_valid = debug_mem_rsp_valid_q;
   assign core_debug.mem_rsp_rdata = debug_mem_rsp_rdata_q;
   assign core_debug.mem_rsp_err = debug_mem_rsp_err_q;
-  assign regfile_raddr1 = debug_halted ? core_debug.gpr_req_addr : dec_rs1;
+  assign debug_inject_valid = core_debug.exec_req_valid && debug_halted &&
+                              !debug_exec_active_q &&
+                              !debug_exec_rsp_valid_q &&
+                              !debug_gpr_rsp_valid_q &&
+                              !debug_mem_rsp_valid_q &&
+                              !debug_mem_req_outstanding_q;
+  assign core_debug.exec_req_ready = debug_inject_valid &&
+                                     debug_inject_ready;
+  assign debug_exec_req_fire = core_debug.exec_req_valid &&
+                               core_debug.exec_req_ready;
+  assign core_debug.exec_rsp_valid = debug_exec_rsp_valid_q;
+  assign core_debug.exec_rsp_error = debug_exec_rsp_error_q;
+  assign debug_exec_complete = retire_valid && ex_debug;
+  assign debug_exec_disallowed = ex_debug &&
+                                 (dec_branch || dec_jal || dec_jalr ||
+                                  dec_ecall || dec_ebreak || dec_mret);
+  assign debug_exec_error = ex_fetch_fault || dec_illegal ||
+                            lsu_active_fault || csr_illegal ||
+                            debug_exec_disallowed;
+  assign regfile_raddr1 = (debug_halted && !debug_exec_active_q) ?
+                          core_debug.gpr_req_addr : dec_rs1;
   assign regfile_we = debug_gpr_write_fire ? 1'b1 : rf_we;
   assign regfile_waddr = debug_gpr_write_fire ? core_debug.gpr_req_addr :
                                                 rf_waddr;
@@ -348,7 +386,7 @@ module core_int_datapath (
         debug_next_pc_q <= instr_pc_i;
       end
 
-      if (!debug_trigger_halt && retire_valid) begin
+      if (!debug_trigger_halt && retire_valid && !ex_debug) begin
         debug_next_pc_q <= debug_retire_next_pc;
       end
 
@@ -362,6 +400,32 @@ module core_int_datapath (
       // OpenOCD may read DPC immediately after dmstatus.allhalted becomes set.
       if (debug_halted || (debug_stop_fetch && debug_pipe_idle && !debug_busy)) begin
         debug_dpc_q <= debug_next_pc_q;
+      end
+    end
+  end
+
+  // Execute exactly one injected instruction while the hart remains in the
+  // HALTED debug-control state. The response is registered so the DM may apply
+  // arbitrary backpressure without causing a second execution or losing error
+  // status. Machine trap state and DPC updates are independently gated below.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      debug_exec_active_q <= 1'b0;
+      debug_exec_rsp_valid_q <= 1'b0;
+      debug_exec_rsp_error_q <= 1'b0;
+    end else begin
+      if (debug_exec_rsp_valid_q && core_debug.exec_rsp_ready) begin
+        debug_exec_rsp_valid_q <= 1'b0;
+      end
+
+      if (debug_exec_req_fire) begin
+        debug_exec_active_q <= 1'b1;
+      end
+
+      if (debug_exec_complete) begin
+        debug_exec_active_q <= 1'b0;
+        debug_exec_rsp_valid_q <= 1'b1;
+        debug_exec_rsp_error_q <= debug_exec_error;
       end
     end
   end
@@ -434,10 +498,11 @@ module core_int_datapath (
     .instr_pc_i(instr_pc_i),
     .instr_i(instr_i),
     .instr_fault_i(instr_fault_i),
-    .debug_inject_valid_i(1'b0),
-    .debug_inject_ready_o(debug_inject_ready_unused),
-    .debug_inject_pc_i(32'h0000_0000),
-    .debug_inject_instr_i(32'h0000_0013),
+    .debug_inject_valid_i(debug_inject_valid),
+    .debug_inject_ready_o(debug_inject_ready),
+    .debug_inject_pc_i(DEBUG_EXEC_PC_BASE +
+                       {28'h000_0000, core_debug.exec_req_index, 2'b00}),
+    .debug_inject_instr_i(core_debug.exec_req_instr),
     .fetch_stall_i(pipe_fetch_stall),
     .decode_stall_i(pipe_decode_stall),
     .execute_bubble_i(pipe_execute_bubble),
@@ -630,13 +695,13 @@ module core_int_datapath (
     .csr_wdata_i(csr_wdata),
     .csr_rdata_o(csr_rdata),
     .csr_illegal_o(csr_illegal),
-    .retire_i(retire_valid && !write_fault && !trap_valid),
-    .trap_valid_i(trap_valid),
+    .retire_i(retire_valid && !ex_debug && !write_fault && !trap_valid),
+    .trap_valid_i(trap_valid && !ex_debug),
     .trap_interrupt_i(trap_interrupt),
     .trap_cause_i(trap_cause),
     .trap_pc_i(trap_pc),
     .trap_tval_i(trap_tval),
-    .mret_i(ex_valid && mret_taken),
+    .mret_i(ex_valid && !ex_debug && mret_taken),
     .timer_irq_i(timer_irq_i),
     .external_irq_i(external_irq_i),
     .mtvec_o(mtvec),
@@ -649,7 +714,7 @@ module core_int_datapath (
   );
 
   core_trap trap_u (
-    .valid_i(retire_valid),
+    .valid_i(retire_valid && !ex_debug),
     .pc_i(ex_pc),
     .instr_i(ex_instr),
     .instr_misaligned_i(1'b0),
@@ -682,7 +747,7 @@ module core_int_datapath (
 
   assign auipc_result = ex_pc + dec_imm;
   assign lsu_active_fault = lsu_mem_op && lsu_fault;
-  assign redirect_valid = retire_valid && branch_taken && !ex_fetch_fault &&
+  assign redirect_valid = retire_valid && !ex_debug && branch_taken && !ex_fetch_fault &&
                           !dec_illegal && !lsu_active_fault;
   assign pipe_redirect_valid = trap_redirect || redirect_valid ||
                                debug_resume_redirect || debug_trigger_halt;
@@ -714,7 +779,8 @@ module core_int_datapath (
                        dec_auipc || dec_jal || dec_jalr || dec_load ||
                        dec_csr);
   assign write_fault = ex_fetch_fault || dec_illegal || unsupported ||
-                       lsu_active_fault || csr_illegal;
+                       lsu_active_fault || csr_illegal ||
+                       debug_exec_disallowed;
 
   core_wb wb_u (
     .wb_valid_i(retire_valid),
@@ -739,8 +805,8 @@ module core_int_datapath (
   assign ex_valid_o = ex_valid;
   assign ex_pc_o = ex_pc;
   assign ex_instr_o = ex_instr;
-  assign illegal_o = retire_valid && dec_illegal;
-  assign lsu_fault_o = retire_valid && lsu_active_fault;
+  assign illegal_o = retire_valid && !ex_debug && dec_illegal;
+  assign lsu_fault_o = retire_valid && !ex_debug && lsu_active_fault;
   assign trap_valid_o = trap_valid;
   assign trap_interrupt_o = trap_interrupt;
   assign trap_cause_o = trap_cause;

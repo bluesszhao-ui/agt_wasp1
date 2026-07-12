@@ -105,6 +105,13 @@ module debug (
   assign core_debug.mem_req_wdata = mem_cmd_wdata;
   assign core_debug.mem_req_wstrb = mem_cmd_wstrb;
   assign core_debug.mem_rsp_ready = mem_rsp_ready;
+  // Program Buffer execution is connected in the following debug-top
+  // milestone. Keep the new core execution channel quiescent until the
+  // verified debug_progbuf_exec sequencer owns these signals.
+  assign core_debug.exec_req_valid = 1'b0;
+  assign core_debug.exec_req_instr = 32'h0000_0013;
+  assign core_debug.exec_req_index = 2'd0;
+  assign core_debug.exec_rsp_ready = 1'b0;
   assign core_debug.trigger_execute_valid = trigger_execute_valid;
   assign core_debug.trigger_execute_addr = trigger_execute_addr;
   assign core_debug.trigger_load_valid = trigger_load_valid;
