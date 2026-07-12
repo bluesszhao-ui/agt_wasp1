@@ -19,19 +19,20 @@ make lint
 
 | Time | Cycle Window | Action | Result |
 | --- | --- | --- | --- |
-| 0ns-21ns | Reset | Hold reset and check invalid slots | Invalid NOP slots matched |
-| 25ns-45ns | Fetch/advance | Accept two instructions and advance IF/ID to EX/WB | PC, instruction, and valid movement matched |
-| 55ns-75ns | Stall/bubble | Hold IF/ID, block fetch, and bubble EX/WB | Hold and bubble behavior matched |
-| 85ns-105ns | Fault | Capture and advance fetch fault metadata | Fault flag propagated through IF/ID and EX/WB |
-| 115ns-125ns | Redirect | Flush slots and forward redirect PC | Slots flushed and redirect output matched |
-| 135ns-1335ns | Random | 120 deterministic random control cycles | All cycles matched the reference model |
+| 0ns-16ns | Reset | Hold reset and check invalid slots/tags | Invalid NOP slots with debug=0 matched |
+| 16ns-36ns | Fetch/advance | Accept two frontend instructions and advance IF/ID to EX/WB | PC, instruction, valid, and debug=0 movement matched |
+| 36ns-66ns | Stall/bubble/release | Hold IF/ID, block fetch, bubble EX/WB, then release | Hold, bubble, and advance behavior matched |
+| 66ns-86ns | Fault | Capture and advance fetch fault metadata | Fault propagated while debug tag remained zero |
+| 86ns-96ns | Redirect | Flush slots and forward redirect PC | Slots/tags flushed and redirect output matched |
+| 96ns-140ns | Debug injection | Inject while frozen, advance tag, backpressure occupied pipe, collide with redirect | Frontend excluded; tag and all priorities matched |
+| 140ns-1346ns | Random | 120 deterministic random control cycles | All cycles matched the reference model |
 
 ## 4. Coverage Summary
 
 The standalone testbench reports:
 
 ```text
-tb_core_pipe coverage: pass_count=129 fetch=15 advance=24 stall=39 bubble=20 redirect=57 fault=7 random=120
+tb_core_pipe coverage: pass_count=133 fetch=15 advance=24 stall=39 bubble=20 redirect=58 fault=7 random=120 debug_inject=1 debug_bp=1 debug_redirect=1
 tb_core_pipe PASS
 ```
 
@@ -44,4 +45,8 @@ Coverage intent met:
 - Execute bubble insertion.
 - Redirect flush and redirect output forwarding.
 - Fetch fault propagation.
+- Frozen-pipeline debug injection with frontend exclusion.
+- Debug source-tag advance and slot-clear behavior.
+- Occupied-pipeline debug backpressure.
+- Redirect priority over simultaneous debug injection.
 - 120 deterministic random control cycles.

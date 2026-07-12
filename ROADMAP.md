@@ -38,7 +38,7 @@ PASS       Current verification target passes
 | `core/core_hazard` | PASS | Load-use stalls, EX/WB forwarding, priority, x0, and random dependency tests pass |
 | `core/core_wb` | PASS | Source selection, write suppression, x0, default, and random writeback tests pass |
 | `core/core_debug_ctrl` | PASS | Debug halt-pending drain, halted state, resume, step hook, busy block, and priority tests pass |
-| `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, and random control tests pass |
+| `core/core_pipe` | PASS | Pipeline PC, IF/ID, EX/WB, stall, bubble, redirect, fault, frozen debug injection, source-tag, backpressure, priority, and random control tests pass |
 | `core/core_int_datapath` | PASS | Executable datapath plus core-side debug halt/DPC/GPR/single-step hooks pass directed coverage |
 | `core` | PASS | Top-level wrapper exposes debug_if.core and passes wrapper/integrated simulation |
 | `frontend/frontend_pc` | PASS | PC reset, sequential advance, stall/ready hold, redirect priority, misalignment, and random priority tests pass |

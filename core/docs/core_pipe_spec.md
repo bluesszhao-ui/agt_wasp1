@@ -5,6 +5,8 @@
 `core_pipe` owns the first wasp1 core pipeline control skeleton: IF/ID pipeline
 slot state, EX/WB pipeline slot state, instruction-stream acceptance, stall
 handling, bubble insertion, and redirect flushing.
+It also accepts one halted-core debug instruction into an otherwise empty
+pipeline and carries an explicit source tag through EX/WB.
 
 Fetch PC generation is owned by `frontend`. `core_pipe` consumes an instruction
 stream that already carries its PC, and forwards branch/trap/MRET redirects back
@@ -47,8 +49,27 @@ redirect_valid_o / redirect_pc_o
 Visible IF/ID and EX/WB outputs are provided for later decode/execute
 integration and for staged verification.
 
+The debug injection interface is:
+
+```text
+debug_inject_valid_i / debug_inject_ready_o
+debug_inject_pc_i / debug_inject_instr_i
+id_debug_o / ex_debug_o
+```
+
+Injection may be accepted only while both slots are empty and no redirect is
+active. An asserted debug request suppresses `instr_ready_o`, preventing a
+simultaneous frontend acceptance. Accepted debug words have fetch fault clear
+and source tag set.
+
+Update priority is reset, redirect, accepted debug injection, then normal
+pipeline update. Injection bypasses fetch/decode stalls because those stalls
+are intentionally asserted while the core is halted.
+
 ## 5. Verification Requirements
 
 Verification must cover reset invalid state, normal instruction acceptance and
 advance, stalls, execute bubbles, redirect flush/forwarding, fetch fault
 propagation, and random control interleavings.
+Verification must additionally cover frozen-pipeline injection, debug request
+backpressure, frontend exclusion, tag advance/clear, and redirect priority.

@@ -18,6 +18,11 @@ model for frontend-side stream PC, IF/ID state, and EX/WB state.
 | Fetch fault | Fault metadata enters IF/ID |
 | Fault advance | Fault metadata advances to EX/WB |
 | Redirect flush | Redirect clears both slots and forwards redirect PC |
+| Frozen debug injection | Debug word enters empty IF/ID while normal stalls are asserted |
+| Frontend exclusion | Debug valid suppresses normal `instr_ready_o` |
+| Debug backpressure | Occupied ID/EX prevents a second debug acceptance |
+| Tag advance/clear | Debug source tag advances to EX/WB and clears with the slot |
+| Redirect priority | Simultaneous redirect flushes and rejects debug injection |
 
 ## 3. Random Cases
 
@@ -29,4 +34,5 @@ redirect target.
 
 All directed and random cycles must match the reference model. Coverage counters
 must show fetch acceptance, decode advance, stall, bubble, redirect, fetch
-fault, and random paths were exercised.
+fault, debug injection/backpressure/redirect priority, and random paths were
+exercised.

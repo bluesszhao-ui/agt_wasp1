@@ -28,6 +28,11 @@ a line bundle.
 `core_pipe` supplies the execute/writeback slot. This milestone decodes the EX
 slot directly and reads the register file using the decoded source fields.
 
+`core_pipe` now also contains a verified halted-core debug injection slot and
+ID/EX source tags. This datapath milestone ties the injection request inactive;
+the next Program Buffer integration step will connect `debug_if` and consume
+`ex_debug` for completion/error isolation without changing normal execution.
+
 ALU operand selection:
 
 ```text

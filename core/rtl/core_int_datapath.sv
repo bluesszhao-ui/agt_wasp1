@@ -63,10 +63,12 @@ module core_int_datapath (
   logic [31:0] id_pc;             // IF/ID PC from core_pipe.
   logic [31:0] id_instr;          // IF/ID instruction from core_pipe.
   logic        id_fetch_fault;    // IF/ID fetch fault from core_pipe.
+  logic        id_debug;          // IF/ID debug-injection source tag.
   logic        ex_valid;          // EX/WB valid from core_pipe.
   logic [31:0] ex_pc;             // EX/WB PC from core_pipe.
   logic [31:0] ex_instr;          // EX/WB instruction from core_pipe.
   logic        ex_fetch_fault;    // EX/WB fetch fault from core_pipe.
+  logic        ex_debug;          // EX/WB debug-injection source tag.
 
   logic [4:0]  id_dec_rd;         // Destination register decoded from ID instruction.
   logic [4:0]  id_dec_rs1;        // Source register 1 decoded from ID instruction.
@@ -191,6 +193,7 @@ module core_int_datapath (
   logic        pipe_fetch_stall;  // Final fetch stall into core_pipe.
   logic        pipe_decode_stall; // Final decode stall into core_pipe.
   logic        pipe_execute_bubble;// Final execute bubble into core_pipe.
+  logic        debug_inject_ready_unused; // Reserved core_pipe injection readiness before integration.
   logic        debug_stop_fetch;   // Debug halt request stops new frontend accepts.
   logic        debug_freeze_pipe;  // Debug halted state freezes the drained pipe.
   logic        debug_halted;       // Core is halted and can accept GPR debug access.
@@ -431,6 +434,10 @@ module core_int_datapath (
     .instr_pc_i(instr_pc_i),
     .instr_i(instr_i),
     .instr_fault_i(instr_fault_i),
+    .debug_inject_valid_i(1'b0),
+    .debug_inject_ready_o(debug_inject_ready_unused),
+    .debug_inject_pc_i(32'h0000_0000),
+    .debug_inject_instr_i(32'h0000_0013),
     .fetch_stall_i(pipe_fetch_stall),
     .decode_stall_i(pipe_decode_stall),
     .execute_bubble_i(pipe_execute_bubble),
@@ -442,10 +449,12 @@ module core_int_datapath (
     .id_pc_o(id_pc),
     .id_instr_o(id_instr),
     .id_fetch_fault_o(id_fetch_fault),
+    .id_debug_o(id_debug),
     .ex_valid_o(ex_valid),
     .ex_pc_o(ex_pc),
     .ex_instr_o(ex_instr),
-    .ex_fetch_fault_o(ex_fetch_fault)
+    .ex_fetch_fault_o(ex_fetch_fault),
+    .ex_debug_o(ex_debug)
   );
 
   core_decode decode_u (

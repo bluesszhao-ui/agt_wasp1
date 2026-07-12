@@ -11,6 +11,7 @@ connects decode, regfile, ALU, LSU, CSR, trap, hazard, and writeback logic.
 
 ```text
 editable source: core/docs/diagrams/core_pipe_block.graffle
+debug-injection extension generator: core/dv/generate_core_pipe_diagram.py
 preview export:  none
 detail level:    L2
 clock domains:   SEQ clk=clk_i rst=rst_ni
@@ -31,8 +32,13 @@ loading.
 The frontend stream beat is accepted when:
 
 ```text
-!fetch_stall_i && !decode_stall_i && !redirect_valid_i
+!fetch_stall_i && !decode_stall_i && !redirect_valid_i &&
+!debug_inject_valid_i
 ```
+
+Debug injection ready is `!id_valid_q && !ex_valid_q && !redirect_valid_i`.
+An accepted injection directly loads IF/ID with `{pc, instr, fault=0,
+debug=1}` and clears EX/WB. This update intentionally bypasses normal stalls.
 
 Redirect has highest priority, clears both pipeline slots, deasserts
 `instr_ready_o`, and forwards the target on `redirect_valid_o/redirect_pc_o`.
@@ -63,6 +69,12 @@ Clock-edge priority:
   IF/ID <- invalid NOP
   EX/WB <- invalid NOP
 
+  else if debug_inject_valid_i && debug_inject_ready_o:
+
+    IF/ID <- {valid=1, pc=debug_inject_pc_i,
+              instr=debug_inject_instr_i, fault=0, debug=1}
+    EX/WB <- invalid NOP with debug=0
+
   else normal pipeline update:
 
     instr_fire = instr_valid_i &&
@@ -71,7 +83,7 @@ Clock-edge priority:
     if execute_bubble_i:
       EX/WB <- invalid NOP
     else if !decode_stall_i:
-      EX/WB <- old IF/ID
+      EX/WB <- old IF/ID including debug source tag
     else:
       EX/WB holds old value
 

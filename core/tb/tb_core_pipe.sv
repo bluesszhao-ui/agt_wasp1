@@ -8,6 +8,10 @@ module tb_core_pipe;
   logic [31:0] instr_pc;         // Testbench instruction stream PC.
   logic [31:0] instr;            // Testbench instruction stream word.
   logic        instr_fault;      // Testbench instruction stream fault flag.
+  logic        debug_inject_valid;// Debug instruction injection request.
+  logic        debug_inject_ready;// DUT accepts a debug instruction into an empty pipe.
+  logic [31:0] debug_inject_pc;  // Synthetic debug instruction PC.
+  logic [31:0] debug_inject_instr;// Debug instruction payload.
   logic        fetch_stall;      // Testbench fetch stall control.
   logic        decode_stall;     // Testbench decode stall control.
   logic        execute_bubble;   // Testbench execute bubble control.
@@ -19,19 +23,23 @@ module tb_core_pipe;
   logic [31:0] id_pc;            // DUT IF/ID PC.
   logic [31:0] id_instr;         // DUT IF/ID instruction.
   logic        id_fetch_fault;   // DUT IF/ID fetch fault.
+  logic        id_debug;         // DUT IF/ID debug source tag.
   logic        ex_valid;         // DUT EX/WB valid.
   logic [31:0] ex_pc;            // DUT EX/WB PC.
   logic [31:0] ex_instr;         // DUT EX/WB instruction.
   logic        ex_fetch_fault;   // DUT EX/WB fetch fault.
+  logic        ex_debug;         // DUT EX/WB debug source tag.
 
   logic        ref_id_valid;     // Reference IF/ID valid.
   logic [31:0] ref_id_pc;        // Reference IF/ID PC.
   logic [31:0] ref_id_instr;     // Reference IF/ID instruction.
   logic        ref_id_fault;     // Reference IF/ID fault flag.
+  logic        ref_id_debug;     // Reference IF/ID debug source tag.
   logic        ref_ex_valid;     // Reference EX/WB valid.
   logic [31:0] ref_ex_pc;        // Reference EX/WB PC.
   logic [31:0] ref_ex_instr;     // Reference EX/WB instruction.
   logic        ref_ex_fault;     // Reference EX/WB fault flag.
+  logic        ref_ex_debug;     // Reference EX/WB debug source tag.
   logic [31:0] stream_pc;        // Frontend-side PC model for instruction input.
 
   integer pass_count;            // Total passing cycle checks.
@@ -42,6 +50,9 @@ module tb_core_pipe;
   integer redirect_count;        // Redirect flush coverage counter.
   integer fault_count;           // Fetch fault propagation counter.
   integer random_count;          // Deterministic random control counter.
+  integer debug_inject_count;    // Accepted frozen-pipeline injection coverage.
+  integer debug_backpressure_count;// Rejected injection while a slot is occupied.
+  integer debug_redirect_count;  // Redirect priority over simultaneous injection.
   integer i;                     // Random loop index.
 
   core_pipe dut (
@@ -52,6 +63,10 @@ module tb_core_pipe;
     .instr_pc_i(instr_pc),
     .instr_i(instr),
     .instr_fault_i(instr_fault),
+    .debug_inject_valid_i(debug_inject_valid),
+    .debug_inject_ready_o(debug_inject_ready),
+    .debug_inject_pc_i(debug_inject_pc),
+    .debug_inject_instr_i(debug_inject_instr),
     .fetch_stall_i(fetch_stall),
     .decode_stall_i(decode_stall),
     .execute_bubble_i(execute_bubble),
@@ -63,10 +78,12 @@ module tb_core_pipe;
     .id_pc_o(id_pc),
     .id_instr_o(id_instr),
     .id_fetch_fault_o(id_fetch_fault),
+    .id_debug_o(id_debug),
     .ex_valid_o(ex_valid),
     .ex_pc_o(ex_pc),
     .ex_instr_o(ex_instr),
-    .ex_fetch_fault_o(ex_fetch_fault)
+    .ex_fetch_fault_o(ex_fetch_fault),
+    .ex_debug_o(ex_debug)
   );
 
   initial begin
@@ -82,10 +99,12 @@ module tb_core_pipe;
       ref_id_pc = 32'h0000_0000;
       ref_id_instr = 32'h0000_0013;
       ref_id_fault = 1'b0;
+      ref_id_debug = 1'b0;
       ref_ex_valid = 1'b0;
       ref_ex_pc = 32'h0000_0000;
       ref_ex_instr = 32'h0000_0013;
       ref_ex_fault = 1'b0;
+      ref_ex_debug = 1'b0;
     end
   endtask
 
@@ -96,10 +115,12 @@ module tb_core_pipe;
           (id_pc !== ref_id_pc) ||
           (id_instr !== ref_id_instr) ||
           (id_fetch_fault !== ref_id_fault) ||
+          (id_debug !== ref_id_debug) ||
           (ex_valid !== ref_ex_valid) ||
           (ex_pc !== ref_ex_pc) ||
           (ex_instr !== ref_ex_instr) ||
-          (ex_fetch_fault !== ref_ex_fault)) begin
+          (ex_fetch_fault !== ref_ex_fault) ||
+          (ex_debug !== ref_ex_debug)) begin
         $fatal(1, "%s state mismatch", name);
       end
       pass_count++;
@@ -131,6 +152,9 @@ module tb_core_pipe;
       instr_pc = stream_pc;
       instr = t_instr;
       instr_fault = t_fault;
+      debug_inject_valid = 1'b0;
+      debug_inject_pc = 32'hFFFF_F000;
+      debug_inject_instr = 32'h0000_0013;
       fetch_stall = t_fetch_stall;
       decode_stall = t_decode_stall;
       execute_bubble = t_execute_bubble;
@@ -160,10 +184,12 @@ module tb_core_pipe;
         ref_id_pc = 32'h0000_0000;
         ref_id_instr = 32'h0000_0013;
         ref_id_fault = 1'b0;
+        ref_id_debug = 1'b0;
         ref_ex_valid = 1'b0;
         ref_ex_pc = 32'h0000_0000;
         ref_ex_instr = 32'h0000_0013;
         ref_ex_fault = 1'b0;
+        ref_ex_debug = 1'b0;
         redirect_count++;
       end else begin
         if (fetch_fire) begin
@@ -176,12 +202,14 @@ module tb_core_pipe;
           ref_ex_pc = 32'h0000_0000;
           ref_ex_instr = 32'h0000_0013;
           ref_ex_fault = 1'b0;
+          ref_ex_debug = 1'b0;
           bubble_count++;
         end else if (!t_decode_stall) begin
           ref_ex_valid = old_id_valid;
           ref_ex_pc = old_id_pc;
           ref_ex_instr = old_id_instr;
           ref_ex_fault = old_id_fault;
+          ref_ex_debug = ref_id_debug;
           advance_count++;
         end
 
@@ -190,6 +218,7 @@ module tb_core_pipe;
           ref_id_pc = instr_pc;
           ref_id_instr = t_instr;
           ref_id_fault = t_fault;
+          ref_id_debug = 1'b0;
           if (t_fault) begin
             fault_count++;
           end
@@ -198,12 +227,106 @@ module tb_core_pipe;
           ref_id_pc = 32'h0000_0000;
           ref_id_instr = 32'h0000_0013;
           ref_id_fault = 1'b0;
+          ref_id_debug = 1'b0;
         end else begin
           stall_count++;
         end
       end
 
       check_state(name);
+    end
+  endtask
+
+  // Verify that debug injection bypasses halted-pipeline stalls, carries its
+  // source tag, receives backpressure while occupied, and loses to redirect.
+  task automatic check_debug_injection;
+    begin
+      @(negedge clk);
+      instr_valid = 1'b1;
+      instr_pc = stream_pc;
+      instr = 32'h1234_5678;
+      instr_fault = 1'b1;
+      fetch_stall = 1'b1;
+      decode_stall = 1'b1;
+      execute_bubble = 1'b0;
+      redirect_valid = 1'b0;
+      debug_inject_valid = 1'b1;
+      debug_inject_pc = 32'hFFFF_F008;
+      debug_inject_instr = 32'h0070_0193;
+      #1;
+      if (!debug_inject_ready || instr_ready) begin
+        $fatal(1, "frozen debug injection handshake mismatch");
+      end
+      @(posedge clk);
+      #1;
+      ref_id_valid = 1'b1;
+      ref_id_pc = debug_inject_pc;
+      ref_id_instr = debug_inject_instr;
+      ref_id_fault = 1'b0;
+      ref_id_debug = 1'b1;
+      ref_ex_valid = 1'b0;
+      ref_ex_pc = 32'h0000_0000;
+      ref_ex_instr = 32'h0000_0013;
+      ref_ex_fault = 1'b0;
+      ref_ex_debug = 1'b0;
+      debug_inject_count++;
+      check_state("debug inject into frozen ID");
+
+      @(negedge clk);
+      instr_valid = 1'b0;
+      debug_inject_valid = 1'b0;
+      decode_stall = 1'b0;
+      #1;
+      @(posedge clk);
+      #1;
+      ref_ex_valid = ref_id_valid;
+      ref_ex_pc = ref_id_pc;
+      ref_ex_instr = ref_id_instr;
+      ref_ex_fault = ref_id_fault;
+      ref_ex_debug = ref_id_debug;
+      ref_id_valid = 1'b0;
+      ref_id_pc = 32'h0000_0000;
+      ref_id_instr = 32'h0000_0013;
+      ref_id_fault = 1'b0;
+      ref_id_debug = 1'b0;
+      check_state("debug tag advances to EX");
+
+      @(negedge clk);
+      debug_inject_valid = 1'b1;
+      #1;
+      if (debug_inject_ready || instr_ready) begin
+        $fatal(1, "occupied debug injection was not backpressured");
+      end
+      debug_backpressure_count++;
+      @(posedge clk);
+      #1;
+      ref_ex_valid = 1'b0;
+      ref_ex_pc = 32'h0000_0000;
+      ref_ex_instr = 32'h0000_0013;
+      ref_ex_fault = 1'b0;
+      ref_ex_debug = 1'b0;
+      check_state("debug occupied backpressure and retire clear");
+
+      @(negedge clk);
+      redirect_valid = 1'b1;
+      redirect_pc = 32'h0003_0000;
+      #1;
+      if (debug_inject_ready || instr_ready || !pipe_redirect_valid) begin
+        $fatal(1, "redirect did not dominate debug injection");
+      end
+      @(posedge clk);
+      #1;
+      reset_ref();
+      stream_pc = redirect_pc;
+      redirect_count++;
+      debug_redirect_count++;
+      check_state("redirect dominates debug injection");
+
+      @(negedge clk);
+      debug_inject_valid = 1'b0;
+      redirect_valid = 1'b0;
+      fetch_stall = 1'b0;
+      decode_stall = 1'b0;
     end
   endtask
 
@@ -216,6 +339,9 @@ module tb_core_pipe;
     redirect_count = 0;
     fault_count = 0;
     random_count = 0;
+    debug_inject_count = 0;
+    debug_backpressure_count = 0;
+    debug_redirect_count = 0;
 
     stream_pc = 32'h0001_0000;
     rst_n = 1'b0;
@@ -223,6 +349,9 @@ module tb_core_pipe;
     instr_pc = stream_pc;
     instr = 32'h0000_0013;
     instr_fault = 1'b0;
+    debug_inject_valid = 1'b0;
+    debug_inject_pc = 32'hFFFF_F000;
+    debug_inject_instr = 32'h0000_0013;
     fetch_stall = 1'b0;
     decode_stall = 1'b0;
     execute_bubble = 1'b0;
@@ -243,7 +372,10 @@ module tb_core_pipe;
     step_cycle("fetch fault", 1'b1, 32'h0050_0293, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 32'h0);
     step_cycle("fault advance", 1'b0, 32'h0000_0013, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 32'h0);
     step_cycle("redirect flush", 1'b1, 32'h0060_0313, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 32'h0002_0000);
+    $display("phase debug-inject start=%0t", $time);
+    check_debug_injection();
 
+    $display("phase random start=%0t", $time);
     void'($urandom(32'hA2A0_000A));
     for (i = 0; i < 120; i++) begin
       step_cycle("random",
@@ -258,15 +390,20 @@ module tb_core_pipe;
       random_count++;
     end
 
+    $display("phase complete=%0t", $time);
+
     if (fetch_count < 5 || advance_count < 5 || stall_count < 2 ||
         bubble_count < 1 || redirect_count < 1 || fault_count < 1 ||
-        random_count < 120) begin
+        random_count < 120 || debug_inject_count != 1 ||
+        debug_backpressure_count != 1 || debug_redirect_count != 1) begin
       $fatal(1, "coverage goal missed");
     end
 
-    $display("tb_core_pipe coverage: pass_count=%0d fetch=%0d advance=%0d stall=%0d bubble=%0d redirect=%0d fault=%0d random=%0d",
+    $display("tb_core_pipe coverage: pass_count=%0d fetch=%0d advance=%0d stall=%0d bubble=%0d redirect=%0d fault=%0d random=%0d debug_inject=%0d debug_bp=%0d debug_redirect=%0d",
              pass_count, fetch_count, advance_count, stall_count,
-             bubble_count, redirect_count, fault_count, random_count);
+             bubble_count, redirect_count, fault_count, random_count,
+             debug_inject_count, debug_backpressure_count,
+             debug_redirect_count);
     $display("tb_core_pipe PASS");
     $finish;
   end
