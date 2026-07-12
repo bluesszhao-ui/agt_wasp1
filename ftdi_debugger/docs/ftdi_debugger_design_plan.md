@@ -54,13 +54,14 @@ used as a UART. That keeps the final wasp1 development setup simple:
 one USB cable -> JTAG debug + UART console / OTP programming
 ```
 
-Target VREF must define the IO level seen by the target. The debugger should
-not drive JTAG or UART pins when VREF is absent.
+Target VREF must define the IO level seen by the target. The debugger must not
+drive JTAG or UART pins when VREF is absent or before OpenOCD asserts the
+ADBUS6 TARGET_EN safety gate.
 
-The first schematic should implement target-facing high-Z behavior by gating
-the level-shifter output enables with a valid VREF indication. JTAG reset
-signals are active-low and should idle high through both OpenOCD layout data and
-target-side pull-ups.
+The first schematic implements target-facing high-Z behavior by NAND-gating
+the active-low level-shifter output enables with `VREF_VALID` and TARGET_EN.
+JTAG reset signals are active-low and idle high through both OpenOCD layout
+data and target-side pull-ups.
 
 ## 4. Relationship To Current Simulation
 

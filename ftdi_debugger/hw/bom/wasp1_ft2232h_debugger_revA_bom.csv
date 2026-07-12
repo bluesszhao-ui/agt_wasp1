@@ -1,16 +1,25 @@
 refdes,quantity,function,preferred_part_or_class,notes
-J1,1,USB connector,USB-C receptacle USB2-only,Device-side CC pulldowns required
-F1,1,USB power protection,resettable fuse or current limiter,Protects VBUS input
-ESD1,1,USB ESD array,low-capacitance USB2 ESD protector,Place close to J1
-U1,1,USB bridge,FT2232HL or FT2232H-family equivalent,Channel A MPSSE JTAG and Channel B UART
-Y1,1,reference clock,12 MHz crystal or oscillator,Follow FTDI clocking guidance
-U2,1,optional EEPROM,93LC56B or 93C56 class,May be DNI if default VID/PID is acceptable
-U3,1,VREF valid detector,low-power comparator or supervisor,Asserts VREF_VALID only inside supported VREF range
-U4,1,debugger-to-target level shifter,8-bit dual-supply direction-fixed translator,OE gated by VREF_VALID
-U5,1,target-to-debugger level shifter,2-bit dual-supply direction-fixed translator,OE gated by VREF_VALID
+J1,1,USB connector,GCT USB4105-GF-A family,USB2 top-mount Type-C receptacle; independent CC pins
+F1,1,USB power protection,Bourns MF-MSMF050-2,500 mA hold resettable fuse on VBUS
+ESD1,1,USB ESD array,ST USBLC6-2SC6,Low-capacitance USB2 D+/D- protection close to J1
+ESD2,1,target signal ESD array,TI TPD8E003DQDR,Eight JTAG/reset/UART channels close to J2
+U1,1,USB bridge,FTDI FT2232HL,Channel A MPSSE JTAG and Channel B UART; LQFP-64
+Y1,1,reference clock,ECS ECS-3225MVQ-120-CN-TR,12 MHz 3.3 V HCMOS oscillator plus or minus 25 ppm
+U2,1,optional EEPROM,Microchip 93LC56BT-I/SN,SOIC-8; may be DNI if default VID/PID is acceptable
+U3,1,VREF valid detector,TI TLV7041DBVR,Open-drain comparator with nominal 1.57 V threshold
+U4,1,debugger-to-target level shifter,TI SN74AXC8T245PWR,OE gated by SHIFT_OE_N; VCC isolation and Ioff
+U5,1,target-to-debugger level shifter,TI SN74AXC2T245RSWR,OE gated by SHIFT_OE_N; VCC isolation and Ioff
+U6,1,3.3 V regulator,Diodes Inc. AP2112K-3.3TRG1,600 mA SOT-25 LDO from protected USB VBUS
+U7,1,fail-safe enable gate,TI SN74LVC1G00DBVR,NAND generates SHIFT_OE_N from VREF_VALID and FT_TARGET_EN
 J2,1,target connector,keyed 2x7 header,Carries VREF/JTAG/reset/UART/GND
 D1,1,USB power LED,green LED plus resistor,Indicates local 3.3 V rail
 D2,1,VREF LED,amber LED plus resistor,Indicates valid target VREF
 RCC1/RCC2,2,USB-C CC pulldown,5.1 kOhm 1%,Advertises USB device role
-RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,series damping,22 to 47 ohm resistor footprint,Place near U4 target-facing outputs
-TP1/TP2/TP3,3,test points,compact SMT test point,TCK TDO and VREF_VALID debug access
+RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,series damping,33 ohm 1 percent 0402,Place near U4 target-facing outputs
+RTARGET_EN/ROE,2,fail-safe bias,100 kOhm 1 percent 0402,TARGET_EN pulldown and SHIFT_OE_N pullup
+RREF_TOP/RREF_BOT,2,VREF threshold divider,110 kOhm and 100 kOhm 1 percent 0402,Nominal 1.57 V comparator reference from VCC_3V3
+RREF,1,FTDI reference resistor,12 kOhm 1 percent 0402,U1 REF to ground per FTDI reference design
+CCORE,1,VCORE filter,3.3 uF X7R 0603,Minimum local VREGOUT/VCORE capacitance
+CDEC,12,local decoupling,100 nF X7R 0402,One per IC supply pin group plus comparator/translators
+CBULK,2,power bulk,4.7 uF X7R 0805,USB protected rail and VCC_3V3 bulk
+TP1/TP2/TP3/TP4/TP5,5,test points,compact SMT test point,TCK TDO VREF_VALID TARGET_EN SHIFT_OE_N

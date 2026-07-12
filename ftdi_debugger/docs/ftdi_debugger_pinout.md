@@ -33,17 +33,20 @@ ftdi channel 0
 | ADBUS3 | `0x0008` | Output | `jtag_tms_i` | High when idle |
 | ADBUS4 | `0x0010` | Output | `jtag_trst_ni` | High inactive |
 | ADBUS5 | `0x0020` | Output | target `srst_ni` if present | High inactive |
+| ADBUS6 | `0x0040` | Output | board `TARGET_EN` | High only after OpenOCD configures Channel A |
 
 The matching OpenOCD low-byte configuration is:
 
 ```text
-ftdi layout_init 0x0038 0x003b
+ftdi layout_init 0x0078 0x007b
 ftdi layout_signal nTRST -data 0x0010 -oe 0x0010
 ftdi layout_signal nSRST -data 0x0020 -oe 0x0020
 ```
 
-`0x0038` drives TMS, nTRST, and nSRST high at initialization. `0x003b` makes
-TCK, TDI, TMS, nTRST, and nSRST outputs while leaving TDO as an input.
+`0x0078` drives TMS, nTRST, nSRST, and TARGET_EN high at initialization.
+`0x007b` makes TCK, TDI, TMS, nTRST, nSRST, and TARGET_EN outputs while
+leaving TDO as an input. A 100 kOhm board pulldown holds TARGET_EN low before
+OpenOCD takes ownership.
 
 ## 4. Channel B UART Mapping
 
@@ -84,7 +87,7 @@ in the same commit.
 ## 6. Electrical Constraints
 
 The debugger must not drive target-facing JTAG, reset, or UART outputs unless a
-valid `VREF` is present.
+valid `VREF` is present and OpenOCD has asserted `TARGET_EN`.
 
 Target-facing IO must be level shifted to `VREF`. The stage-1 allowed target
 range is:
@@ -99,8 +102,8 @@ Recommended schematic constraints:
 USB connector: ESD protection and controlled shield/ground strategy
 FT2232H: 12 MHz reference crystal or oscillator per datasheet circuit
 EEPROM: optional but footprint recommended for product string/serial config
-VREF sense: comparator or level-translator OE gating
-JTAG/UART level shifters: high-Z target side when VREF invalid
+VREF sense: comparator plus TARGET_EN safety gating
+JTAG/UART level shifters: high-Z target side when VREF invalid or TARGET_EN low
 TCK/TMS/TDI/nTRST/nSRST: series damping footprints near driver
 TDO/UART_TXD: no debugger-side pull that fights target output
 Reset pins: target-side pull-ups define inactive high

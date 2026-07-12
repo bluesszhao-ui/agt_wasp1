@@ -2,11 +2,12 @@
 
 ## 1. Result
 
-Status: PASS for stage-1 collateral and Rev A hardware-package consistency.
+Status: PASS for Rev A detailed-design collateral consistency.
 
 This is a pre-hardware verification report. It verifies documentation and
 OpenOCD configuration consistency before formal EDA schematic/PCB work starts.
-It now also checks the Rev A schematic-input, netlist, and BOM package.
+It now also checks the Rev A design spec, editable architecture diagram,
+schematic-input, netlist, BOM, and fail-safe target-enable policy.
 Electrical and board-level checks remain TBD until hardware exists.
 
 ## 2. Command
@@ -23,6 +24,7 @@ make -C ftdi_debugger lint
 | 1s-2s | Parse `docs/ftdi_debugger_pinout.md` | ADBUS/BDBUS mapping, VREF range, OpenOCD masks, IDCODE, `stepi`, and `hbreak` expectations are documented | PASS |
 | 2s-3s | Parse spec, design plan, and verification plan | FT2232H channel split, OpenOCD config, GDB bring-up, USB/JTAG/UART checks are documented | PASS |
 | 3s-4s | Parse Rev A schematic-input, netlist, and BOM files | ADBUS/BDBUS nets, VREF-valid gating, FT2232H, level shifters, target connector, and OpenOCD bit masks are mutually consistent | PASS |
+| 4s-5s | Audit `docs/diagrams/ftdi_debugger_revA_block.graffle` | Editable drawing has a visible 5 pt grid, grid-aligned geometry, explicit native line segments, V arrowheads, timing-class colors, and no unrelated overlap | PASS |
 
 ## 4. Coverage Summary
 
@@ -31,6 +33,7 @@ PASS openocd reference cfg
 PASS pinout document
 PASS spec and plans
 PASS hardware package
+PASS OmniGraffle coordinate/overlap audit
 RESULT PASS ftdi_debugger collateral check
 ```
 
@@ -42,13 +45,17 @@ Channel A MPSSE JTAG
 Channel B UART
 ADBUS0..ADBUS5 JTAG/reset mapping
 BDBUS0..BDBUS1 UART mapping
-OpenOCD layout_init 0x0038 0x003b
+OpenOCD layout_init 0x0078 0x007b
+ADBUS6 TARGET_EN safety gate
+VREF_VALID and TARGET_EN fail-safe OE equation
 nTRST/nSRST masks
 wasp1 TAP expected ID 0x100001cf
 GDB stepi and hbreak smoke expectations
 Rev A schematic-input page plan
+Rev A frozen component selections and power architecture
 Rev A netlist-level FT2232H/JTAG/UART/VREF mapping
 Rev A BOM key components
+Editable Rev A architecture/block diagram
 ```
 
 ## 5. Residual Scope

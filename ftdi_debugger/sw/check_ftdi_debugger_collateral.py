@@ -32,7 +32,7 @@ def check_openocd_cfg() -> None:
         "adapter driver ftdi",
         "ftdi vid_pid 0x0403 0x6010",
         "ftdi channel 0",
-        "ftdi layout_init 0x0038 0x003b",
+        "ftdi layout_init 0x0078 0x007b",
         "ftdi layout_signal nTRST -data 0x0010 -oe 0x0010",
         "ftdi layout_signal nSRST -data 0x0020 -oe 0x0020",
         "transport select jtag",
@@ -57,8 +57,10 @@ def check_pinout_doc() -> None:
         "ADBUS5",
         "BDBUS0",
         "BDBUS1",
-        "`0x0038`",
-        "`0x003b`",
+        "ADBUS6",
+        "TARGET_EN",
+        "`0x0078`",
+        "`0x007b`",
         "`0x0010`",
         "`0x0020`",
         "OpenOCD TAP IDCODE 0x100001cf",
@@ -73,6 +75,7 @@ def check_pinout_doc() -> None:
 def check_spec_and_plan() -> None:
     spec = read_rel("docs/ftdi_debugger_spec.md")
     plan = read_rel("docs/ftdi_debugger_design_plan.md")
+    design = read_rel("docs/ftdi_debugger_revA_design_spec.md")
     verify = read_rel("docs/ftdi_debugger_verification_plan.md")
     for token in [
         "FT2232H",
@@ -89,6 +92,15 @@ def check_spec_and_plan() -> None:
         "GDB bring-up",
     ]:
         require_token(plan, token, "design plan")
+    for token in [
+        "FT2232HL",
+        "SN74AXC8T245",
+        "SN74AXC2T245",
+        "TLV7041",
+        "SHIFT_OE_N = !(VREF_VALID && FT_TARGET_EN)",
+        "layout_init 0x0078 0x007b",
+    ]:
+        require_token(design, token, "Rev A design spec")
     for token in [
         "USB enumeration",
         "TAP scan",
@@ -126,7 +138,9 @@ def check_hardware_package() -> None:
         "ADBUS5",
         "BDBUS0",
         "BDBUS1",
-        "ftdi layout_init 0x0038 0x003b",
+        "ftdi layout_init 0x0078 0x007b",
+        "TARGET_EN",
+        "SHIFT_OE_N",
         "VREF_VALID",
     ]:
         require_token(schematic, token, "hardware schematic input")
@@ -138,9 +152,11 @@ def check_hardware_package() -> None:
         "FT_A_TMS": ("U1 ADBUS3", "U4 A3", "0x0008"),
         "FT_A_NTRST": ("U1 ADBUS4", "U4 A4", "0x0010"),
         "FT_A_NSRST": ("U1 ADBUS5", "U4 A5", "0x0020"),
+        "FT_TARGET_EN": ("U1 ADBUS6", "U7 input B", "0x0040"),
         "FT_B_TXD": ("U1 BDBUS0", "U4 A6", "Channel B"),
         "FT_B_RXD": ("U5 A2", "U1 BDBUS1", "Channel B"),
-        "VREF_VALID": ("U3 output", "U4 OE/U5 OE", "valid VREF"),
+        "VREF_VALID": ("U3 output", "U7 input A", "1.57 V"),
+        "SHIFT_OE_N": ("U7 output", "U4 OE_N/U5 OE_N", "both high"),
     }
     for net, (source, destination, token) in required_nets.items():
         row = find_row(nets, "net", net)
@@ -151,12 +167,25 @@ def check_hardware_package() -> None:
             )
         require_token(row.get("requirement", ""), token, f"netlist {net}")
 
-    for refdes in ["J1", "U1", "Y1", "U2", "U3", "U4", "U5", "J2"]:
+    for refdes in [
+        "J1", "U1", "Y1", "U2", "U3", "U4", "U5", "U6", "U7",
+        "ESD1", "ESD2", "J2",
+    ]:
         find_row(bom, "refdes", refdes)
     require_token(
         find_row(bom, "refdes", "U1").get("preferred_part_or_class", ""),
         "FT2232H",
         "bom U1",
+    )
+    require_token(
+        find_row(bom, "refdes", "U4").get("preferred_part_or_class", ""),
+        "SN74AXC8T245",
+        "bom U4",
+    )
+    require_token(
+        find_row(bom, "refdes", "U7").get("preferred_part_or_class", ""),
+        "SN74LVC1G00",
+        "bom U7",
     )
     require_token(
         find_row(bom, "refdes", "J2").get("notes", ""),

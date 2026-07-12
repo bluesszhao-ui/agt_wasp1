@@ -56,6 +56,7 @@ The initial reference mapping is:
 | ADBUS3 | TMS |
 | ADBUS4 | nTRST |
 | ADBUS5 | nSRST |
+| ADBUS6 | TARGET_EN safety gate |
 | BDBUS0 | UART TX to target RX |
 | BDBUS1 | UART RX from target TX |
 
@@ -82,8 +83,9 @@ The checked-in reference config is:
 ftdi_debugger/openocd/wasp1_ft2232h_reference.cfg
 ```
 
-It uses FT2232H VID/PID `0x0403:0x6010`, Channel A, `layout_init 0x0038
-0x003b`, nTRST bit `0x0010`, and nSRST bit `0x0020`.
+It uses FT2232H VID/PID `0x0403:0x6010`, Channel A, `layout_init 0x0078
+0x007b`, nTRST bit `0x0010`, nSRST bit `0x0020`, and TARGET_EN bit
+`0x0040`.
 
 ## 6. Non-Goals
 

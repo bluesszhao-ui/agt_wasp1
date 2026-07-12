@@ -4,14 +4,17 @@ USB,USB_DP,J1 D+,ESD1 and U1 USBDP,USB D+ protected before FT2232H
 USB,USB_DM,J1 D-,ESD1 and U1 USBDM,USB D- protected before FT2232H
 USB,CC1,J1 CC1,RCC1 to GND,USB-C device pulldown
 USB,CC2,J1 CC2,RCC2 to GND,USB-C device pulldown
-POWER,VCC_3V3,U6 output,U1 VCCIOA/U1 VCCIOB/U4 A-side/U5 A-side,local debugger IO rail
+POWER,VCC_3V3,U6 output,U1 VCCIOA/VCCIOB/VPHY/VPLL/VREGIN; U3/U4/U5/U7/Y1,local debugger logic IO analog and clock rail
+POWER,VCORE,U1 VREGOUT,U1 VCORE pins and CCORE,internal 1.8 V core rail with at least 3.3 uF local capacitance
 POWER,GND,board ground,J1/J2/U1/U4/U5 common reference,common return
-CLOCK,FT_CLK12,Y1,U1 XI/XO,12 MHz FT2232H reference
+CLOCK,FT_CLK12,Y1 output,U1 OSCI,12 MHz 3.3 V oscillator within plus or minus 30 ppm
 EEPROM,EECS,U1 EECS,U2 CS,optional FTDI EEPROM chip select
 EEPROM,EESK,U1 EESK,U2 SK,optional FTDI EEPROM clock
 EEPROM,EEDATA,U1 EEDATA,U2 DI/DO,optional FTDI EEPROM data
 VREF,VREF,J2 pin 1,U3 input/U4 B-side/U5 B-side,target IO reference only
-VREF,VREF_VALID,U3 output,U4 OE/U5 OE,target-facing drivers enabled only with valid VREF
+VREF,VREF_VALID,U3 output,U7 input A,high only above the nominal 1.57 V threshold
+CONTROL,FT_TARGET_EN,U1 ADBUS6,U7 input B,OpenOCD bit 0x0040 with 100 kOhm pulldown
+CONTROL,SHIFT_OE_N,U7 output,U4 OE_N/U5 OE_N,low only when VREF_VALID and FT_TARGET_EN are both high
 JTAG,FT_A_TCK,U1 ADBUS0,U4 A1,OpenOCD bit 0x0001 TCK source
 JTAG,TCK,U4 B1,J2 pin 3,target TCK with series damping footprint
 JTAG,FT_A_TDI,U1 ADBUS1,U4 A2,OpenOCD bit 0x0002 TDI source
@@ -33,3 +36,5 @@ INDICATOR,LED_VREF,VREF_VALID,D2/RLED2,target VREF valid indicator
 TEST,TP_TCK,TCK,TP1,JTAG clock measurement point
 TEST,TP_TDO,TDO,TP2,JTAG data-out measurement point
 TEST,TP_VREF_VALID,VREF_VALID,TP3,level-shifter enable measurement point
+TEST,TP_TARGET_EN,FT_TARGET_EN,TP4,host ownership gate measurement point
+TEST,TP_SHIFT_OE_N,SHIFT_OE_N,TP5,active-low translator enable measurement point

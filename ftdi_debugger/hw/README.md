@@ -20,8 +20,16 @@ netlist/wasp1_ft2232h_debugger_revA_nets.csv
 bom/wasp1_ft2232h_debugger_revA_bom.csv
 ```
 
+Its detailed electrical design and editable architecture diagram are:
+
+```text
+../docs/ftdi_debugger_revA_design_spec.md
+../docs/diagrams/ftdi_debugger_revA_block.graffle
+```
+
 This is not yet a PCB release. It is the reviewable source of truth for drawing
-the formal EDA schematic and then the board layout.
+the formal EDA schematic and then the board layout. No ERC or DRC result is
+claimed until those native EDA sources exist and pass the corresponding tools.
 
 The first schematic revision must follow:
 

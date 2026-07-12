@@ -29,12 +29,14 @@ reserved for the UART console and OTP programming flow.
 | Refdes | Function | Preferred part class | Design note |
 | --- | --- | --- | --- |
 | J1 | Host USB connector | USB-C receptacle, USB2-only | Add 5.1 kOhm pulldowns on CC1/CC2 |
-| U1 | USB/JTAG/UART bridge | FT2232HL or equivalent FT2232H family part | Channel A is MPSSE JTAG; Channel B is UART |
-| Y1 | FTDI reference clock | 12 MHz crystal or oscillator | Follow the FTDI datasheet load-capacitance guidance |
-| U2 | FTDI EEPROM | 93LC56B/93C56 class, optional footprint | Allows product string and serial programming |
-| U3 | VREF-valid detector | Low-power comparator or supervisor | Enables target-facing drivers only when VREF is valid |
-| U4 | Debugger-to-target level shifter | 8-bit dual-supply direction-fixed translator | Drives TCK/TMS/TDI/nTRST/nSRST/UART_RXD toward target |
-| U5 | Target-to-debugger level shifter | 2-bit dual-supply direction-fixed translator | Receives TDO/UART_TXD from target |
+| U1 | USB/JTAG/UART bridge | FT2232HL, LQFP-64 | Channel A is MPSSE JTAG; Channel B is UART |
+| Y1 | FTDI reference clock | ECS-3225MVQ-120-CN-TR, 12 MHz oscillator | 3.3 V, +/-25 ppm HCMOS drives OSCI; OSCO is no-connect |
+| U2 | FTDI EEPROM | 93LC56BT-I/SN, SOIC-8, optional footprint | Allows product string and serial programming |
+| U3 | VREF-valid detector | TLV7041DBVR open-drain comparator | Releases VREF_VALID high above the 1.57 V nominal threshold |
+| U4 | Debugger-to-target level shifter | SN74AXC8T245PWR | Drives TCK/TMS/TDI/nTRST/nSRST/UART_RXD toward target |
+| U5 | Target-to-debugger level shifter | SN74AXC2T245RSWR | Receives TDO/UART_TXD from target |
+| U6 | Local 3.3 V regulator | AP2112K-3.3TRG1, SOT-25 | Generates VCC_3V3 from protected USB VBUS |
+| U7 | Fail-safe enable gate | SN74LVC1G00DBVR NAND | SHIFT_OE_N is low only when VREF_VALID and TARGET_EN are high |
 | J2 | Target connector | Keyed 2x7 header | Pinout follows `docs/ftdi_debugger_pinout.md` |
 
 ## 4. Voltage And Enable Policy
@@ -46,9 +48,11 @@ The debugger has two IO domains:
 | `VCC_3V3` | 3.3 V | debugger board | FT2232H local IO side and LEDs |
 | `VREF` | 1.8 V to 3.3 V | target board | target-facing level-shifter side |
 
-Target-facing outputs must be high-Z when `VREF_VALID=0`. The Rev A schematic
-implements this by tying the output enable of U4 and U5 to `VREF_VALID` with the
-polarity required by the selected level-shifter parts.
+Target-facing outputs must be high-Z when `VREF_VALID=0` or `TARGET_EN=0`.
+ADBUS6 is pulled down so the board remains isolated while FT2232H is in its
+power-up UART mode. OpenOCD changes ADBUS6 to a high output through
+`layout_init 0x0078 0x007b`. U7 generates active-low `SHIFT_OE_N`; a pull-up
+keeps both translator OEs disabled if U7 is unpowered.
 
 The debugger must not back-power the target through JTAG, reset, UART, ESD
 parts, pull-ups, or indicator circuits.
@@ -63,11 +67,12 @@ parts, pull-ups, or indicator circuits.
 | ADBUS3 | `0x0008` | `FT_A_TMS` | `TMS` | debugger to target |
 | ADBUS4 | `0x0010` | `FT_A_NTRST` | `nTRST` | debugger to target |
 | ADBUS5 | `0x0020` | `FT_A_NSRST` | `nSRST` | debugger to target |
+| ADBUS6 | `0x0040` | `FT_TARGET_EN` | board enable gate | local safety control |
 
 OpenOCD must continue to use:
 
 ```text
-ftdi layout_init 0x0038 0x003b
+ftdi layout_init 0x0078 0x007b
 ftdi layout_signal nTRST -data 0x0010 -oe 0x0010
 ftdi layout_signal nSRST -data 0x0020 -oe 0x0020
 ```
@@ -108,8 +113,11 @@ USB D+/D-: route as controlled differential pair according to board stackup
 TCK/TMS/TDI/nTRST/nSRST/UART_RXD: place series resistors near U4 outputs
 TDO/UART_TXD: avoid pull devices that load target outputs
 VREF: keep as sense/level-shifter rail, not a board power source
+TARGET_EN: 100 kOhm pulldown at U1/enable-gate input
+SHIFT_OE_N: 100 kOhm pullup to VCC_3V3; route to U4/U5 active-low OE pins
 ESD: place close to USB and target connector entry points
-Test points: expose VCC_3V3, VREF, VREF_VALID, TCK, TMS, TDI, TDO, GND
+Test points: expose VCC_3V3, VCORE, VREF, VREF_VALID, TARGET_EN,
+SHIFT_OE_N, TCK, TDO, GND
 ```
 
 ## 9. Release Gate
@@ -122,4 +130,3 @@ openocd/wasp1_ft2232h_reference.cfg
 hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv
 hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
 ```
-
