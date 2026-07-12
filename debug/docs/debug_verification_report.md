@@ -59,6 +59,7 @@ debug_dmi_regs_verification_report.md
 debug_halt_ctrl_verification_report.md
 debug_reg_access_verification_report.md
 debug_progbuf_verification_report.md
+debug_progbuf_exec_verification_report.md
 debug_abstract_cmd_verification_report.md
 debug_jtag_dtm_verification_report.md
 debug_jtag_verification_report.md

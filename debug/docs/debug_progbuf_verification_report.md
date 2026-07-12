@@ -43,6 +43,7 @@ Program Buffer execution claim.
 
 ## 5. Residual Scope
 
-This report covers storage only. DMI routing, `progbufsize` advertisement,
-postexec sequencing, core execution, implicit ebreak, exception reporting, and
-OpenOCD/GDB Program Buffer use remain future integration work.
+This report covers storage only. The standalone sequencing leaf is now covered
+by `debug_progbuf_exec_verification_report.md`; DMI routing, `progbufsize`
+advertisement, postexec dispatch, core execution, architectural exception
+integration, and OpenOCD/GDB Program Buffer use remain future integration work.

@@ -9,6 +9,9 @@ DMI_TB_TOP := tb_debug_dmi_regs
 PROGBUF_RTL_FILELIST := filelists/debug_progbuf.f
 PROGBUF_TB_FILELIST := filelists/tb_debug_progbuf.f
 PROGBUF_TB_TOP := tb_debug_progbuf
+PROGBUF_EXEC_RTL_FILELIST := filelists/debug_progbuf_exec.f
+PROGBUF_EXEC_TB_FILELIST := filelists/tb_debug_progbuf_exec.f
+PROGBUF_EXEC_TB_TOP := tb_debug_progbuf_exec
 HALT_CTRL_RTL_FILELIST := filelists/debug_halt_ctrl.f
 HALT_CTRL_TB_FILELIST := filelists/tb_debug_halt_ctrl.f
 HALT_CTRL_TB_TOP := tb_debug_halt_ctrl
@@ -25,18 +28,18 @@ JTAG_RTL_FILELIST := filelists/debug_jtag.f
 JTAG_TB_FILELIST := filelists/tb_debug_jtag.f
 JTAG_TB_TOP := tb_debug_jtag
 
-.PHONY: all lint lint-top lint-dmi-regs lint-progbuf lint-halt-ctrl lint-reg-access lint-abstract-cmd \
+.PHONY: all lint lint-top lint-dmi-regs lint-progbuf lint-progbuf-exec lint-halt-ctrl lint-reg-access lint-abstract-cmd \
 	lint-jtag-dtm lint-jtag \
-	lint-ic lint-top-ic lint-dmi-regs-ic lint-progbuf-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
+	lint-ic lint-top-ic lint-dmi-regs-ic lint-progbuf-ic lint-progbuf-exec-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
 	lint-jtag-dtm-ic lint-jtag-ic \
-	lint-fpga-v7 lint-dmi-regs-fpga-v7 lint-progbuf-fpga-v7 lint-halt-ctrl-fpga-v7 \
+	lint-fpga-v7 lint-dmi-regs-fpga-v7 lint-progbuf-fpga-v7 lint-progbuf-exec-fpga-v7 lint-halt-ctrl-fpga-v7 \
 	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 \
 	lint-jtag-dtm-fpga-v7 lint-jtag-fpga-v7 \
-	sim sim-top sim-dmi-regs sim-progbuf sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag clean
+	sim sim-top sim-dmi-regs sim-progbuf sim-progbuf-exec sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag clean
 
 all: lint sim
 
-lint: lint-top lint-dmi-regs lint-progbuf lint-halt-ctrl lint-reg-access lint-abstract-cmd lint-jtag-dtm lint-jtag
+lint: lint-top lint-dmi-regs lint-progbuf lint-progbuf-exec lint-halt-ctrl lint-reg-access lint-abstract-cmd lint-jtag-dtm lint-jtag
 
 lint-top:
 	@mkdir -p build logs
@@ -58,6 +61,13 @@ lint-progbuf:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
 		-f $(PROGBUF_RTL_FILELIST) > logs/lint_progbuf.log 2>&1
 	@cat logs/lint_progbuf.log
+
+lint-progbuf-exec:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_progbuf_exec \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(PROGBUF_EXEC_RTL_FILELIST) > logs/lint_progbuf_exec.log 2>&1
+	@cat logs/lint_progbuf_exec.log
 
 lint-halt-ctrl:
 	@mkdir -p build logs
@@ -94,7 +104,7 @@ lint-jtag:
 		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag.log 2>&1
 	@cat logs/lint_jtag.log
 
-lint-ic: lint-top-ic lint-dmi-regs-ic lint-progbuf-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
+lint-ic: lint-top-ic lint-dmi-regs-ic lint-progbuf-ic lint-progbuf-exec-ic lint-halt-ctrl-ic lint-reg-access-ic lint-abstract-cmd-ic \
 	lint-jtag-dtm-ic lint-jtag-ic
 
 lint-top-ic:
@@ -120,6 +130,14 @@ lint-progbuf-ic:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
 		-f $(PROGBUF_RTL_FILELIST) > logs/lint_progbuf_ic.log 2>&1
 	@cat logs/lint_progbuf_ic.log
+
+lint-progbuf-exec-ic:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_progbuf_exec \
+		+define+WASP1_TARGET_IC \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(PROGBUF_EXEC_RTL_FILELIST) > logs/lint_progbuf_exec_ic.log 2>&1
+	@cat logs/lint_progbuf_exec_ic.log
 
 lint-halt-ctrl-ic:
 	@mkdir -p build logs
@@ -161,7 +179,7 @@ lint-jtag-ic:
 		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag_ic.log 2>&1
 	@cat logs/lint_jtag_ic.log
 
-lint-fpga-v7: lint-dmi-regs-fpga-v7 lint-progbuf-fpga-v7 lint-halt-ctrl-fpga-v7 \
+lint-fpga-v7: lint-dmi-regs-fpga-v7 lint-progbuf-fpga-v7 lint-progbuf-exec-fpga-v7 lint-halt-ctrl-fpga-v7 \
 	lint-reg-access-fpga-v7 lint-abstract-cmd-fpga-v7 lint-top-fpga-v7 \
 	lint-jtag-dtm-fpga-v7 lint-jtag-fpga-v7
 
@@ -188,6 +206,14 @@ lint-progbuf-fpga-v7:
 		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
 		-f $(PROGBUF_RTL_FILELIST) > logs/lint_progbuf_fpga_v7.log 2>&1
 	@cat logs/lint_progbuf_fpga_v7.log
+
+lint-progbuf-exec-fpga-v7:
+	@mkdir -p build logs
+	$(VERILATOR) --lint-only -sv --top-module debug_progbuf_exec \
+		+define+WASP1_TARGET_FPGA_XILINX_VIRTEX7 \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNDRIVEN \
+		-f $(PROGBUF_EXEC_RTL_FILELIST) > logs/lint_progbuf_exec_fpga_v7.log 2>&1
+	@cat logs/lint_progbuf_exec_fpga_v7.log
 
 lint-halt-ctrl-fpga-v7:
 	@mkdir -p build logs
@@ -229,7 +255,7 @@ lint-jtag-fpga-v7:
 		-Wno-UNDRIVEN -f $(JTAG_RTL_FILELIST) > logs/lint_jtag_fpga_v7.log 2>&1
 	@cat logs/lint_jtag_fpga_v7.log
 
-sim: sim-top sim-dmi-regs sim-progbuf sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag
+sim: sim-top sim-dmi-regs sim-progbuf sim-progbuf-exec sim-halt-ctrl sim-reg-access sim-abstract-cmd sim-jtag-dtm sim-jtag
 
 sim-top:
 	@mkdir -p build logs
@@ -258,6 +284,16 @@ sim-progbuf:
 	@./build/obj_$(PROGBUF_TB_TOP)/V$(PROGBUF_TB_TOP) \
 		> logs/tb_debug_progbuf.log 2>&1
 	@cat logs/tb_debug_progbuf.log
+
+sim-progbuf-exec:
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(PROGBUF_EXEC_TB_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Mdir build/obj_$(PROGBUF_EXEC_TB_TOP) -f $(PROGBUF_EXEC_TB_FILELIST) \
+		> logs/tb_debug_progbuf_exec_build.log 2>&1
+	@./build/obj_$(PROGBUF_EXEC_TB_TOP)/V$(PROGBUF_EXEC_TB_TOP) \
+		> logs/tb_debug_progbuf_exec.log 2>&1
+	@cat logs/tb_debug_progbuf_exec.log
 
 sim-halt-ctrl:
 	@mkdir -p build logs

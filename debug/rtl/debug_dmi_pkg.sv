@@ -33,6 +33,8 @@ package debug_dmi_pkg;
   // Four words are enough for the first Program Buffer execution sequence
   // while keeping the register bank and future executor deliberately small.
   localparam int PROGBUF_WORD_COUNT = 4;
+  // Explicit EBREAK terminates Program Buffer execution while impebreak is 0.
+  localparam logic [31:0] PROGBUF_EBREAK_INSN = 32'h0010_0073;
 
   // Abstract command error encodings held in abstractcs.cmderr.
   localparam logic [2:0] CMDERR_NONE         = 3'd0;

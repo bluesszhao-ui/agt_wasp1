@@ -62,9 +62,10 @@ architectural CSR side effects beyond `dcsr.step`
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 
-The standalone `debug_progbuf` four-word storage leaf is implemented and
-verified, but it is intentionally not instantiated or advertised here until
-the Program Buffer execution path is complete.
+The standalone `debug_progbuf` four-word storage leaf and
+`debug_progbuf_exec` sequencing leaf are implemented and verified, but they are
+intentionally not instantiated or advertised here until DMI routing, postexec,
+and halted-core instruction execution are complete.
 
 ## 5. Target Support
 

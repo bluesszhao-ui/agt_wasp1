@@ -62,6 +62,7 @@ PASS       Current verification target passes
 | `debug/debug_reg_access` | PASS | GPR ready/valid sequencing, backpressure, errors, flush drain, and random transactions pass |
 | `debug/debug_abstract_cmd` | PASS | RV32 GPR Access Register decode, physical Access Memory, OpenOCD/GDB CSR probes including core-captured DPC, DCSR.step, two execute/load/store exact-address trigger configuration slots, cmderr mapping, aborts, and random commands pass |
 | `debug/debug_progbuf` | PASS | Four-word Program Buffer storage, reset/clear priority, all-index access, full-array view, and deterministic-random scoreboard pass; DMI advertisement/execution remain staged |
+| `debug/debug_progbuf_exec` | PASS | Five-state ordered sequencer, explicit EBREAK, backpressure, exception, halt-loss, DM/reset abort, all-index, and 64-program random coverage pass; core execution remains staged |
 | `debug/debug_jtag_dtm` | PASS | JTAG TAP, IDCODE, DTMCS, DMI scan chain, busy/sticky status, and DMI CDC tests pass |
 | `debug/debug_jtag` | PASS | Integrated JTAG-to-Debug-Module path passes IDCODE, DTMCS, DMI, halt/resume, GPR abstract access, and sticky reset tests |
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, two OpenOCD/GDB hardware breakpoints, and load/store watchpoints |
@@ -80,7 +81,7 @@ PASS       Current verification target passes
 ```text
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
 2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
-3. Connect the verified debug_progbuf storage to postexec/core execution, then add optional System Bus Access
+3. Connect the verified Program Buffer storage/sequencer to DMI, postexec, and halted-core instruction execution, then add optional System Bus Access
 4. Extend the four-seed randomized IRQ baseline with longer-duration nightly/CI campaigns
 ```
 

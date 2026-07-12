@@ -205,6 +205,7 @@ debug
   debug_mem_access
   debug_abstract_cmd
   debug_progbuf
+  debug_progbuf_exec
 ```
 
 ### timer
