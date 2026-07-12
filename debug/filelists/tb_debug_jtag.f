@@ -3,6 +3,7 @@
 rtl/debug_dmi_pkg.sv
 rtl/debug_dmi_if.sv
 ../common/rtl/debug_if.sv
+rtl/debug_progbuf.sv
 rtl/debug_dmi_regs.sv
 rtl/debug_halt_ctrl.sv
 rtl/debug_abstract_cmd.sv

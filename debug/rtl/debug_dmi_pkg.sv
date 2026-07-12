@@ -23,6 +23,16 @@ package debug_dmi_pkg;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_HARTINFO   = 7'h12;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_ABSTRACTCS = 7'h16;
   localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_COMMAND    = 7'h17;
+  // Canonical Program Buffer addresses are reserved now for the standalone
+  // storage leaf; debug_dmi_regs does not route them until execution exists.
+  localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF0   = 7'h20;
+  localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF1   = 7'h21;
+  localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF2   = 7'h22;
+  localparam logic [DMI_ADDR_WIDTH-1:0] DMI_ADDR_PROGBUF3   = 7'h23;
+
+  // Four words are enough for the first Program Buffer execution sequence
+  // while keeping the register bank and future executor deliberately small.
+  localparam int PROGBUF_WORD_COUNT = 4;
 
   // Abstract command error encodings held in abstractcs.cmderr.
   localparam logic [2:0] CMDERR_NONE         = 3'd0;

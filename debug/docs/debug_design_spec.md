@@ -11,6 +11,10 @@ debug_abstract_cmd
 debug_reg_access
 ```
 
+`debug_progbuf` storage is verified as a standalone leaf but is not yet part of
+this wrapper. This keeps `abstractcs.progbufsize=0` until debugger-supplied
+instructions can actually execute.
+
 The wrapper adds no new architectural register state. Its local logic consists
 of explicit channel wiring, top-level output assignment, and an internal
 abstract-access `debug_if` instance used to satisfy leaf modport ownership.

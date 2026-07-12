@@ -62,6 +62,10 @@ architectural CSR side effects beyond `dcsr.step`
 multi-hart selection beyond architectural nonexistent-hart reporting
 ```
 
+The standalone `debug_progbuf` four-word storage leaf is implemented and
+verified, but it is intentionally not instantiated or advertised here until
+the Program Buffer execution path is complete.
+
 ## 5. Target Support
 
 The module is synthesizable SystemVerilog and target-neutral. The target macros
