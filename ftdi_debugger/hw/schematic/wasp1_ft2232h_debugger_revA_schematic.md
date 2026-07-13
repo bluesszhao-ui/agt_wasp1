@@ -2,9 +2,9 @@
 
 ## 1. Purpose
 
-This document is the Rev A schematic-input package for the external wasp1 FTDI
-debugger. It is not a PCB release. It freezes the intended schematic pages,
-major parts, and board-level signal ownership before the EDA schematic is drawn.
+This document records the Rev A schematic contract for the external wasp1 FTDI
+debugger. The corresponding native KiCad 10 hierarchy is implemented under
+`hw/kicad/wasp1_ft2232h_debugger_revA/`. It is not yet a PCB release.
 
 The design goal is:
 
@@ -19,10 +19,11 @@ reserved for the UART console and OTP programming flow.
 
 | Page | Title | Main content |
 | ---: | --- | --- |
-| 1 | USB and local power | USB-C USB2 connector, ESD, CC resistors, polyfuse, 3.3 V rail |
-| 2 | FT2232H core | FT2232H, 12 MHz clock, optional EEPROM, USB D+/D-, local decoupling |
-| 3 | VREF and level shifting | target VREF sense, VREF-valid comparator, JTAG/UART level shifters |
-| 4 | Target connector and indicators | keyed target header, series damping, LEDs, test points |
+| 1 | wasp1 FT2232H Debugger Rev A | Root hierarchy and four electrical child sheets |
+| 2 | USB and local power | USB-C USB2 connector, ESD, CC resistors, polyfuse, 3.3 V rail |
+| 3 | FT2232H core clock and EEPROM | FT2232H, 12 MHz clock, optional EEPROM, USB D+/D-, local decoupling |
+| 4 | VREF detection and level shifting | Target VREF sense, fail-safe enable gate, translators, isolated VREF LED |
+| 5 | Target connector ESD and test access | Keyed target header, damping, ESD, and eight test points |
 
 ## 3. Core Parts
 
@@ -37,6 +38,7 @@ reserved for the UART console and OTP programming flow.
 | U5 | Target-to-debugger level shifter | SN74AXC2T245RSWR | Receives TDO/UART_TXD from target |
 | U6 | Local 3.3 V regulator | AP2112K-3.3TRG1, SOT-25 | Generates VCC_3V3 from protected USB VBUS |
 | U7 | Fail-safe enable gate | SN74LVC1G00DBVR NAND | SHIFT_OE_N is low only when VREF_VALID and TARGET_EN are high |
+| Q1 | VREF LED isolation | 2N7002, SOT-23 | Drives D2 without loading the comparator output |
 | J2 | Target connector | Keyed 2x7 header | Pinout follows `docs/ftdi_debugger_pinout.md` |
 
 ## 4. Voltage And Enable Policy
@@ -56,6 +58,11 @@ keeps both translator OEs disabled if U7 is unpowered.
 
 The debugger must not back-power the target through JTAG, reset, UART, ESD
 parts, pull-ups, or indicator circuits.
+
+The VREF-valid LED is not connected directly across `VREF_VALID`. Q1 senses the
+comparator output at its gate and sinks D2 current from `VCC_3V3`, preserving
+the logic-high margin at U7. Unused U4 A7/A8 inputs each have a 10 kOhm
+pulldown; their bidirectional pins are not hard-shorted to ground.
 
 ## 5. FT2232H Channel A Mapping
 
@@ -122,7 +129,8 @@ SHIFT_OE_N, TCK, TDO, GND
 
 ## 9. Release Gate
 
-Before a PCB is routed, the EDA schematic must be checked against:
+The native schematic must pass KiCad ERC with no errors or warnings before a
+PCB is routed, and it must be checked against:
 
 ```text
 docs/ftdi_debugger_pinout.md

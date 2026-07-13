@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "wasp1")(type "KiCad")(uri "${KIPRJMOD}/wasp1_ft2232h_debugger_revA.kicad_sym")(options "")(descr "wasp1 FTDI debugger Rev A symbols"))
+)

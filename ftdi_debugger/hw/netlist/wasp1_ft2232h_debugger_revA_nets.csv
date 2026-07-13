@@ -12,7 +12,7 @@ EEPROM,EECS,U1 EECS,U2 CS,optional FTDI EEPROM chip select
 EEPROM,EESK,U1 EESK,U2 SK,optional FTDI EEPROM clock
 EEPROM,EEDATA,U1 EEDATA,U2 DI/DO,optional FTDI EEPROM data
 VREF,VREF,J2 pin 1,U3 input/U4 B-side/U5 B-side,target IO reference only
-VREF,VREF_VALID,U3 output,U7 input A,high only above the nominal 1.57 V threshold
+VREF,VREF_VALID,U3 output,U7 input A and Q1 gate,10 kOhm pullup; high only above the nominal 1.57 V threshold
 CONTROL,FT_TARGET_EN,U1 ADBUS6,U7 input B,OpenOCD bit 0x0040 with 100 kOhm pulldown
 CONTROL,SHIFT_OE_N,U7 output,U4 OE_N/U5 OE_N,low only when VREF_VALID and FT_TARGET_EN are both high
 JTAG,FT_A_TCK,U1 ADBUS0,U4 A1,OpenOCD bit 0x0001 TCK source
@@ -32,9 +32,14 @@ UART,UART_RXD,U4 B6,J2 pin 12,target UART RXD
 UART,UART_TXD,J2 pin 11,U5 B2,target UART TXD
 UART,FT_B_RXD,U5 A2,U1 BDBUS1,FT2232H Channel B UART RX
 INDICATOR,LED_USB,VCC_3V3,D1/RLED1,USB/local power indicator
-INDICATOR,LED_VREF,VREF_VALID,D2/RLED2,target VREF valid indicator
-TEST,TP_TCK,TCK,TP1,JTAG clock measurement point
-TEST,TP_TDO,TDO,TP2,JTAG data-out measurement point
-TEST,TP_VREF_VALID,VREF_VALID,TP3,level-shifter enable measurement point
-TEST,TP_TARGET_EN,FT_TARGET_EN,TP4,host ownership gate measurement point
-TEST,TP_SHIFT_OE_N,SHIFT_OE_N,TP5,active-low translator enable measurement point
+INDICATOR,LED_VREF,VCC_3V3,RLED2/D2/Q1 to GND,Q1 gate senses VREF_VALID without loading the comparator output
+UNUSED,U4_A7_UNUSED,U4 A7,RU4_A7 to GND,defined low input on unused translator channel seven
+UNUSED,U4_A8_UNUSED,U4 A8,RU4_A8 to GND,defined low input on unused translator channel eight
+TEST,TP_VCC_3V3,VCC_3V3,TP1,local debugger rail measurement point
+TEST,TP_VCORE,VCORE,TP2,FT2232H core rail measurement point
+TEST,TP_VREF,VREF,TP3,target reference rail measurement point
+TEST,TP_VREF_VALID,VREF_VALID,TP4,comparator output measurement point
+TEST,TP_TARGET_EN,FT_TARGET_EN,TP5,host ownership gate measurement point
+TEST,TP_SHIFT_OE_N,SHIFT_OE_N,TP6,active-low translator enable measurement point
+TEST,TP_TCK,TCK,TP7,JTAG clock measurement point
+TEST,TP_TDO,TDO,TP8,JTAG data-out measurement point

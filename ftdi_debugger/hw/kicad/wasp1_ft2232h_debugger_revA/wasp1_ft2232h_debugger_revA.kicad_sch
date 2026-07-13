@@ -1,0 +1,171 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "c956cfef-8987-4a56-b2c2-f9ef3d89fe50")
+	(paper "A3")
+	(title_block
+		(title "wasp1 FT2232H Debugger Rev A")
+		(date "2026-07-12")
+		(rev "Rev A")
+		(company "wasp1")
+		(comment 1 "FT2232H Channel A JTAG / Channel B UART")
+		(comment 2 "Sheet 1 of 5")
+	)
+	(lib_symbols)
+	(text "All labels are explicit electrical nets; NC markers identify intentionally unused pins."
+		(exclude_from_sim no)
+		(at 120.65 20.32 0)
+		(effects
+			(font
+				(size 1.5 1.5)
+				(bold yes)
+			)
+		)
+		(uuid "35d76e94-797b-5af1-9042-1c5e52ca00bf")
+	)
+	(sheet
+		(at 55 100)
+		(size 300 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "7168259e-3223-51a9-92f4-eb75173a2ae5")
+		(property "Sheetname" "FT2232H core clock and EEPROM"
+			(at 57.54 102.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sheetfile" "02_ft2232h_core.kicad_sch"
+			(at 57.54 107.62 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(sheet
+		(at 55 45)
+		(size 300 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "96e0ef0d-a494-5495-93c1-14c7b5ce6636")
+		(property "Sheetname" "USB and local power"
+			(at 57.54 47.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sheetfile" "01_usb_power.kicad_sch"
+			(at 57.54 52.62 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(sheet
+		(at 55 210)
+		(size 300 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "a7fe48a5-ca51-5532-985e-2ff115a908ce")
+		(property "Sheetname" "Target connector ESD and test access"
+			(at 57.54 212.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sheetfile" "04_target_io.kicad_sch"
+			(at 57.54 217.62 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(sheet
+		(at 55 155)
+		(size 300 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "e493b098-a8e2-5cb3-9f90-e744d2fc5848")
+		(property "Sheetname" "VREF detection and level shifting"
+			(at 57.54 157.54 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Sheetfile" "03_vref_level_shift.kicad_sch"
+			(at 57.54 162.62 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+)

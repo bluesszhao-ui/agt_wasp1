@@ -41,6 +41,7 @@ Target VREF
   -> TLV7041 U3 -> VREF_VALID
 VREF_VALID + TARGET_EN
   -> SN74LVC1G00 U7 -> SHIFT_OE_N -> U4/U5
+VREF_VALID -> 2N7002 Q1 -> isolated amber status LED D2
 ```
 
 ## 3. Frozen Major Components
@@ -54,6 +55,7 @@ VREF_VALID + TARGET_EN
 | U5 | SN74AXC2T245RSWR | Two target inputs, independent direction pins, Ioff and VCC isolation |
 | U6 | AP2112K-3.3TRG1 | 600 mA USB-to-3.3 V LDO in SOT-25 |
 | U7 | SN74LVC1G00DBVR | Fail-safe active-low OE generation from two active-high qualifiers |
+| Q1 | 2N7002, SOT-23 | Isolates the VREF-valid logic net from D2 indicator current |
 | Y1 | ECS-3225MVQ-120-CN-TR | 12 MHz, 3.3 V, +/-25 ppm oscillator meeting the FTDI OSCI tolerance |
 | ESD1 | USBLC6-2SC6 | Low-capacitance USB2 D+/D- protection |
 | ESD2 | TPD8E003DQDR | Eight target-header GPIO/JTAG/UART ESD channels |
@@ -100,12 +102,20 @@ U4 and U5 are therefore disabled unless both the target voltage and host-side
 JTAG ownership are valid. Their VCC isolation and Ioff behavior provide a
 second barrier when VREF is absent.
 
+Q1 uses `VREF_VALID` only as a MOSFET gate input. D2 current flows from
+`VCC_3V3` through RLED2 and D2 into Q1, so the indicator cannot pull down the
+U7 input. A 10 kOhm RVALID pullup defines the comparator logic-high level.
+
 ## 6. Signal Direction
 
 U4 VCCA is VCC_3V3 and VCCB is VREF. Both direction banks are fixed A-to-B.
 Its active channels are TCK, TDI, TMS, nTRST, nSRST, and UART_RXD. U5 uses the
 same rails with each direction fixed B-to-A for TDO and UART_TXD. All U4 target
 outputs include 33 Ohm series-damping footprints near U4.
+
+Unused U4 A7 and A8 are separately biased low through 10 kOhm RU4_A7 and
+RU4_A8. This avoids floating CMOS inputs while preserving the bidirectional
+translator pins as ordinary protected inputs rather than hard ground shorts.
 
 ESD2 protects the eight J2 signal pins. It is placed at J2, ahead of long board
 routes. VREF is sense-only and is never connected to VCC_3V3.

@@ -31,9 +31,10 @@ Step 1 has a stage-1 reference output:
 ftdi_debugger/docs/ftdi_debugger_pinout.md
 ```
 
-Steps 2 and 3 now have a Rev A schematic-input package:
+Steps 2 and 3 now have a native Rev A KiCad schematic and its review package:
 
 ```text
+ftdi_debugger/hw/kicad/wasp1_ft2232h_debugger_revA/
 ftdi_debugger/hw/schematic/wasp1_ft2232h_debugger_revA_schematic.md
 ftdi_debugger/hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv
 ftdi_debugger/hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
@@ -89,7 +90,7 @@ board-specific stress tests.
 
 ## 5. Current Hardware Package Status
 
-The Rev A hardware package freezes the intended FT2232H channel split, target
-header, VREF-valid level-shifter enable policy, initial BOM classes, and
-netlist-level signal ownership. Formal EDA schematic capture, PCB layout,
-gerbers, assembly files, and physical bring-up remain later hardware steps.
+The Rev A hardware package freezes the FT2232H channel split, target header,
+VREF-valid level-shifter enable policy, BOM classes, and signal ownership. The
+native four-sheet KiCad schematic passes ERC with zero errors and zero warnings.
+PCB layout, gerbers, assembly files, and physical bring-up remain later steps.

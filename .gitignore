@@ -31,3 +31,9 @@ llvm_s1/toolchain/install/*
 .DS_Store
 *.swp
 *.swo
+
+# KiCad per-user state and automatic recovery history
+*.kicad_prl
+**/.history/
+*.kicad_sch-bak
+*.kicad_pcb-bak

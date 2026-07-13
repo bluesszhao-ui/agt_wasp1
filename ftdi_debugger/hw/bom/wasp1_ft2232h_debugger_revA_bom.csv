@@ -12,14 +12,21 @@ U5,1,target-to-debugger level shifter,TI SN74AXC2T245RSWR,OE gated by SHIFT_OE_N
 U6,1,3.3 V regulator,Diodes Inc. AP2112K-3.3TRG1,600 mA SOT-25 LDO from protected USB VBUS
 U7,1,fail-safe enable gate,TI SN74LVC1G00DBVR,NAND generates SHIFT_OE_N from VREF_VALID and FT_TARGET_EN
 J2,1,target connector,keyed 2x7 header,Carries VREF/JTAG/reset/UART/GND
-D1,1,USB power LED,green LED plus resistor,Indicates local 3.3 V rail
-D2,1,VREF LED,amber LED plus resistor,Indicates valid target VREF
+D1,1,USB power LED,green LED 0603,Indicates local 3.3 V rail
+RLED1,1,USB power LED resistor,2.2 kOhm 1 percent 0402,Limits D1 current from VCC_3V3
+D2,1,VREF LED,amber LED 0603,Indicates valid target VREF through isolated Q1 drive
+RLED2,1,VREF LED resistor,2.2 kOhm 1 percent 0402,Limits D2 current from VCC_3V3
+Q1,1,VREF LED isolation switch,2N7002 SOT-23,Prevents the indicator from loading VREF_VALID
 RCC1/RCC2,2,USB-C CC pulldown,5.1 kOhm 1%,Advertises USB device role
 RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,series damping,33 ohm 1 percent 0402,Place near U4 target-facing outputs
 RTARGET_EN/ROE,2,fail-safe bias,100 kOhm 1 percent 0402,TARGET_EN pulldown and SHIFT_OE_N pullup
 RREF_TOP/RREF_BOT,2,VREF threshold divider,110 kOhm and 100 kOhm 1 percent 0402,Nominal 1.57 V comparator reference from VCC_3V3
+RVALID,1,VREF valid pullup,10 kOhm 1 percent 0402,Pulls the U3 open-drain output to VCC_3V3
+RRESET,1,FTDI reset pullup,10 kOhm 1 percent 0402,Holds FT_RESET_N inactive during normal operation
+REECS,1,EEPROM chip-select bias,10 kOhm 1 percent 0402,Holds EECS low when the optional EEPROM is absent
+RU4_A7/RU4_A8,2,unused translator input bias,10 kOhm 1 percent 0402,Terminates unused U4 A-side inputs without shorting bidirectional pins
 RREF,1,FTDI reference resistor,12 kOhm 1 percent 0402,U1 REF to ground per FTDI reference design
 CCORE,1,VCORE filter,3.3 uF X7R 0603,Minimum local VREGOUT/VCORE capacitance
-CDEC,12,local decoupling,100 nF X7R 0402,One per IC supply pin group plus comparator/translators
+CDEC1-CDEC10,10,local decoupling,100 nF X7R 0402,Debugger and target rail decoupling for FTDI and translator supply groups
 CBULK,2,power bulk,4.7 uF X7R 0805,USB protected rail and VCC_3V3 bulk
-TP1/TP2/TP3/TP4/TP5,5,test points,compact SMT test point,TCK TDO VREF_VALID TARGET_EN SHIFT_OE_N
+TP1-TP8,8,test points,compact SMT test point,VCC_3V3 VCORE VREF VREF_VALID TARGET_EN SHIFT_OE_N TCK TDO

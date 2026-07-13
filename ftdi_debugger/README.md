@@ -20,12 +20,11 @@ Target interface: VREF-sensed level-shifted JTAG, optional SRST/TRST
 Primary software: OpenOCD ftdi driver plus wasp1 target config
 ```
 
-Current status: requirements, reference pinout, OpenOCD FTDI config, frozen Rev
-A component/power/level-shifting design, schematic-input/netlist/BOM package,
-editable audited block diagram, and static collateral checks are present. The
-ADBUS6 `FT_TARGET_EN` gate keeps the target isolated until OpenOCD explicitly
-enables it after MPSSE setup. Formal EDA schematic capture, PCB layout, and
-board bring-up remain hardware milestones.
+Current status: the requirements, pinout, OpenOCD config, Rev A BOM/netlist,
+editable block diagram, and native four-sheet KiCad schematic are present. The
+schematic passes KiCad 10 ERC with zero errors and zero warnings. The ADBUS6
+`FT_TARGET_EN` gate keeps the target isolated until OpenOCD explicitly enables
+it after MPSSE setup. PCB layout and board bring-up remain hardware milestones.
 
 Run the documentation/config consistency check with:
 

@@ -16,6 +16,13 @@ def read_rel(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def require_file(path: str) -> Path:
+    file_path = ROOT / path
+    if not file_path.is_file():
+        raise AssertionError(f"missing file: {path}")
+    return file_path
+
+
 def require_token(text: str, token: str, label: str) -> None:
     if token not in text:
         raise AssertionError(f"{label}: missing token {token!r}")
@@ -132,8 +139,8 @@ def check_hardware_package() -> None:
     for token in [
         "USB and local power",
         "FT2232H core",
-        "VREF and level shifting",
-        "Target connector and indicators",
+        "VREF detection and level shifting",
+        "Target connector ESD and test access",
         "ADBUS0",
         "ADBUS5",
         "BDBUS0",
@@ -155,7 +162,7 @@ def check_hardware_package() -> None:
         "FT_TARGET_EN": ("U1 ADBUS6", "U7 input B", "0x0040"),
         "FT_B_TXD": ("U1 BDBUS0", "U4 A6", "Channel B"),
         "FT_B_RXD": ("U5 A2", "U1 BDBUS1", "Channel B"),
-        "VREF_VALID": ("U3 output", "U7 input A", "1.57 V"),
+        "VREF_VALID": ("U3 output", "U7 input A and Q1 gate", "1.57 V"),
         "SHIFT_OE_N": ("U7 output", "U4 OE_N/U5 OE_N", "both high"),
     }
     for net, (source, destination, token) in required_nets.items():
@@ -169,7 +176,8 @@ def check_hardware_package() -> None:
 
     for refdes in [
         "J1", "U1", "Y1", "U2", "U3", "U4", "U5", "U6", "U7",
-        "ESD1", "ESD2", "J2",
+        "ESD1", "ESD2", "J2", "Q1", "RLED1", "RLED2", "RVALID",
+        "RRESET", "REECS", "RU4_A7/RU4_A8", "CDEC1-CDEC10", "TP1-TP8",
     ]:
         find_row(bom, "refdes", refdes)
     require_token(
@@ -195,12 +203,49 @@ def check_hardware_package() -> None:
     print("PASS hardware package")
 
 
+def check_native_kicad_schematic() -> None:
+    base = "hw/kicad/wasp1_ft2232h_debugger_revA"
+    expected_files = [
+        "wasp1_ft2232h_debugger_revA.kicad_sch",
+        "wasp1_ft2232h_debugger_revA.kicad_sym",
+        "wasp1_ft2232h_debugger_revA.kicad_pro",
+        "sym-lib-table",
+        "fp-lib-table",
+        "01_usb_power.kicad_sch",
+        "02_ft2232h_core.kicad_sch",
+        "03_vref_level_shift.kicad_sch",
+        "04_target_io.kicad_sch",
+    ]
+    for name in expected_files:
+        require_file(f"{base}/{name}")
+
+    combined = "\n".join(
+        read_rel(f"{base}/{name}")
+        for name in expected_files
+        if name.endswith(".kicad_sch")
+    )
+    for token in [
+        'property "Reference" "U1"',
+        'property "Reference" "U4"',
+        'property "Reference" "Q1"',
+        'property "Reference" "TP8"',
+        'VREF_VALID',
+        'SHIFT_OE_N',
+        'U4_A7_UNUSED',
+        'U4_A8_UNUSED',
+        'WASP1 TARGET',
+    ]:
+        require_token(combined, token, "native KiCad schematic")
+    print("PASS native KiCad schematic structure")
+
+
 def main() -> int:
     try:
         check_openocd_cfg()
         check_pinout_doc()
         check_spec_and_plan()
         check_hardware_package()
+        check_native_kicad_schematic()
     except AssertionError as exc:
         print(f"FAIL {exc}", file=sys.stderr)
         return 1
