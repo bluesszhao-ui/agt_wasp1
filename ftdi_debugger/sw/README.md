@@ -27,3 +27,8 @@ The local consistency checker is:
 ```text
 python3 check_ftdi_debugger_collateral.py
 ```
+
+The deterministic PCB generator consumes a KiCad XML netlist and system
+footprints. `make -C ftdi_debugger kicad-pcb-generate` recreates the four-layer
+Rev A placement; `kicad-pcb-placement-drc` checks its unrouted-stage DRC
+contract, and `kicad-pcb-render` creates a local 3D review image.

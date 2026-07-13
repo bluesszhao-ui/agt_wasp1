@@ -239,6 +239,39 @@ def check_native_kicad_schematic() -> None:
     print("PASS native KiCad schematic structure")
 
 
+def check_native_kicad_board() -> None:
+    """Check committed PCB structure without pretending the board is routed."""
+    base = "hw/kicad/wasp1_ft2232h_debugger_revA"
+    board = read_rel(f"{base}/wasp1_ft2232h_debugger_revA.kicad_pcb")
+    rules = read_rel(f"{base}/wasp1_ft2232h_debugger_revA.kicad_dru")
+    project = read_rel(f"{base}/wasp1_ft2232h_debugger_revA.kicad_pro")
+    require_regex(board, r'\(general\s+\(thickness 1\.6\)', "native KiCad PCB")
+    for pattern in [
+        r'\(\d+ "In1\.Cu" power\)',
+        r'\(\d+ "In2\.Cu" power\)',
+    ]:
+        require_regex(board, pattern, "native KiCad PCB")
+    for token in [
+        'property "Reference" "J1"',
+        'property "Reference" "J2"',
+        'property "Reference" "U1"',
+        'property "Reference" "TP8"',
+        '(attr smd dnp)',
+        'wasp1 FT2232H DEBUGGER REV A',
+    ]:
+        require_token(board, token, "native KiCad PCB")
+    for token in [
+        'USB differential pair skew',
+        'Power minimum width',
+        'UQFN fine-pitch pad clearance',
+        'USB-C manufacturer footprint hole clearance',
+    ]:
+        require_token(rules, token, "native KiCad PCB rules")
+    for token in ['"name": "USB_DIFF"', '"name": "POWER"', '"name": "JTAG"']:
+        require_token(project, token, "native KiCad PCB net classes")
+    print("PASS native KiCad PCB placement structure")
+
+
 def main() -> int:
     try:
         check_openocd_cfg()
@@ -246,6 +279,7 @@ def main() -> int:
         check_spec_and_plan()
         check_hardware_package()
         check_native_kicad_schematic()
+        check_native_kicad_board()
     except AssertionError as exc:
         print(f"FAIL {exc}", file=sys.stderr)
         return 1

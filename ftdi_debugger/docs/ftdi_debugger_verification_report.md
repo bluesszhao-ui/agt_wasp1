@@ -2,18 +2,22 @@
 
 ## 1. Result
 
-Status: PASS for Rev A detailed-design collateral and native schematic.
+Status: PASS for Rev A detailed-design collateral, native schematic, and PCB
+placement milestone.
 
-This is a pre-PCB verification report. It verifies documentation, OpenOCD
+This report verifies documentation, OpenOCD
 configuration, native KiCad hierarchy, design spec, editable architecture
-diagram, netlist, BOM, and fail-safe target-enable policy. KiCad 10.0.4 ERC
-passes with zero errors and zero warnings. Board-level DRC remains pending.
+diagram, netlist, BOM, fail-safe target-enable policy, and deterministic native
+PCB placement. KiCad 10.0.4 ERC passes with zero errors and zero warnings. PCB
+placement DRC has zero unexpected categories and zero schematic parity issues;
+170 unconnected items remain because routing has not started.
 
 ## 2. Command
 
 ```text
 make -C ftdi_debugger lint
 make -C ftdi_debugger kicad-erc
+make -C ftdi_debugger kicad-pcb-placement-drc
 ```
 
 ## 3. Time-Sequenced Action Table
@@ -28,6 +32,9 @@ make -C ftdi_debugger kicad-erc
 | 5s-6s | Run KiCad 10.0.4 ERC over the hierarchy | No electrical-rule errors or warnings | PASS: 0 errors, 0 warnings |
 | 6s-7s | Render the five-page A3 schematic preview at 100 dpi for visual QA | All pages have a light background; no page, title block, or component is clipped | PASS; mean page brightness 240-253/255 |
 | 7s-8s | Audit `docs/diagrams/ftdi_debugger_revA_block.graffle` | Editable drawing has a visible 5 pt grid, grid-aligned geometry, explicit native line segments, V arrowheads, timing-class colors, and no unrelated overlap | PASS |
+| 8s-9s | Parse native `.kicad_pcb`, `.kicad_dru`, and project net classes | Four copper layers, 1.6 mm stack, 57 footprints, DNP U2, board text, USB/power/JTAG classes, and local rules exist | PASS |
+| 9s-10s | Run KiCad placement-stage DRC with schematic parity | No short, clearance, mask, silk, edge, or parity failures; unrouted items remain explicit | PASS: 0 unexpected categories, 170 expected unrouted items, 0 parity issues |
+| 10s-11s | Render the 1600x1000 top-side 3D preview | Board outline, USB-C, FT2232H, translators, target connector, test points, and readable reference designators are visible without incoherent overlap | PASS |
 
 ## 4. Coverage Summary
 
@@ -37,9 +44,11 @@ PASS pinout document
 PASS spec and plans
 PASS hardware package
 PASS native KiCad schematic structure
+PASS native KiCad PCB placement structure
 PASS OmniGraffle coordinate/overlap audit
 RESULT PASS ftdi_debugger collateral check
 KiCad ERC: 0 errors, 0 warnings
+KiCad PCB placement DRC: 170 expected unrouted items, 2 documented connector library overrides
 Schematic preview: 5 A3 pages, 200 dpi source raster, light-background pixel audit PASS
 ```
 
@@ -63,6 +72,9 @@ Rev A netlist-level FT2232H/JTAG/UART/VREF mapping
 Rev A BOM key components
 Editable Rev A architecture/block diagram
 Native KiCad root plus four electrical child sheets
+Native KiCad 110 mm x 65 mm four-layer PCB placement
+USB_DIFF, POWER, JTAG, and Default net classes
+Board stackup, local DRC rules, DNP propagation, and reference-designator layout
 Q1-isolated VREF indicator
 U4 A7/A8 defined unused-input bias
 Eight test points with net-to-reference consistency
@@ -74,7 +86,8 @@ Five-page A3 PDF and SVG review exports
 The following remain for the hardware milestone:
 
 ```text
-PCB DRC
+PCB copper routing and final zero-unconnected DRC
+Gerber, drill, placement, and fabrication drawing generation
 BOM manufacturer/footprint review
 USB enumeration on a real board
 VREF gating measurement

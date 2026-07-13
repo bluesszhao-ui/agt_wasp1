@@ -133,6 +133,26 @@ target signals: keep at least 0.25 mm from USB pair
 test points: VCC_3V3, VCORE, VREF, VREF_VALID, TARGET_EN, SHIFT_OE_N, TCK, TDO
 ```
 
+The native Rev A placement uses a 110 mm x 65 mm, 1.6 mm four-layer board:
+
+```text
+F.Cu: component-side signal and local power routing
+In1.Cu: power layer, with GND kept continuous under USB and clocks
+In2.Cu: power layer for VCC_3V3/VCORE/VREF distribution as appropriate
+B.Cu: secondary signal routing
+finish: ENIG
+```
+
+J1 is on the left edge, J2 is on the right edge, and functional placement runs
+from USB/power through U1, VREF/level shifting, ESD2, and the target connector.
+The PCB generator preserves the schematic's 57 footprints and 49 real nets;
+synthetic no-connect nets remain netless. U2 retains its schematic DNP status.
+
+Placement-stage DRC intentionally reports unrouted connections until copper
+routing is complete. The only non-routing warnings are local-library mismatch
+notices for J1 and J2, whose repeated pad numbers and J1 rotation require native
+board-local pad metadata. They are tracked, not globally excluded.
+
 ## 8. Source References
 
 ```text

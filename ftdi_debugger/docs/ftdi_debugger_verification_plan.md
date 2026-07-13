@@ -19,6 +19,8 @@ behavior.
 | GDB attach | Run wasp1 GDB smoke/stress | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, and the stress flow hits simultaneous `hbreak *0x0` / `hbreak *0x4`, then detaches |
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
 | Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A design spec, schematic input, netlist, BOM, and docs remain mutually consistent |
+| PCB placement DRC | Run `make -C ftdi_debugger kicad-pcb-placement-drc` | No electrical/geometry/silk/parity category remains; unconnected items are explicit until routing |
+| Final PCB DRC | Run KiCad DRC after routing | Zero unconnected items, shorts, clearance errors, silk violations, parity errors, and unreviewed warnings |
 
 ## 3. Time-Sequenced Case Table Template
 
@@ -30,6 +32,7 @@ behavior.
 | 30s-60s | Run GDB smoke/stress | register packet, PC read, `stepi`, one `hbreak`, and dual-resident `hbreak` stress pass | TBD |
 | 60s-90s | Open UART channel | console or OTP programming transaction passes | TBD |
 | offline | Run collateral checker | config, documentation, Rev A netlist, and BOM checks pass | PASS before hardware |
+| offline | Run placement-stage PCB DRC and 3D preview | functional placement is electrically consistent and visually reviewable; unrouted nets remain explicit | PASS before routing |
 
 ## 4. Required Evidence
 
@@ -38,6 +41,7 @@ The final hardware milestone should archive:
 ```text
 schematic PDF
 PCB layout/gerbers
+placement and final-routing DRC reports
 BOM
 Rev A schematic-input lint log
 OpenOCD log

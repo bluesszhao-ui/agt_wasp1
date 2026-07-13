@@ -40,6 +40,18 @@ ftdi_debugger/hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv
 ftdi_debugger/hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
 ```
 
+Step 5 has reached the verified placement milestone:
+
+```text
+native four-layer .kicad_pcb with 57 placed footprints and 49 real nets
+110 mm x 65 mm board outline and 1.6 mm ENIG stackup
+Default, USB_DIFF, POWER, and JTAG net classes
+placement-stage DRC with zero unexpected categories and zero parity issues
+```
+
+Copper routing, planes, final DRC, and manufacturing outputs remain within
+step 5 and must pass before electrical bring-up begins.
+
 The reference OpenOCD output for step 4 is:
 
 ```text
@@ -93,4 +105,5 @@ board-specific stress tests.
 The Rev A hardware package freezes the FT2232H channel split, target header,
 VREF-valid level-shifter enable policy, BOM classes, and signal ownership. The
 native four-sheet KiCad schematic passes ERC with zero errors and zero warnings.
-PCB layout, gerbers, assembly files, and physical bring-up remain later steps.
+The four-layer PCB placement passes its unrouted-stage DRC contract. Copper
+routing, gerbers, assembly files, and physical bring-up remain later steps.

@@ -21,13 +21,17 @@ Primary software: OpenOCD ftdi driver plus wasp1 target config
 ```
 
 Current status: the requirements, pinout, OpenOCD config, Rev A BOM/netlist,
-editable block diagram, and native four-sheet KiCad schematic are present. The
-schematic passes KiCad 10 ERC with zero errors and zero warnings. The ADBUS6
-`FT_TARGET_EN` gate keeps the target isolated until OpenOCD explicitly enables
-it after MPSSE setup. PCB layout and board bring-up remain hardware milestones.
+editable block diagram, native four-sheet KiCad schematic, and deterministic
+four-layer PCB placement are present. The schematic passes KiCad 10 ERC with
+zero errors and zero warnings. Placement DRC has zero electrical, geometry,
+silkscreen, and schematic-parity errors; its remaining 170 unconnected items
+are the expected unrouted nets. The ADBUS6 `FT_TARGET_EN` gate keeps the target
+isolated until OpenOCD explicitly enables it after MPSSE setup. PCB routing,
+manufacturing outputs, and board bring-up remain hardware milestones.
 
 Run the documentation/config consistency check with:
 
 ```text
 make -C ftdi_debugger lint
+make -C ftdi_debugger kicad-pcb-placement-drc
 ```
