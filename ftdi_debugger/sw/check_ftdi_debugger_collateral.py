@@ -203,6 +203,34 @@ def check_hardware_package() -> None:
     print("PASS hardware package")
 
 
+def check_manufacturing_docs() -> None:
+    """Check release notes that gate generated fabrication outputs."""
+    fabrication = read_rel(
+        "hw/fabrication/wasp1_ft2232h_debugger_revA_fabrication_notes.md"
+    )
+    assembly = read_rel(
+        "hw/assembly/wasp1_ft2232h_debugger_revA_assembly_notes.md"
+    )
+    for token in [
+        "110 mm x 65 mm",
+        "ENIG",
+        "90 ohm nominal",
+        "Gerber X2",
+        "IPC-D-356",
+        "J1/J2 board-local footprint warnings",
+    ]:
+        require_token(fabrication, token, "fabrication notes")
+    for token in [
+        "U2 is DNP",
+        "J1: shell opening faces the left board edge",
+        "VREF to VCC_3V3: open circuit",
+        "SHIFT_OE_N",
+        "FT_TARGET_EN",
+    ]:
+        require_token(assembly, token, "assembly notes")
+    print("PASS manufacturing documentation")
+
+
 def check_native_kicad_schematic() -> None:
     base = "hw/kicad/wasp1_ft2232h_debugger_revA"
     expected_files = [
@@ -240,7 +268,7 @@ def check_native_kicad_schematic() -> None:
 
 
 def check_native_kicad_board() -> None:
-    """Check committed PCB structure without pretending the board is routed."""
+    """Check that the committed native PCB includes the routed Rev A structure."""
     base = "hw/kicad/wasp1_ft2232h_debugger_revA"
     board = read_rel(f"{base}/wasp1_ft2232h_debugger_revA.kicad_pcb")
     rules = read_rel(f"{base}/wasp1_ft2232h_debugger_revA.kicad_dru")
@@ -258,18 +286,34 @@ def check_native_kicad_board() -> None:
         'property "Reference" "TP8"',
         '(attr smd dnp)',
         'wasp1 FT2232H DEBUGGER REV A',
+        'GND_PLANE_IN1',
+        '(segment',
+        '(via',
     ]:
         require_token(board, token, "native KiCad PCB")
+    require_regex(
+        board,
+        r'\(property "Datasheet"[\s\S]*?\(hide yes\)',
+        "native KiCad PCB hidden fabrication properties",
+    )
     for token in [
         'USB differential pair skew',
-        'Power minimum width',
+        'Local low-voltage power minimum width',
+        'USB VBUS minimum width',
         'UQFN fine-pitch pad clearance',
         'USB-C manufacturer footprint hole clearance',
+        'U5 local fanout clearance',
+        'USB-C local signal fanout clearance',
     ]:
         require_token(rules, token, "native KiCad PCB rules")
-    for token in ['"name": "USB_DIFF"', '"name": "POWER"', '"name": "JTAG"']:
+    for token in [
+        '"name": "USB_DIFF"',
+        '"name": "POWER"',
+        '"name": "VBUS"',
+        '"name": "JTAG"',
+    ]:
         require_token(project, token, "native KiCad PCB net classes")
-    print("PASS native KiCad PCB placement structure")
+    print("PASS native KiCad routed PCB structure")
 
 
 def main() -> int:
@@ -278,6 +322,7 @@ def main() -> int:
         check_pinout_doc()
         check_spec_and_plan()
         check_hardware_package()
+        check_manufacturing_docs()
         check_native_kicad_schematic()
         check_native_kicad_board()
     except AssertionError as exc:

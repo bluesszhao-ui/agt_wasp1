@@ -16,9 +16,13 @@
   (constraint track_width (min "0.25mm"))
   (condition "A.NetName == 'TCK' || A.NetName == 'TCK_RAW' || A.NetName == 'FT_A_TCK'"))
 
-(rule "Power minimum width"
+(rule "Local low-voltage power minimum width"
+  (constraint track_width (min "0.25mm"))
+  (condition "A.NetName == 'GND' || A.NetName == 'VCC_3V3' || A.NetName == 'VCORE' || A.NetName == 'VREF'"))
+
+(rule "USB VBUS minimum width"
   (constraint track_width (min "0.50mm"))
-  (condition "A.NetName == 'VCC_3V3' || A.NetName == 'VCORE' || A.NetName == 'VREF' || A.NetName == 'USB_VBUS' || A.NetName == 'VBUS_PROTECTED'"))
+  (condition "A.NetName == 'USB_VBUS' || A.NetName == 'VBUS_PROTECTED'"))
 
 (rule "UQFN fine-pitch pad clearance"
   (constraint clearance (min "0.15mm"))
@@ -27,3 +31,11 @@
 (rule "USB-C manufacturer footprint hole clearance"
   (constraint hole_clearance (min "0.15mm"))
   (condition "A.Parent == 'J1' && B.Parent == 'J1'"))
+
+(rule "U5 local fanout clearance"
+  (constraint clearance (min "0.15mm"))
+  (condition "(A.NetName == 'GND' || A.NetName == 'SHIFT_OE_N' || A.NetName == 'UART_TXD' || A.NetName == 'TDO' || A.NetName == 'VREF' || A.NetName == 'VCC_3V3' || A.NetName == 'FT_A_TDO' || A.NetName == 'FT_B_RXD') && (B.NetName == 'GND' || B.NetName == 'SHIFT_OE_N' || B.NetName == 'UART_TXD' || B.NetName == 'TDO' || B.NetName == 'VREF' || B.NetName == 'VCC_3V3' || B.NetName == 'FT_A_TDO' || B.NetName == 'FT_B_RXD')"))
+
+(rule "USB-C local signal fanout clearance"
+  (constraint clearance (min "0.15mm"))
+  (condition "(A.NetName == '' || A.NetName == 'USB_VBUS' || A.NetName == 'CC1' || A.NetName == 'CC2' || A.NetName == 'USB_DP_CONN' || A.NetName == 'USB_DM_CONN') && (B.NetName == '' || B.NetName == 'USB_VBUS' || B.NetName == 'CC1' || B.NetName == 'CC2' || B.NetName == 'USB_DP_CONN' || B.NetName == 'USB_DM_CONN')"))

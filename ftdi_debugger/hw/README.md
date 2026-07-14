@@ -30,9 +30,11 @@ Its detailed electrical design and editable architecture diagram are:
 ../docs/diagrams/ftdi_debugger_revA_block.graffle
 ```
 
-This is not yet a PCB release. The native four-sheet KiCad hierarchy passes
-KiCad 10 ERC with zero errors and zero warnings. PCB capture and DRC remain the
-next hardware milestone.
+The native four-sheet KiCad hierarchy passes KiCad 10 ERC with zero errors and
+zero warnings. The four-layer board is fully routed and its final DRC has zero
+errors, zero unconnected pads, and zero schematic parity errors. Generated
+manufacturing data remains under `build/manufacturing/`; fabrication and
+assembly requirements are tracked in `fabrication/` and `assembly/`.
 
 The PDF is a stable five-page A3 review preview assembled from individually
 rendered sheets. The native KiCad hierarchy remains the electrical source of

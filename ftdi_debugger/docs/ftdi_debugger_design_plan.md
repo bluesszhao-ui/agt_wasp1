@@ -40,17 +40,21 @@ ftdi_debugger/hw/netlist/wasp1_ft2232h_debugger_revA_nets.csv
 ftdi_debugger/hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
 ```
 
-Step 5 has reached the verified placement milestone:
+Step 5 has reached the verified routed-PCB milestone:
 
 ```text
-native four-layer .kicad_pcb with 57 placed footprints and 49 real nets
+native four-layer .kicad_pcb with 57 footprints and 49 real nets
 110 mm x 65 mm board outline and 1.6 mm ENIG stackup
-Default, USB_DIFF, POWER, and JTAG net classes
-placement-stage DRC with zero unexpected categories and zero parity issues
+Default, USB_DIFF, POWER, VBUS, and JTAG net classes
+695 routed segments, 72 vias, and a continuous filled In1.Cu GND plane
+final DRC with zero errors, zero unconnected pads, and zero parity errors
+USB pair skew below 0.50 mm on both sides of ESD1
 ```
 
-Copper routing, planes, final DRC, and manufacturing outputs remain within
-step 5 and must pass before electrical bring-up begins.
+The step-5 manufacturing target now reproducibly generates and audits Gerbers,
+drill files, pick-and-place data, IPC-D-356, board statistics, and assembly
+drawings. These outputs still require an independent manufacturing review and
+fabricator-specific impedance confirmation before electrical bring-up begins.
 
 The reference OpenOCD output for step 4 is:
 
@@ -105,5 +109,8 @@ board-specific stress tests.
 The Rev A hardware package freezes the FT2232H channel split, target header,
 VREF-valid level-shifter enable policy, BOM classes, and signal ownership. The
 native four-sheet KiCad schematic passes ERC with zero errors and zero warnings.
-The four-layer PCB placement passes its unrouted-stage DRC contract. Copper
-routing, gerbers, assembly files, and physical bring-up remain later steps.
+The four-layer PCB is fully routed and passes final DRC with no errors,
+unconnected pads, or schematic parity errors. The two remaining warnings are
+reviewed board-local footprint overrides for J1 and J2. Manufacturing outputs
+are reproducibly generated and pass structural audit. Independent Gerber,
+stackup, BOM, and assembly review plus physical bring-up remain later steps.

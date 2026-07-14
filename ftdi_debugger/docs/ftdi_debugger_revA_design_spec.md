@@ -133,25 +133,34 @@ target signals: keep at least 0.25 mm from USB pair
 test points: VCC_3V3, VCORE, VREF, VREF_VALID, TARGET_EN, SHIFT_OE_N, TCK, TDO
 ```
 
-The native Rev A placement uses a 110 mm x 65 mm, 1.6 mm four-layer board:
+The native Rev A implementation uses a 110 mm x 65 mm, 1.6 mm four-layer board:
 
 ```text
 F.Cu: component-side signal and local power routing
-In1.Cu: power layer, with GND kept continuous under USB and clocks
-In2.Cu: power layer for VCC_3V3/VCORE/VREF distribution as appropriate
+In1.Cu: continuous filled GND reference plane
+In2.Cu: reviewed power trunks, including the protected USB VBUS tree
 B.Cu: secondary signal routing
 finish: ENIG
 ```
 
 J1 is on the left edge, J2 is on the right edge, and functional placement runs
 from USB/power through U1, VREF/level shifting, ESD2, and the target connector.
-The PCB generator preserves the schematic's 57 footprints and 49 real nets;
-synthetic no-connect nets remain netless. U2 retains its schematic DNP status.
+The placement generator preserves the schematic's 57 footprints and 49 real
+nets; synthetic no-connect nets remain netless. It writes a placement artifact
+under `build/` and cannot overwrite the formal routed PCB. U2 retains its
+schematic DNP status.
 
-Placement-stage DRC intentionally reports unrouted connections until copper
-routing is complete. The only non-routing warnings are local-library mismatch
-notices for J1 and J2, whose repeated pad numbers and J1 rotation require native
-board-local pad metadata. They are tracked, not globally excluded.
+The routed board contains 695 trace segments and 72 through vias. Signal routes
+use 0.20 mm copper, local low-voltage power and JTAG routes use 0.25 mm, and USB
+VBUS uses 0.50 mm copper with 0.80/0.40 mm power vias. The connector-to-ESD USB
+pair measures 7.762475 mm for D+ and 7.299259 mm for D-, giving 0.463216 mm
+skew. The ESD-to-U1 pair measures 18.270343 mm for D+ and 18.684556 mm for D-,
+giving 0.414214 mm skew. Both satisfy the 0.50 mm matching requirement.
+
+Final DRC reports zero errors, zero unconnected pads, and zero schematic parity
+errors. The only warnings are local-library mismatch notices for J1 and J2,
+whose repeated pad numbers and J1 rotation require native board-local pad
+metadata. They are reviewed and tracked rather than globally excluded.
 
 ## 8. Source References
 

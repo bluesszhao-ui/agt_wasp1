@@ -30,5 +30,8 @@ python3 check_ftdi_debugger_collateral.py
 
 The deterministic PCB generator consumes a KiCad XML netlist and system
 footprints. `make -C ftdi_debugger kicad-pcb-generate` recreates the four-layer
-Rev A placement; `kicad-pcb-placement-drc` checks its unrouted-stage DRC
-contract, and `kicad-pcb-render` creates a local 3D review image.
+Rev A placement under `build/` without overwriting the formal routed board.
+`kicad-pcb-placement-drc` checks its unrouted-stage DRC contract,
+`kicad-pcb-final-drc` checks the committed routed board plus USB length
+matching, `kicad-pcb-manufacturing` generates and audits the fabrication and
+assembly package, and `kicad-pcb-render` creates a local 3D review image.

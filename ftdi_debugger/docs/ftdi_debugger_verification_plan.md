@@ -20,7 +20,10 @@ behavior.
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
 | Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A design spec, schematic input, netlist, BOM, and docs remain mutually consistent |
 | PCB placement DRC | Run `make -C ftdi_debugger kicad-pcb-placement-drc` | No electrical/geometry/silk/parity category remains; unconnected items are explicit until routing |
-| Final PCB DRC | Run KiCad DRC after routing | Zero unconnected items, shorts, clearance errors, silk violations, parity errors, and unreviewed warnings |
+| Final PCB DRC | Run `make -C ftdi_debugger kicad-pcb-final-drc` | Zero unconnected items, shorts, clearance errors, silk violations, parity errors, and unreviewed warnings |
+| Routed-board audit | Read the committed PCB through KiCad `pcbnew` | Four copper layers, filled In1.Cu GND plane, reviewed line widths/J1 orientation, substantial routing, and both USB pair skews at most 0.50 mm |
+| Manufacturing output | Run `make -C ftdi_debugger kicad-pcb-manufacturing` | Final DRC passes first; nine Gerbers, separate PTH/NPTH drills, 56 populated positions, IPC-D-356, statistics, and assembly PDFs pass structural audit |
+| Assembly drawing QA | Render both generated PDFs to images | Board geometry is unclipped, footprint properties do not obscure the drawing, U2 is marked DNP, and the empty bottom assembly state is explicit |
 
 ## 3. Time-Sequenced Case Table Template
 
@@ -33,6 +36,8 @@ behavior.
 | 60s-90s | Open UART channel | console or OTP programming transaction passes | TBD |
 | offline | Run collateral checker | config, documentation, Rev A netlist, and BOM checks pass | PASS before hardware |
 | offline | Run placement-stage PCB DRC and 3D preview | functional placement is electrically consistent and visually reviewable; unrouted nets remain explicit | PASS before routing |
+| offline | Run final DRC and routed-board audit | no DRC error, unconnected pad, or parity error; both USB skew checks pass | PASS: 2 reviewed footprint warnings only |
+| offline | Generate and visually review manufacturing outputs | all required files pass structural audit; top/bottom assembly plots are legible | PASS before independent release review |
 
 ## 4. Required Evidence
 

@@ -2,15 +2,16 @@
 
 ## 1. Result
 
-Status: PASS for Rev A detailed-design collateral, native schematic, and PCB
-placement milestone.
+Status: PASS for Rev A detailed-design collateral, native schematic, and routed
+PCB milestone.
 
 This report verifies documentation, OpenOCD
 configuration, native KiCad hierarchy, design spec, editable architecture
 diagram, netlist, BOM, fail-safe target-enable policy, and deterministic native
-PCB placement. KiCad 10.0.4 ERC passes with zero errors and zero warnings. PCB
-placement DRC has zero unexpected categories and zero schematic parity issues;
-170 unconnected items remain because routing has not started.
+PCB implementation. KiCad 10.0.4 ERC passes with zero errors and zero warnings.
+Final PCB DRC has zero errors, zero unconnected pads, and zero schematic parity
+errors. The only two warnings are reviewed local-footprint overrides for J1 and
+J2.
 
 ## 2. Command
 
@@ -18,6 +19,8 @@ placement DRC has zero unexpected categories and zero schematic parity issues;
 make -C ftdi_debugger lint
 make -C ftdi_debugger kicad-erc
 make -C ftdi_debugger kicad-pcb-placement-drc
+make -C ftdi_debugger kicad-pcb-final-drc
+make -C ftdi_debugger kicad-pcb-manufacturing
 ```
 
 ## 3. Time-Sequenced Action Table
@@ -34,7 +37,12 @@ make -C ftdi_debugger kicad-pcb-placement-drc
 | 7s-8s | Audit `docs/diagrams/ftdi_debugger_revA_block.graffle` | Editable drawing has a visible 5 pt grid, grid-aligned geometry, explicit native line segments, V arrowheads, timing-class colors, and no unrelated overlap | PASS |
 | 8s-9s | Parse native `.kicad_pcb`, `.kicad_dru`, and project net classes | Four copper layers, 1.6 mm stack, 57 footprints, DNP U2, board text, USB/power/JTAG classes, and local rules exist | PASS |
 | 9s-10s | Run KiCad placement-stage DRC with schematic parity | No short, clearance, mask, silk, edge, or parity failures; unrouted items remain explicit | PASS: 0 unexpected categories, 170 expected unrouted items, 0 parity issues |
-| 10s-11s | Render the 1600x1000 top-side 3D preview | Board outline, USB-C, FT2232H, translators, target connector, test points, and readable reference designators are visible without incoherent overlap | PASS |
+| 10s-11s | Import the reviewed routing session, complete USB VBUS/CC2 routing, and fill the In1.Cu ground plane | Every net is routed; USB and clock paths retain a continuous ground reference | PASS: 695 segments, 72 vias, 0 unconnected pads |
+| 11s-12s | Audit USB copper lengths | Both connector-to-ESD and ESD-to-U1 pair skew are at most 0.50 mm | PASS: 0.463216 mm pre-ESD, 0.414214 mm post-ESD |
+| 12s-13s | Run final KiCad DRC with schematic parity | Zero errors, unconnected pads, and parity errors; only reviewed local-footprint warnings remain | PASS: 0 errors, 0 unconnected pads, 0 parity errors, 2 reviewed warnings |
+| 13s-14s | Render the 1600x1000 top-side 3D preview | Board outline, USB-C, FT2232H, translators, target connector, test points, and readable reference designators are visible without incoherent overlap | PASS |
+| 14s-15s | Export and audit the manufacturing package | Nine Gerber X2 layers, separate PTH/NPTH drills, 56 populated positions, IPC-D-356, board statistics, and assembly drawings are complete | PASS |
+| 15s-16s | Render both assembly PDFs to raster for visual QA | No clipped board geometry, property noise, or unreadable footprint field overlap; DNP U2 is visibly crossed out | PASS; top drawing clear, bottom drawing correctly shows no bottom-side components |
 
 ## 4. Coverage Summary
 
@@ -44,11 +52,17 @@ PASS pinout document
 PASS spec and plans
 PASS hardware package
 PASS native KiCad schematic structure
-PASS native KiCad PCB placement structure
+PASS native KiCad routed PCB structure
 PASS OmniGraffle coordinate/overlap audit
 RESULT PASS ftdi_debugger collateral check
 KiCad ERC: 0 errors, 0 warnings
 KiCad PCB placement DRC: 170 expected unrouted items, 2 documented connector library overrides
+KiCad final PCB DRC: 0 errors, 0 unconnected pads, 0 parity errors, 2 reviewed connector library overrides
+Routed PCB audit: 695 segments, 72 vias, filled In1.Cu GND plane
+USB copper skew: 0.463216 mm pre-ESD, 0.414214 mm post-ESD
+Manufacturing audit: 9 Gerbers, 90 PTH holes, 2 NPTH holes, 56 placements
+Manufacturing support: IPC-D-356, board statistics, top/bottom assembly PDFs
+Assembly PDF raster review: PASS
 Schematic preview: 5 A3 pages, 200 dpi source raster, light-background pixel audit PASS
 ```
 
@@ -72,9 +86,16 @@ Rev A netlist-level FT2232H/JTAG/UART/VREF mapping
 Rev A BOM key components
 Editable Rev A architecture/block diagram
 Native KiCad root plus four electrical child sheets
-Native KiCad 110 mm x 65 mm four-layer PCB placement
-USB_DIFF, POWER, JTAG, and Default net classes
+Native KiCad 110 mm x 65 mm four-layer routed PCB
+USB_DIFF, POWER, VBUS, JTAG, and Default net classes
 Board stackup, local DRC rules, DNP propagation, and reference-designator layout
+695 routed segments, 72 through vias, and a filled In1.Cu GND plane
+0.20 mm signals, 0.25 mm local power/JTAG, and 0.50 mm USB VBUS
+USB pair length matching on both sides of ESD1
+Gerber X2 copper/mask/silkscreen/edge output
+Separate PTH/NPTH Excellon drill streams and maps
+Position CSV with DNP U2 excluded, IPC-D-356, and board statistics
+Top and mirrored-bottom assembly drawings
 Q1-isolated VREF indicator
 U4 A7/A8 defined unused-input bias
 Eight test points with net-to-reference consistency
@@ -86,9 +107,10 @@ Five-page A3 PDF and SVG review exports
 The following remain for the hardware milestone:
 
 ```text
-PCB copper routing and final zero-unconnected DRC
-Gerber, drill, placement, and fabrication drawing generation
-BOM manufacturer/footprint review
+Independent Gerber/drill viewer and fabrication drawing review
+Fabricator stackup and 90 ohm USB impedance confirmation
+BOM manufacturer part number, footprint, lifecycle, and availability review
+J1/J2 manufacturer drawing and local-footprint review
 USB enumeration on a real board
 VREF gating measurement
 JTAG waveform/scope checks

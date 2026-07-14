@@ -13,6 +13,7 @@ import argparse
 from copy import deepcopy
 from pathlib import Path
 import json
+import re
 import uuid
 import xml.etree.ElementTree as ET
 
@@ -37,7 +38,10 @@ def stable_uuid(name: str) -> str:
 def placement_table() -> dict[str, tuple[float, float, float]]:
     """Define the reviewed Rev A functional placement in millimetres."""
     table: dict[str, tuple[float, float, float]] = {
-        "J1": (20, 50, 90), "ESD1": (30, 50, 0), "F1": (27, 30, 0),
+        # Rotate the receptacle so its shell faces the board edge while its
+        # signal pads face inward; the opposite orientation traps VBUS behind
+        # the shell locating holes and makes a valid fanout impossible.
+        "J1": (20, 50, 270), "ESD1": (30, 50, 0), "F1": (27, 30, 0),
         "U6": (38, 30, 0), "CBULK1": (31, 35, 0), "CBULK2": (43, 35, 0),
         "RCC1": (24, 61, 0), "RCC2": (29, 61, 0), "RLED1": (35, 25, 0),
         "D1": (40, 25, 0), "U1": (55, 51, 0), "Y1": (55, 34, 0),
@@ -232,6 +236,68 @@ def add_reference_geometry(
     board_path.write_text(text, encoding="utf-8")
 
 
+def hide_non_reference_properties(board_path: Path) -> None:
+    """Restore hidden geometry for non-reference footprint properties.
+
+    kiutils 1.4.8 writes every retained property on F.Fab but does not preserve
+    its hidden flag.  Without this repair, fabrication plots contain datasheet
+    URLs, descriptions, and library-generator metadata over the component
+    outlines.  Reference properties remain visible for assembly review.
+    """
+    text = board_path.read_text(encoding="utf-8")
+    pattern = re.compile(r'\n(?P<indent>[ \t]+)\(property "(?P<name>[^"]+)"')
+    cursor = 0
+    chunks: list[str] = []
+    hidden_count = 0
+    while match := pattern.search(text, cursor):
+        chunks.append(text[cursor:match.start()])
+        # Include the leading newline in the emitted property block so the
+        # mechanical repair does not collapse adjacent S-expressions.
+        start = match.start()
+        depth = 0
+        in_string = False
+        escaped = False
+        end = start
+        for end in range(start, len(text)):
+            char = text[end]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end += 1
+                    break
+        property_text = text[start:end]
+        if match.group("name") != "Reference" and "(hide yes)" not in property_text:
+            effects = re.search(r"\n(?P<indent>[ \t]+)\(effects", property_text)
+            if effects is None:
+                # Raw kiutils output keeps compact properties on one line.
+                property_text = property_text[:-1] + " (hide yes))"
+            else:
+                property_text = (
+                    property_text[:effects.start()]
+                    + f"\n{effects.group('indent')}(hide yes)"
+                    + property_text[effects.start():]
+                )
+            hidden_count += 1
+        chunks.append(property_text)
+        cursor = end
+    chunks.append(text[cursor:])
+    if hidden_count == 0:
+        raise ValueError("no visible non-reference footprint properties were found")
+    board_path.write_text("".join(chunks), encoding="utf-8")
+
+
 def build_board(netlist: Path, footprint_root: Path) -> Board:
     """Create the board, assign footprints/nets, and apply deterministic placement."""
     components, net_rows = parse_netlist(netlist)
@@ -367,7 +433,13 @@ def update_project_netclasses(project_path: Path) -> None:
          "diff_pair_width": 0.20, "diff_pair_gap": 0.20},
         {"name": "USB_DIFF", "clearance": 0.20, "track_width": 0.20, "via_diameter": 0.60, "via_drill": 0.30,
          "diff_pair_width": 0.20, "diff_pair_gap": 0.18},
-        {"name": "POWER", "clearance": 0.25, "track_width": 0.50, "via_diameter": 0.80, "via_drill": 0.40,
+        # Fine-pitch IC power pins first escape at 0.25 mm.  Wider distribution
+        # is provided by copper pours and trunks after the local fanout.
+        {"name": "POWER", "clearance": 0.20, "track_width": 0.25, "via_diameter": 0.60, "via_drill": 0.30,
+         "diff_pair_width": 0.20, "diff_pair_gap": 0.20},
+        # USB input power carries the cable-side current and therefore keeps a
+        # wider trace and via than the low-voltage local supplies.
+        {"name": "VBUS", "clearance": 0.20, "track_width": 0.50, "via_diameter": 0.80, "via_drill": 0.40,
          "diff_pair_width": 0.20, "diff_pair_gap": 0.20},
         {"name": "JTAG", "clearance": 0.20, "track_width": 0.25, "via_diameter": 0.60, "via_drill": 0.30,
          "diff_pair_width": 0.20, "diff_pair_gap": 0.20},
@@ -379,10 +451,23 @@ def update_project_netclasses(project_path: Path) -> None:
         "schematic_color": "rgba(0, 0, 0, 0.000)", "tuning_profile": "", "wire_width": 6,
     }
     project["net_settings"]["classes"] = [{**defaults, **item} for item in classes]
+    assignments = {
+        "USB_DIFF": ("USB_DP", "USB_DM", "USB_DP_CONN", "USB_DM_CONN"),
+        "POWER": ("GND", "VCC_3V3", "VCORE", "VREF"),
+        "VBUS": ("USB_VBUS", "VBUS_PROTECTED"),
+        "JTAG": (
+            "FT_A_NSRST", "FT_A_NTRST", "FT_A_TCK", "FT_A_TDI", "FT_A_TDO", "FT_A_TMS",
+            "NSRST_RAW", "NTRST_RAW", "TCK", "TCK_RAW", "TDI", "TDI_RAW", "TDO",
+            "TMS", "TMS_RAW", "nSRST", "nTRST",
+        ),
+    }
+    # Exact-name patterns are intentionally verbose.  They are stable across
+    # KiCad versions and avoid silently assigning every net to Default when a
+    # regular-expression-like pattern is interpreted as a hierarchical path.
     project["net_settings"]["netclass_patterns"] = [
-        {"netclass": "USB_DIFF", "pattern": "/USB_*"},
-        {"netclass": "POWER", "pattern": "/(GND|VCC_3V3|VCORE|VREF|USB_VBUS|VBUS_PROTECTED)"},
-        {"netclass": "JTAG", "pattern": "/(FT_A_*|TCK*|TMS*|TDI*|TDO|nTRST|nSRST|NTRST_RAW|NSRST_RAW)"},
+        {"netclass": netclass, "pattern": net}
+        for netclass, nets in assignments.items()
+        for net in nets
     ]
     project_path.write_text(json.dumps(project, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -398,6 +483,7 @@ def main() -> int:
     board.to_file(str(args.output), encoding="utf-8")
     components, _ = parse_netlist(args.netlist)
     add_reference_geometry(args.output, components, args.footprint_root)
+    hide_non_reference_properties(args.output)
     add_dnp_attributes(
         args.output,
         {component["ref"] for component in components if component["dnp"] == "true"},

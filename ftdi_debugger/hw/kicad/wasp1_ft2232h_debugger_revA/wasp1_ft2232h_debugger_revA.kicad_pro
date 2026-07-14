@@ -533,7 +533,7 @@
       },
       {
         "bus_width": 12,
-        "clearance": 0.25,
+        "clearance": 0.2,
         "diff_pair_gap": 0.2,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -541,6 +541,25 @@
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "POWER",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 2147483647,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.25,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.2,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "VBUS",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
@@ -578,15 +597,111 @@
     "netclass_patterns": [
       {
         "netclass": "USB_DIFF",
-        "pattern": "/USB_*"
+        "pattern": "USB_DP"
+      },
+      {
+        "netclass": "USB_DIFF",
+        "pattern": "USB_DM"
+      },
+      {
+        "netclass": "USB_DIFF",
+        "pattern": "USB_DP_CONN"
+      },
+      {
+        "netclass": "USB_DIFF",
+        "pattern": "USB_DM_CONN"
       },
       {
         "netclass": "POWER",
-        "pattern": "/(GND|VCC_3V3|VCORE|VREF|USB_VBUS|VBUS_PROTECTED)"
+        "pattern": "GND"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "VCC_3V3"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "VCORE"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "VREF"
+      },
+      {
+        "netclass": "VBUS",
+        "pattern": "USB_VBUS"
+      },
+      {
+        "netclass": "VBUS",
+        "pattern": "VBUS_PROTECTED"
       },
       {
         "netclass": "JTAG",
-        "pattern": "/(FT_A_*|TCK*|TMS*|TDI*|TDO|nTRST|nSRST|NTRST_RAW|NSRST_RAW)"
+        "pattern": "FT_A_NSRST"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "FT_A_NTRST"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "FT_A_TCK"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "FT_A_TDI"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "FT_A_TDO"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "FT_A_TMS"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "NSRST_RAW"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "NTRST_RAW"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TCK"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TCK_RAW"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TDI"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TDI_RAW"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TDO"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TMS"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "TMS_RAW"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "nSRST"
+      },
+      {
+        "netclass": "JTAG",
+        "pattern": "nTRST"
       }
     ]
   },
