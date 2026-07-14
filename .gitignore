@@ -22,6 +22,9 @@ wave/*
 __pycache__/
 *.pyc
 
+# Local review renders and scratch outputs
+/tmp/
+
 # Local LLVM source/build/install payloads are large third-party artifacts.
 llvm_s1/toolchain/llvm-project/
 llvm_s1/toolchain/install/*
@@ -34,6 +37,7 @@ llvm_s1/toolchain/install/*
 
 # KiCad per-user state and automatic recovery history
 *.kicad_prl
+~*.lck
 **/.history/
 *.kicad_sch-bak
 *.kicad_pcb-bak

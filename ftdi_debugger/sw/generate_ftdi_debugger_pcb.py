@@ -373,10 +373,9 @@ def build_board(netlist: Path, footprint_root: Path) -> Board:
             "Datasheet": component["datasheet"],
             "Description": component["description"],
         })
-        # Library-level BOM/position exclusions (notably TestPoint) must not
-        # override the schematic symbol's assembly contract.
-        footprint.attributes.excludeFromBom = False
-        footprint.attributes.excludeFromPosFiles = False
+        # Preserve library-level assembly exclusions.  In particular, the
+        # exposed TestPoint pad is PCB copper rather than a fitted component,
+        # so it must never appear in pick-and-place or procurement outputs.
         set_footprint_text(footprint, ref, component["value"])
         for pad_index, pad in enumerate(footprint.pads):
             # Repeated pad numbers and unnumbered mechanical holes are legal;

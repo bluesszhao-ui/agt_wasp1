@@ -358,6 +358,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/a9f487e4-1e42-565a-89d5-6e29ca075df5")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -4863,6 +4864,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/cce402ec-a6ce-55c7-a7b9-b36d3e539ef7")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -6485,6 +6487,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/d8c62c85-68b2-56ea-b700-125a1b16d0b7")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -8154,6 +8157,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/996ff4c0-2b50-5b90-b9a7-265934b31206")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -8925,6 +8929,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/f57d7db9-f825-5bb2-88fc-9bd3ec554242")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -10580,6 +10585,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/ba395a83-8557-536b-a8b3-bb0e6e62dba5")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -10674,6 +10680,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/ba105bbe-51c5-5060-99c6-0cdd037a5684")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)
@@ -11552,6 +11559,7 @@
 			)
 		)
 		(path "/a7fe48a5-ca51-5532-985e-2ff115a908ce/8b5f0470-4ab9-58b7-b724-50de178aa7ef")
+		(attr exclude_from_pos_files exclude_from_bom)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
 			(center 0 0)

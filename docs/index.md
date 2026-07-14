@@ -30,6 +30,8 @@
 | `../ftdi_debugger/docs/ftdi_debugger_revA_design_spec.md` | Frozen Rev A component, power, isolation, signal, and PCB design decisions |
 | `../ftdi_debugger/docs/ftdi_debugger_verification_plan.md` | FTDI debugger board bring-up and verification plan |
 | `../ftdi_debugger/docs/ftdi_debugger_verification_report.md` | FTDI debugger collateral check report |
+| `../ftdi_debugger/docs/ftdi_debugger_manufacturing_review_report.md` | FTDI debugger Rev A manufacturing audit findings and release holds |
+| `../ftdi_debugger/hw/fabrication/wasp1_ft2232h_debugger_revA_release_checklist.md` | Controlled manufacturing release gates and sign-off table |
 | `../llvm_s1/toolchain/docs/wasp1_toolchain_setup.md` | LLVM toolchain discovery, local build, and strict smoke-test setup |
 
 ## Module Documentation

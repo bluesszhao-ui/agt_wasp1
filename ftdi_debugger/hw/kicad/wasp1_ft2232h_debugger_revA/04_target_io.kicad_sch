@@ -497,7 +497,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 54.61 190.5 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid ba105bbe-51c5-5060-99c6-0cdd037a5684)
     (property "Reference" "TP1" (id 0) (at 44.45 180.34 0)
       (effects (font (size 1.27 1.27)))
@@ -515,7 +515,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 134.62 190.5 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid cce402ec-a6ce-55c7-a7b9-b36d3e539ef7)
     (property "Reference" "TP2" (id 0) (at 124.46000000000001 180.34 0)
       (effects (font (size 1.27 1.27)))
@@ -533,7 +533,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 214.63 190.5 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid 996ff4c0-2b50-5b90-b9a7-265934b31206)
     (property "Reference" "TP3" (id 0) (at 204.47 180.34 0)
       (effects (font (size 1.27 1.27)))
@@ -551,7 +551,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 294.64 190.5 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid d8c62c85-68b2-56ea-b700-125a1b16d0b7)
     (property "Reference" "TP4" (id 0) (at 284.47999999999996 180.34 0)
       (effects (font (size 1.27 1.27)))
@@ -569,7 +569,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 54.61 234.95000000000002 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid ba395a83-8557-536b-a8b3-bb0e6e62dba5)
     (property "Reference" "TP5" (id 0) (at 44.45 224.79000000000002 0)
       (effects (font (size 1.27 1.27)))
@@ -587,7 +587,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 134.62 234.95000000000002 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid a9f487e4-1e42-565a-89d5-6e29ca075df5)
     (property "Reference" "TP6" (id 0) (at 124.46000000000001 224.79000000000002 0)
       (effects (font (size 1.27 1.27)))
@@ -605,7 +605,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 214.63 234.95000000000002 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid f57d7db9-f825-5bb2-88fc-9bd3ec554242)
     (property "Reference" "TP7" (id 0) (at 204.47 224.79000000000002 0)
       (effects (font (size 1.27 1.27)))
@@ -623,7 +623,7 @@
   )
 
   (symbol (lib_id "wasp1:TestPoint") (at 294.64 234.95000000000002 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
+    (in_bom no) (on_board yes) (dnp no)
     (uuid 8b5f0470-4ab9-58b7-b724-50de178aa7ef)
     (property "Reference" "TP8" (id 0) (at 284.47999999999996 224.79000000000002 0)
       (effects (font (size 1.27 1.27)))

@@ -27,7 +27,10 @@ I-SRAM target loader are present. ERC has
 zero violations; final PCB DRC has zero errors, zero unconnected pads, and zero
 schematic parity errors. The ADBUS6 `FT_TARGET_EN` gate keeps the target
 isolated until OpenOCD explicitly enables it after MPSSE setup. Independent
-manufacturing review and physical board bring-up remain milestones.
+local manufacturing review now passes, including Gerber/drill geometry, 48
+fitted placement rows, and full production-BOM coverage. Fabrication is still
+HOLD pending board-shop USB impedance sign-off, second-person CAM review,
+procurement confirmation, and physical board bring-up.
 
 Run the documentation/config consistency check with:
 
@@ -37,4 +40,5 @@ make -C ftdi_debugger host-test
 make -C ftdi_debugger kicad-pcb-placement-drc
 make -C ftdi_debugger kicad-pcb-final-drc
 make -C ftdi_debugger kicad-pcb-manufacturing
+make -C ftdi_debugger kicad-manufacturing-release
 ```

@@ -15,6 +15,94 @@ import pcbnew
 MAX_USB_SKEW_MM = 0.50
 
 
+def mm_point(vector: pcbnew.VECTOR2I) -> tuple[float, float]:
+    """Convert one KiCad internal coordinate to rounded millimetres."""
+    return (round(pcbnew.ToMM(vector.x), 6), round(pcbnew.ToMM(vector.y), 6))
+
+
+def audit_release_geometry(board: pcbnew.BOARD) -> None:
+    """Check board technology and the two release-critical local footprints."""
+    thickness = pcbnew.ToMM(board.GetDesignSettings().GetBoardThickness())
+    if not abs(thickness - 1.6) < 1e-6:
+        raise AssertionError(f"source-board finished thickness is not 1.6 mm: {thickness}")
+
+    edge_segments = []
+    for item in board.GetDrawings():
+        if str(board.GetLayerName(item.GetLayer())) == "Edge.Cuts":
+            if not isinstance(item, pcbnew.PCB_SHAPE) or item.GetShape() != pcbnew.SHAPE_T_SEGMENT:
+                raise AssertionError("Rev A board outline must contain only straight segments")
+            edge_segments.append((mm_point(item.GetStart()), mm_point(item.GetEnd())))
+    expected_edges = {
+        ((15.0, 20.0), (125.0, 20.0)),
+        ((125.0, 20.0), (125.0, 85.0)),
+        ((125.0, 85.0), (15.0, 85.0)),
+        ((15.0, 85.0), (15.0, 20.0)),
+    }
+    if set(edge_segments) != expected_edges:
+        raise AssertionError(f"unexpected source-board outline: {edge_segments}")
+
+    j1 = board.FindFootprintByReference("J1")
+    if j1 is None:
+        raise AssertionError("USB-C footprint J1 is missing")
+    if str(j1.GetFPID().GetLibItemName()) != "USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal":
+        raise AssertionError("J1 is not the reviewed GCT USB4105 footprint")
+    if mm_point(j1.GetPosition()) != (20.0, 50.0) or abs(j1.GetOrientationDegrees() + 90.0) > 0.01:
+        raise AssertionError("USB-C J1 position/orientation differs from the reviewed release")
+    j1_pads = list(j1.Pads())
+    pad_numbers = Counter(str(pad.GetNumber()) for pad in j1_pads)
+    expected_numbers = Counter({
+        "": 2, "SH": 4,
+        "A1": 1, "A4": 1, "A5": 1, "A6": 1, "A7": 1, "A8": 1,
+        "A9": 1, "A12": 1, "B1": 1, "B4": 1, "B5": 1, "B6": 1,
+        "B7": 1, "B8": 1, "B9": 1, "B12": 1,
+    })
+    if pad_numbers != expected_numbers:
+        raise AssertionError(f"J1 USB-C pad map differs: {dict(pad_numbers)}")
+    critical_usb = {
+        "A6": (23.68, 49.75), "A7": (23.68, 50.25),
+        "B6": (23.68, 50.75), "B7": (23.68, 49.25),
+    }
+    observed_usb = {
+        str(pad.GetNumber()): mm_point(pad.GetPosition())
+        for pad in j1_pads if str(pad.GetNumber()) in critical_usb
+    }
+    if observed_usb != critical_usb:
+        raise AssertionError(f"J1 USB D+/D- pad placement differs: {observed_usb}")
+    slot_drills = sorted(
+        (round(pcbnew.ToMM(pad.GetDrillSize().x), 3), round(pcbnew.ToMM(pad.GetDrillSize().y), 3))
+        for pad in j1_pads if str(pad.GetNumber()) == "SH"
+    )
+    if slot_drills != [(0.6, 1.4), (0.6, 1.4), (0.6, 1.7), (0.6, 1.7)]:
+        raise AssertionError(f"J1 shell-slot geometry differs: {slot_drills}")
+
+    j2 = board.FindFootprintByReference("J2")
+    if j2 is None:
+        raise AssertionError("target connector J2 is missing")
+    if str(j2.GetFPID().GetLibItemName()) != "IDC-Header_2x07_P2.54mm_Vertical":
+        raise AssertionError("J2 is not the reviewed 2x7 IDC footprint")
+    if mm_point(j2.GetPosition()) != (117.0, 50.0) or abs(j2.GetOrientationDegrees()) > 0.01:
+        raise AssertionError("target connector J2 position/orientation differs")
+    j2_pads = {int(pad.GetNumber()): pad for pad in j2.Pads()}
+    if set(j2_pads) != set(range(1, 15)):
+        raise AssertionError("J2 must contain pins 1 through 14 exactly once")
+    for number, pad in j2_pads.items():
+        row = (number - 1) // 2
+        column = (number - 1) % 2
+        expected = (117.0 + column * 2.54, 50.0 + row * 2.54)
+        drill = tuple(round(pcbnew.ToMM(value), 3) for value in (pad.GetDrillSize().x, pad.GetDrillSize().y))
+        if mm_point(pad.GetPosition()) != expected or drill != (1.0, 1.0):
+            raise AssertionError(f"J2 pin {number} geometry differs from the 2.54 mm grid")
+
+    for index in range(1, 9):
+        test_pad = board.FindFootprintByReference(f"TP{index}")
+        if test_pad is None:
+            raise AssertionError(f"TP{index} is missing")
+        if not test_pad.IsExcludedFromBOM() or not test_pad.IsExcludedFromPosFiles():
+            raise AssertionError(f"TP{index} must be PCB-only and excluded from assembly outputs")
+        if test_pad.IsDNP():
+            raise AssertionError(f"TP{index} is PCB copper, not a DNP component")
+
+
 def audit_report(report_path: Path) -> Counter[str]:
     """Require a clean report apart from the two reviewed local footprints."""
     report = report_path.read_text(encoding="utf-8")
@@ -52,6 +140,7 @@ def audit_board(board_path: Path) -> dict[str, float | int]:
         raise AssertionError(f"expected four copper layers, got {board.GetCopperLayerCount()}")
     if len(board.GetFootprints()) != 57:
         raise AssertionError(f"expected 57 footprints, got {len(board.GetFootprints())}")
+    audit_release_geometry(board)
 
     tracks = list(board.GetTracks())
     segment_count = sum(not isinstance(item, pcbnew.PCB_VIA) for item in tracks)
@@ -84,11 +173,6 @@ def audit_board(board_path: Path) -> dict[str, float | int]:
         raise AssertionError("GND_PLANE_IN1 is not on In1.Cu")
     if not ground_zone.IsFilled():
         raise AssertionError("GND_PLANE_IN1 has not been filled")
-
-    j1 = board.FindFootprintByReference("J1")
-    if j1 is None or abs(j1.GetOrientationDegrees() + 90.0) > 0.01:
-        observed = None if j1 is None else j1.GetOrientationDegrees()
-        raise AssertionError(f"USB-C J1 orientation is incorrect: {observed}")
 
     lengths = routed_lengths(board)
     required_usb_nets = ("USB_DP_CONN", "USB_DM_CONN", "USB_DP", "USB_DM")
@@ -133,6 +217,7 @@ def main() -> int:
         f"{metrics['segments']} segments, {metrics['vias']} vias, "
         f"DRC={dict(categories)}"
     )
+    print("PASS release geometry: 1.6 mm board, closed outline, reviewed J1/J2, PCB-only TP1-TP8")
     print(
         "PASS USB pre-ESD: "
         f"D+={metrics['usb_dp_conn_mm']:.6f} mm, "

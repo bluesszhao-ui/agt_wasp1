@@ -18,20 +18,22 @@ KICAD_DRILL_DIR := $(KICAD_MFG_DIR)/drill
 KICAD_POSITIONS := $(KICAD_MFG_DIR)/wasp1_ft2232h_debugger_revA_positions.csv
 KICAD_IPCD356 := $(KICAD_MFG_DIR)/wasp1_ft2232h_debugger_revA.ipc
 KICAD_BOARD_STATS := $(KICAD_MFG_DIR)/wasp1_ft2232h_debugger_revA_board_stats.json
+KICAD_BOM := hw/bom/wasp1_ft2232h_debugger_revA_bom.csv
+KICAD_RELEASE_ZIP := build/release/wasp1_ft2232h_debugger_revA_manufacturing_release.zip
 KICAD_FOOTPRINT_ROOT ?= /Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints
 KICAD_PYTHONPATH ?= build/python
 KICAD_PYTHON ?= /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3
 KICAD_SVG_DIR := hw/schematic/svg
 KICAD_ERC_REPORT := logs/ftdi_debugger_revA_erc.rpt
 
-.PHONY: all lint check diagram-check host-lint host-test kicad-generate kicad-erc kicad-svg \
+.PHONY: all lint check diagram-check host-lint host-test production-bom-check kicad-generate kicad-erc kicad-svg \
 	kicad-netlist kicad-pcb-generate kicad-pcb-placement-drc \
 	kicad-pcb-final-drc kicad-pcb-manufacturing kicad-pcb-render \
-	kicad-python-deps clean
+	kicad-manufacturing-release kicad-python-deps clean
 
 all: lint host-test
 
-lint: check diagram-check host-lint
+lint: check diagram-check host-lint production-bom-check
 
 check:
 	$(PYTHON) sw/check_ftdi_debugger_collateral.py
@@ -44,6 +46,9 @@ host-lint:
 
 host-test:
 	PYTHONPATH=host $(PYTHON) -m unittest discover -s host/tests -v
+
+production-bom-check:
+	$(KICAD_PYTHON) sw/check_production_bom.py $(KICAD_BOARD) $(KICAD_BOM)
 
 kicad-generate:
 	PYTHONPATH=$${PYTHONPATH:-} $(PYTHON) sw/generate_ftdi_debugger_kicad.py --output $(KICAD_DIR)
@@ -117,21 +122,25 @@ kicad-pcb-manufacturing: kicad-pcb-final-drc
 		--output $(KICAD_MFG_DIR)/wasp1_ft2232h_debugger_revA_top_assembly.pdf \
 		--mode-single --layers F.Fab,F.Silkscreen,Edge.Cuts \
 		--sketch-pads-on-fab-layers --crossout-DNP-footprints-on-fab-layers \
-		--exclude-value --no-property-popups --scale 0 --black-and-white \
+		--exclude-value --no-property-popups --scale 0 --black-and-white --bg-color '#ffffff' \
 		--check-zones $(KICAD_BOARD)
 	XDG_CACHE_HOME=/tmp/wasp1_font_cache $(KICAD_CLI) pcb export pdf \
 		--output $(KICAD_MFG_DIR)/wasp1_ft2232h_debugger_revA_bottom_assembly.pdf \
 		--mode-single --layers B.Fab,B.Silkscreen,Edge.Cuts --mirror \
 		--sketch-pads-on-fab-layers --crossout-DNP-footprints-on-fab-layers \
-		--exclude-value --no-property-popups --scale 0 --black-and-white \
+		--exclude-value --no-property-popups --scale 0 --bg-color '#ffffff' \
 		--check-zones $(KICAD_BOARD)
 	$(PYTHON) sw/check_manufacturing_outputs.py $(KICAD_MFG_DIR)
+	$(KICAD_PYTHON) sw/check_production_bom.py $(KICAD_BOARD) $(KICAD_BOM)
 
 kicad-pcb-render:
 	@mkdir -p build
 	XDG_CACHE_HOME=/tmp/wasp1_font_cache $(KICAD_CLI) pcb render \
 		--output $(KICAD_PCB_RENDER) --width 1600 --height 1000 \
 		--side top --perspective --quality basic $(KICAD_BOARD)
+
+kicad-manufacturing-release: kicad-pcb-manufacturing
+	$(PYTHON) sw/build_manufacturing_release.py --module . --output $(KICAD_RELEASE_ZIP)
 
 clean:
 	@true

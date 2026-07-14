@@ -1,32 +1,28 @@
-refdes,quantity,function,preferred_part_or_class,notes
-J1,1,USB connector,GCT USB4105-GF-A family,USB2 top-mount Type-C receptacle; independent CC pins
-F1,1,USB power protection,Bourns MF-MSMF050-2,500 mA hold resettable fuse on VBUS
-ESD1,1,USB ESD array,ST USBLC6-2SC6,Low-capacitance USB2 D+/D- protection close to J1
-ESD2,1,target signal ESD array,TI TPD8E003DQDR,Eight JTAG/reset/UART channels close to J2
-U1,1,USB bridge,FTDI FT2232HL,Channel A MPSSE JTAG and Channel B UART; LQFP-64
-Y1,1,reference clock,ECS ECS-3225MVQ-120-CN-TR,12 MHz 3.3 V HCMOS oscillator plus or minus 25 ppm
-U2,1,optional EEPROM,Microchip 93LC56BT-I/SN,SOIC-8; may be DNI if default VID/PID is acceptable
-U3,1,VREF valid detector,TI TLV7041DBVR,Open-drain comparator with nominal 1.57 V threshold
-U4,1,debugger-to-target level shifter,TI SN74AXC8T245PWR,OE gated by SHIFT_OE_N; VCC isolation and Ioff
-U5,1,target-to-debugger level shifter,TI SN74AXC2T245RSWR,OE gated by SHIFT_OE_N; VCC isolation and Ioff
-U6,1,3.3 V regulator,Diodes Inc. AP2112K-3.3TRG1,600 mA SOT-25 LDO from protected USB VBUS
-U7,1,fail-safe enable gate,TI SN74LVC1G00DBVR,NAND generates SHIFT_OE_N from VREF_VALID and FT_TARGET_EN
-J2,1,target connector,keyed 2x7 header,Carries VREF/JTAG/reset/UART/GND
-D1,1,USB power LED,green LED 0603,Indicates local 3.3 V rail
-RLED1,1,USB power LED resistor,2.2 kOhm 1 percent 0402,Limits D1 current from VCC_3V3
-D2,1,VREF LED,amber LED 0603,Indicates valid target VREF through isolated Q1 drive
-RLED2,1,VREF LED resistor,2.2 kOhm 1 percent 0402,Limits D2 current from VCC_3V3
-Q1,1,VREF LED isolation switch,2N7002 SOT-23,Prevents the indicator from loading VREF_VALID
-RCC1/RCC2,2,USB-C CC pulldown,5.1 kOhm 1%,Advertises USB device role
-RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,series damping,33 ohm 1 percent 0402,Place near U4 target-facing outputs
-RTARGET_EN/ROE,2,fail-safe bias,100 kOhm 1 percent 0402,TARGET_EN pulldown and SHIFT_OE_N pullup
-RREF_TOP/RREF_BOT,2,VREF threshold divider,110 kOhm and 100 kOhm 1 percent 0402,Nominal 1.57 V comparator reference from VCC_3V3
-RVALID,1,VREF valid pullup,10 kOhm 1 percent 0402,Pulls the U3 open-drain output to VCC_3V3
-RRESET,1,FTDI reset pullup,10 kOhm 1 percent 0402,Holds FT_RESET_N inactive during normal operation
-REECS,1,EEPROM chip-select bias,10 kOhm 1 percent 0402,Holds EECS low when the optional EEPROM is absent
-RU4_A7/RU4_A8,2,unused translator input bias,10 kOhm 1 percent 0402,Terminates unused U4 A-side inputs without shorting bidirectional pins
-RREF,1,FTDI reference resistor,12 kOhm 1 percent 0402,U1 REF to ground per FTDI reference design
-CCORE,1,VCORE filter,3.3 uF X7R 0603,Minimum local VREGOUT/VCORE capacitance
-CDEC1-CDEC10,10,local decoupling,100 nF X7R 0402,Debugger and target rail decoupling for FTDI and translator supply groups
-CBULK,2,power bulk,4.7 uF X7R 0805,USB protected rail and VCC_3V3 bulk
-TP1-TP8,8,test points,compact SMT test point,VCC_3V3 VCORE VREF VREF_VALID TARGET_EN SHIFT_OE_N TCK TDO
+refdes,quantity,population,function,manufacturer,manufacturer_part_number,approved_alternate,footprint,lifecycle_status,lifecycle_checked,source_url,notes
+J1,1,POP,USB 2.0 Type-C receptacle,GCT,USB4105-GF-A-120,NONE,USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal,Active,2026-07-14,https://gct.co/connector/usb4105,Top-mount 16-contact receptacle with 1.20 mm shell stakes; independently verify ordered suffix against drawing
+F1,1,POP,USB VBUS resettable fuse,Bourns,MF-MSMF050-2,NONE,Fuse_1812_4532Metric,Selected - procurement recheck,2026-07-14,https://www.bourns.com/docs/product-datasheets/mf-msmf.pdf,500 mA hold current
+ESD1,1,POP,USB D+/D- low-capacitance ESD array,STMicroelectronics,USBLC6-2SC6,NONE,SOT-23-6,Active volume production,2026-07-14,https://www.st.com/en/protections-and-emi-filters/usblc6-2.html,Place connector side toward J1
+ESD2,1,POP,JTAG reset and UART ESD array,Texas Instruments,TPD8E003DQDR,NONE,WSON-8-1EP_2x2mm_P0.5mm_EP0.9x1.6mm,Active,2026-07-14,https://www.ti.com/product/TPD8E003/part-details/TPD8E003DQDR,Eight protected target channels
+U1,1,POP,dual-channel USB bridge,FTDI,FT2232HL-REEL,FT2232HL-TRAY,LQFP-64_10x10mm_P0.5mm,Active,2026-07-14,https://ftdichip.com/products/ft2232hl/,Channel A MPSSE JTAG and channel B UART
+Y1,1,POP,12 MHz reference oscillator,ECS Inc.,ECS-3225MVQ-120-CN-TR,NONE,Oscillator_SMD_EuroQuartz_XO32-4Pin_3.2x2.5mm,Current product page,2026-07-14,https://ecsxtal.com/products/oscillators/surface-mount-oscillators/ecs-3225mvq-120-cn-tr/,3.3 V HCMOS plus or minus 25 ppm
+U2,1,DNP,optional FTDI configuration EEPROM,Microchip Technology,93LC56BT-I/SN,NONE,SOIC-8_3.9x4.9mm_P1.27mm,In production,2026-07-14,https://www.microchip.com/en-us/product/93LC56B,Populate only for custom descriptors or serial-number policy
+U3,1,POP,VREF-valid open-drain comparator,Texas Instruments,TLV7041DBVR,NONE,SOT-23-5,Active production,2026-07-14,https://www.ti.com/product/TLV7041/part-details/TLV7041DBVR,Nominal 1.57 V valid threshold
+U4,1,POP,debugger-to-target level translator,Texas Instruments,SN74AXC8T245PWR,NONE,TSSOP-24_4.4x7.8mm_P0.65mm,Active production,2026-07-14,https://www.ti.com/product/SN74AXC8T245,OE gated by SHIFT_OE_N
+U5,1,POP,target-to-debugger level translator,Texas Instruments,SN74AXC2T245RSWR,NONE,Texas_RSW0010A_UQFN-10_1.4x1.8mm_P0.4mm,Active production,2026-07-14,https://www.ti.com/product/SN74AXC2T245/part-details/SN74AXC2T245RSWR,OE gated by SHIFT_OE_N
+U6,1,POP,USB-to-3.3 V regulator,Diodes Incorporated,AP2112K-3.3TRG1,NONE,SOT-23-5,Current product,2026-07-14,https://www.diodes.com/part/view/AP2112,600 mA SOT-25 LDO
+U7,1,POP,fail-safe enable NAND gate,Texas Instruments,SN74LVC1G00DBVR,NONE,SOT-23-5,Active production,2026-07-14,https://www.ti.com/product/SN74LVC1G00/part-details/SN74LVC1G00DBVR,Generates SHIFT_OE_N from VREF_VALID and FT_TARGET_EN
+J2,1,POP,keyed 2x7 target IDC header,Samtec,TST-107-01-L-D,TST-107-01-G-D,IDC-Header_2x07_P2.54mm_Vertical,Active - primary had zero distributor stock at check,2026-07-14,https://www.samtec.com/products/tst-107-01-l-d,2.54 mm vertical through-hole polarized header; alternate plating requires procurement approval
+D1,1,POP,USB power indicator green LED,Wurth Elektronik,150060VS75000,NONE,LED_0603_1608Metric,Active production,2026-07-14,https://www.we-online.com/en/components/products/WL-SMCW,0603 bright green
+D2,1,POP,VREF-valid indicator amber LED,Wurth Elektronik,150060AS75000,NONE,LED_0603_1608Metric,Active production,2026-07-14,https://www.we-online.com/en/components/products/WL-SMCW,0603 amber
+Q1,1,POP,VREF LED isolation NMOS,Diodes Incorporated,2N7002-7-F,NONE,SOT-23,Current product,2026-07-14,https://www.diodes.com/_files/datasheets/2N7002.pdf,Prevents LED loading of VREF_VALID
+RLED1/RLED2,2,POP,LED current limiting,Yageo,RC0402FR-072K2L,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,2.2 kOhm 1 percent 0402
+RCC1/RCC2,2,POP,USB-C device-role pulldown,Yageo,RC0402FR-075K1L,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,5.1 kOhm 1 percent 0402
+RTCK/RTMS/RTDI/RTRST/RSRST/RURX,6,POP,target-output series damping,Yageo,RC0402FR-0733RL,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,33 Ohm 1 percent 0402
+RTARGET_EN/ROE/RREF_BOT,3,POP,fail-safe bias and VREF divider,Yageo,RC0402FR-07100KL,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,100 kOhm 1 percent 0402
+RREF_TOP,1,POP,VREF threshold divider high side,Yageo,RC0402FR-07110KL,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,110 kOhm 1 percent 0402
+RVALID/RRESET/REECS/RU4_A7/RU4_A8,5,POP,pullups and unused-input bias,Yageo,RC0402FR-0710KL,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,10 kOhm 1 percent 0402
+RREF,1,POP,FTDI reference resistor,Yageo,RC0402FR-0712KL,NONE,R_0402_1005Metric,Selected - procurement recheck,2026-07-14,https://www.yageo.com/en/ProductSearch/PartNumberSearch,12 kOhm 1 percent 0402
+CCORE,1,POP,VCORE regulator filter,Murata,GRM188R61A335KE15D,NONE,C_0603_1608Metric,Current series - procurement recheck,2026-07-14,https://www.murata.com/en-us/products/productdetail?partno=GRM188R61A335KE15%23,3.3 uF 10 V X5R 0603; meets FTDI minimum filter capacitance
+CDEC1-CDEC10,10,POP,local rail decoupling,Murata,GRM155R71C104KA88D,NONE,C_0402_1005Metric,Current series - procurement recheck,2026-07-14,https://www.murata.com/en-global/api/pdfdownloadapi?cate=luCeramicCapacitorsSMD&partno=GRM155R71C104KA88%23,100 nF 16 V X7R 0402
+CBULK1/CBULK2,2,POP,USB and 3.3 V bulk decoupling,TDK,C2012X7R1A475K125AC,NONE,C_0805_2012Metric,Production,2026-07-14,https://product.tdk.com/en/search/capacitor/ceramic/mlcc/info?part_no=C2012X7R1A475K125AC,4.7 uF 10 V X7R 0805
+TP1-TP8,8,PCB_ONLY,exposed copper test pads,PCB fabrication,N/A,N/A,TestPoint_Pad_D1.0mm,PCB_ONLY,2026-07-14,N/A,No physical component; excluded from procurement BOM and position output

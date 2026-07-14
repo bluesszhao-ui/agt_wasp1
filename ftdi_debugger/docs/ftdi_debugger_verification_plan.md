@@ -22,8 +22,10 @@ behavior.
 | Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A design spec, schematic input, netlist, BOM, and docs remain mutually consistent |
 | PCB placement DRC | Run `make -C ftdi_debugger kicad-pcb-placement-drc` | No electrical/geometry/silk/parity category remains; unconnected items are explicit until routing |
 | Final PCB DRC | Run `make -C ftdi_debugger kicad-pcb-final-drc` | Zero unconnected items, shorts, clearance errors, silk violations, parity errors, and unreviewed warnings |
-| Routed-board audit | Read the committed PCB through KiCad `pcbnew` | Four copper layers, filled In1.Cu GND plane, reviewed line widths/J1 orientation, substantial routing, and both USB pair skews at most 0.50 mm |
-| Manufacturing output | Run `make -C ftdi_debugger kicad-pcb-manufacturing` | Final DRC passes first; nine Gerbers, separate PTH/NPTH drills, 56 populated positions, IPC-D-356, statistics, and assembly PDFs pass structural audit |
+| Routed-board audit | Read the committed PCB through KiCad `pcbnew` | Four copper layers, 1.6 mm board, closed outline, filled In1.Cu GND plane, reviewed J1/J2 geometry, PCB-only test-pad attributes, and both USB pair skews at most 0.50 mm |
+| Production BOM | Run `make -C ftdi_debugger production-bom-check` | Every board reference has exact population and footprint coverage; critical MPNs, source URLs, and lifecycle-review dates are present |
+| Manufacturing output | Run `make -C ftdi_debugger kicad-pcb-manufacturing` | Final DRC passes first; nine Gerbers, common coordinate system, closed profile, separate PTH/NPTH drills, 48 fitted positions, IPC-D-356, statistics, and assembly PDFs pass audit |
+| Release archive | Run `make -C ftdi_debugger kicad-manufacturing-release` | Deterministic ZIP contains CAM data, BOM, notes, checklist, reports, schematic, and internal/external SHA-256 manifests |
 | Assembly drawing QA | Render both generated PDFs to images | Board geometry is unclipped, footprint properties do not obscure the drawing, U2 is marked DNP, and the empty bottom assembly state is explicit |
 
 ## 3. Time-Sequenced Case Table Template
@@ -38,7 +40,7 @@ behavior.
 | offline | Run collateral checker | config, documentation, Rev A netlist, and BOM checks pass | PASS before hardware |
 | offline | Run placement-stage PCB DRC and 3D preview | functional placement is electrically consistent and visually reviewable; unrouted nets remain explicit | PASS before routing |
 | offline | Run final DRC and routed-board audit | no DRC error, unconnected pad, or parity error; both USB skew checks pass | PASS: 2 reviewed footprint warnings only |
-| offline | Generate and visually review manufacturing outputs | all required files pass structural audit; top/bottom assembly plots are legible | PASS before independent release review |
+| offline | Generate and visually review manufacturing outputs | Gerber/drill geometry and 48 fitted positions pass; top/bottom assembly plots are legible | PASS locally; external release gates remain HOLD |
 | offline | Run host protocol unit tests against OTP model | all destructive-operation safeguards and protocol invariants pass | PASS before target loader |
 
 ## 4. Required Evidence

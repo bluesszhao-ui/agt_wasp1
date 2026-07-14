@@ -6,6 +6,11 @@ U2 is DNP by default. Populate it only when custom FTDI descriptors or a fixed
 serial-number policy are required. All other references are populated unless a
 released BOM revision explicitly says otherwise.
 
+TP1 through TP8 are exposed 1.0 mm PCB copper pads, not fitted test-point
+components. They are intentionally excluded from the procurement BOM and
+pick-and-place output. The Rev A position CSV therefore contains 48 fitted
+components.
+
 All components are mounted on the top side in Rev A. The mirrored bottom
 assembly drawing therefore contains only through-hole and mechanical-hole
 locations; this sparse result is intentional.
@@ -24,6 +29,10 @@ ESD1/ESD2: verify pin 1 and connector-side placement
 Inspect the fine-pitch U1, U4, and U5 pins for bridges. Confirm that every J1
 shield/mechanical pad is soldered and that all J2 through-hole pins have full
 barrel fill.
+
+CCORE is `GRM188R61A335KE15D` (3.3 uF, 10 V, X5R, 0603). FTDI specifies a
+minimum 3.3 uF VCORE filter capacitor; do not substitute a lower effective
+capacitance after DC-bias derating review.
 
 ## Pre-Power Checks
 

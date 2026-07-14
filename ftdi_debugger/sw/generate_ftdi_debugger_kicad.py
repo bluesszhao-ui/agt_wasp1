@@ -114,7 +114,8 @@ def page(title: str, page_number: int) -> Schematic:
 
 
 def add_symbol(sch: Schematic, symbol: Symbol, ref: str, value: str, x: float, y: float,
-               nets: dict[str, str | None], dnp: bool = False, on_board: bool = True) -> None:
+               nets: dict[str, str | None], dnp: bool = False, on_board: bool = True,
+               in_bom: bool = True) -> None:
     """Place a symbol and attach a global label or NC marker to every physical pin."""
     # KiCad's default schematic connection grid is 50 mil (1.27 mm).
     x = round(x / 1.27) * 1.27
@@ -126,7 +127,9 @@ def add_symbol(sch: Schematic, symbol: Symbol, ref: str, value: str, x: float, y
     inst.libId = symbol.libId
     inst.position = Position(x, y, 0)
     inst.unit = 1
-    inst.inBom = on_board
+    # PCB-only symbols such as exposed test pads remain electrically present
+    # while staying out of procurement and assembly BOMs.
+    inst.inBom = on_board and in_bom
     inst.onBoard = on_board
     inst.dnp = dnp
     inst.uuid = instance_uuid
@@ -317,7 +320,12 @@ def build_pages(symbols: dict[str, Symbol]) -> list[Schematic]:
     add_symbol(p4, symbols["ESD8"], "ESD2", "TPD8E003DQDR", 285, 95, {"1": "TCK", "2": "TMS", "3": "TDI", "4": "TDO", "5": "nTRST", "6": "nSRST", "7": "UART_TXD", "8": "UART_RXD", "9": "GND"})
     add_symbol(p4, symbols["TARGET"], "J2", "WASP1 TARGET", 350, 95, {"1": "VREF", "2": "GND", "3": "TCK", "4": "GND", "5": "TMS", "6": "GND", "7": "TDI", "8": "TDO", "9": "nTRST", "10": "nSRST", "11": "UART_TXD", "12": "UART_RXD", "13": "GND", "14": None})
     for index, net in enumerate(("VCC_3V3", "VCORE", "VREF", "VREF_VALID", "FT_TARGET_EN", "SHIFT_OE_N", "TCK", "TDO"), start=1):
-        add_symbol(p4, symbols["TP"], f"TP{index}", net, 55 + ((index - 1) % 4) * 80, 190 + ((index - 1) // 4) * 45, {"1": net})
+        add_symbol(
+            p4, symbols["TP"], f"TP{index}", net,
+            55 + ((index - 1) % 4) * 80,
+            190 + ((index - 1) // 4) * 45,
+            {"1": net}, in_bom=False,
+        )
     add_symbol(p4, symbols["GND"], "#PWR04", "GND", 365, 210, {"1": "GND"}, on_board=False)
     return [p1, p2, p3, p4]
 

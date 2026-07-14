@@ -2,8 +2,9 @@
 
 ## 1. Result
 
-Status: PASS for Rev A detailed-design collateral, native schematic, routed
-PCB, and host OTP protocol/client milestone.
+Status: PASS for the Rev A engineering package, routed PCB, local manufacturing
+audit, and host OTP protocol/client milestone. Fabrication release remains
+HOLD until the external gates in the manufacturing checklist are signed.
 
 This report verifies documentation, OpenOCD
 configuration, native KiCad hierarchy, design spec, editable architecture
@@ -22,6 +23,7 @@ make -C ftdi_debugger kicad-erc
 make -C ftdi_debugger kicad-pcb-placement-drc
 make -C ftdi_debugger kicad-pcb-final-drc
 make -C ftdi_debugger kicad-pcb-manufacturing
+make -C ftdi_debugger kicad-manufacturing-release
 ```
 
 ## 3. Time-Sequenced Action Table
@@ -42,11 +44,12 @@ make -C ftdi_debugger kicad-pcb-manufacturing
 | 11s-12s | Audit USB copper lengths | Both connector-to-ESD and ESD-to-U1 pair skew are at most 0.50 mm | PASS: 0.463216 mm pre-ESD, 0.414214 mm post-ESD |
 | 12s-13s | Run final KiCad DRC with schematic parity | Zero errors, unconnected pads, and parity errors; only reviewed local-footprint warnings remain | PASS: 0 errors, 0 unconnected pads, 0 parity errors, 2 reviewed warnings |
 | 13s-14s | Render the 1600x1000 top-side 3D preview | Board outline, USB-C, FT2232H, translators, target connector, test points, and readable reference designators are visible without incoherent overlap | PASS |
-| 14s-15s | Export and audit the manufacturing package | Nine Gerber X2 layers, separate PTH/NPTH drills, 56 populated positions, IPC-D-356, board statistics, and assembly drawings are complete | PASS |
+| 14s-15s | Export and independently parse the manufacturing package | Nine Gerber X2 layers share 4.6 metric coordinates; outline is closed; drill inventory and 48 fitted positions are exact | PASS |
 | 15s-16s | Render both assembly PDFs to raster for visual QA | No clipped board geometry, property noise, or unreadable footprint field overlap; DNP U2 is visibly crossed out | PASS; top drawing clear, bottom drawing correctly shows no bottom-side components |
 | 16s-17s | Compile and unit-test the host OTP package | Framing, CRC, chunking, monotonic programming, range/alignment, verify, error, sequence, and lock cases pass | PASS |
 | 17s-18s | Build and model-test target I-SRAM loader | Freestanding 2320-byte RV32I image and target protocol model pass | PASS |
 | 18s-19s | Run complete-SoC UART/OTP loader regression | OTP-to-I-SRAM entry, 8N1 framing, program/read, CRC/transition errors, lock, and lock rejection pass | PASS: 15 checks |
+| 19s-20s | Cross-check production BOM and build deterministic release archive | 57 references map to exact populations/footprints; archive contains controlled inputs and SHA-256 manifest | PASS: 48 POP, 1 DNP, 8 PCB_ONLY |
 
 ## 4. Coverage Summary
 
@@ -65,8 +68,9 @@ KiCad PCB placement DRC: 170 expected unrouted items, 2 documented connector lib
 KiCad final PCB DRC: 0 errors, 0 unconnected pads, 0 parity errors, 2 reviewed connector library overrides
 Routed PCB audit: 695 segments, 72 vias, filled In1.Cu GND plane
 USB copper skew: 0.463216 mm pre-ESD, 0.414214 mm post-ESD
-Manufacturing audit: 9 Gerbers, 90 PTH holes, 2 NPTH holes, 56 placements
+Manufacturing audit: 9 Gerbers, closed 110x65 mm profile, 86 round PTH, 4 plated slots, 2 NPTH, 48 placements
 Manufacturing support: IPC-D-356, board statistics, top/bottom assembly PDFs
+Production BOM: 48 POP, 1 DNP, 8 PCB_ONLY; exact critical MPN and footprint audit PASS
 Assembly PDF raster review: PASS
 Host OTP unit tests: PASS
 Target OTP protocol model: PASS
@@ -107,11 +111,11 @@ Board stackup, local DRC rules, DNP propagation, and reference-designator layout
 USB pair length matching on both sides of ESD1
 Gerber X2 copper/mask/silkscreen/edge output
 Separate PTH/NPTH Excellon drill streams and maps
-Position CSV with DNP U2 excluded, IPC-D-356, and board statistics
+Position CSV with DNP U2 and PCB-only TP1-TP8 excluded, IPC-D-356, and board statistics
 Top and mirrored-bottom assembly drawings
 Q1-isolated VREF indicator
 U4 A7/A8 defined unused-input bias
-Eight test points with net-to-reference consistency
+Eight exposed PCB test pads with net-to-reference consistency and assembly exclusions
 Five-page A3 PDF and SVG review exports
 ```
 
@@ -120,10 +124,10 @@ Five-page A3 PDF and SVG review exports
 The following remain for the hardware milestone:
 
 ```text
-Independent Gerber/drill viewer and fabrication drawing review
 Fabricator stackup and 90 ohm USB impedance confirmation
-BOM manufacturer part number, footprint, lifecycle, and availability review
-J1/J2 manufacturer drawing and local-footprint review
+Independent second-person Gerber/drill CAM viewer review
+Procurement stock, MOQ, lead-time, suffix, and alternate recheck
+J1/J2 automated local-footprint geometry is complete; ordered-part human drawing sign-off remains
 USB enumeration on a real board
 VREF gating measurement
 JTAG waveform/scope checks

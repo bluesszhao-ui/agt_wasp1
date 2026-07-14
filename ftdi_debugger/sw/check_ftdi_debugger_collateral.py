@@ -222,30 +222,37 @@ def check_hardware_package() -> None:
 
     for refdes in [
         "J1", "U1", "Y1", "U2", "U3", "U4", "U5", "U6", "U7",
-        "ESD1", "ESD2", "J2", "Q1", "RLED1", "RLED2", "RVALID",
-        "RRESET", "REECS", "RU4_A7/RU4_A8", "CDEC1-CDEC10", "TP1-TP8",
+        "ESD1", "ESD2", "J2", "Q1", "RLED1/RLED2",
+        "RVALID/RRESET/REECS/RU4_A7/RU4_A8", "CDEC1-CDEC10", "TP1-TP8",
     ]:
         find_row(bom, "refdes", refdes)
     require_token(
-        find_row(bom, "refdes", "U1").get("preferred_part_or_class", ""),
+        find_row(bom, "refdes", "U1").get("manufacturer_part_number", ""),
         "FT2232H",
         "bom U1",
     )
     require_token(
-        find_row(bom, "refdes", "U4").get("preferred_part_or_class", ""),
+        find_row(bom, "refdes", "U4").get("manufacturer_part_number", ""),
         "SN74AXC8T245",
         "bom U4",
     )
     require_token(
-        find_row(bom, "refdes", "U7").get("preferred_part_or_class", ""),
+        find_row(bom, "refdes", "U7").get("manufacturer_part_number", ""),
         "SN74LVC1G00",
         "bom U7",
     )
     require_token(
-        find_row(bom, "refdes", "J2").get("notes", ""),
-        "VREF/JTAG/reset/UART/GND",
+        find_row(bom, "refdes", "J1").get("manufacturer_part_number", ""),
+        "USB4105-GF-A-120",
+        "bom J1",
+    )
+    require_token(
+        find_row(bom, "refdes", "J2").get("manufacturer_part_number", ""),
+        "TST-107-01-L-D",
         "bom J2",
     )
+    if find_row(bom, "refdes", "TP1-TP8").get("population") != "PCB_ONLY":
+        raise AssertionError("bom: TP1-TP8 must be PCB_ONLY")
     print("PASS hardware package")
 
 
@@ -257,6 +264,10 @@ def check_manufacturing_docs() -> None:
     assembly = read_rel(
         "hw/assembly/wasp1_ft2232h_debugger_revA_assembly_notes.md"
     )
+    checklist = read_rel(
+        "hw/fabrication/wasp1_ft2232h_debugger_revA_release_checklist.md"
+    )
+    review = read_rel("docs/ftdi_debugger_manufacturing_review_report.md")
     for token in [
         "110 mm x 65 mm",
         "ENIG",
@@ -268,12 +279,29 @@ def check_manufacturing_docs() -> None:
         require_token(fabrication, token, "fabrication notes")
     for token in [
         "U2 is DNP",
+        "TP1 through TP8 are exposed 1.0 mm PCB copper pads",
         "J1: shell opening faces the left board edge",
         "VREF to VCC_3V3: open circuit",
         "SHIFT_OE_N",
         "FT_TARGET_EN",
     ]:
         require_token(assembly, token, "assembly notes")
+    for token in [
+        "HOLD - DO NOT ORDER",
+        "Fabricator impedance review",
+        "Independent visual CAM review",
+        "Procurement review",
+        "USB4105-GF-A-120",
+        "TST-107-01-L-D",
+    ]:
+        require_token(checklist, token, "manufacturing release checklist")
+    for token in [
+        "corrected from 56 to 48 rows",
+        "GRM188R61A335KE15D",
+        "1.6200 mm",
+        "HOLD - DO NOT ORDER",
+    ]:
+        require_token(review, token, "manufacturing review report")
     print("PASS manufacturing documentation")
 
 
@@ -331,6 +359,7 @@ def check_native_kicad_board() -> None:
         'property "Reference" "U1"',
         'property "Reference" "TP8"',
         '(attr smd dnp)',
+        '(attr exclude_from_pos_files exclude_from_bom)',
         'wasp1 FT2232H DEBUGGER REV A',
         'GND_PLANE_IN1',
         '(segment',
