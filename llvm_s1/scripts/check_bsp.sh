@@ -59,7 +59,9 @@ bsp_files="
   bsp/include/wasp1_uart.h
   bsp/include/wasp1_wdg.h
   bsp/linker/wasp1.ld
+  bsp/linker/wasp1_isram_loader.ld
   bsp/startup/crt0.S
+  bsp/startup/isram_loader_start.S
   bsp/startup/trap.S
   bsp/startup/vectors.S
   bsp/runtime/syscalls.c
@@ -78,9 +80,15 @@ bsp_files="
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
   bsp/examples/otp_program.c
+  bsp/bootloader/wasp1_uart_otp_protocol.h
+  bsp/bootloader/wasp1_uart_otp_protocol.c
+  bsp/bootloader/uart_otp_loader.c
   docs/wasp1_bsp_stage1.md
+  docs/wasp1_uart_otp_loader.md
   scripts/check_otp_image.sh
   scripts/wasp1_make_otp_image.py
+  scripts/build_uart_otp_loader.sh
+  tests/runtime/test_uart_otp_protocol.c
 "
 
 for file in $bsp_files; do
@@ -96,6 +104,10 @@ require_grep 'csrw[[:space:]]+mtvec' bsp/startup/crt0.S 'mtvec setup'
 require_grep '__trap_entry' bsp/startup/trap.S 'trap entry'
 require_grep 'sw[[:space:]]+x31' bsp/startup/trap.S 'trap context save'
 require_grep '\.fasttext' bsp/examples/otp_program.c 'OTP programming routine in I-SRAM section'
+require_grep 'ORIGIN = 0x10000000' bsp/linker/wasp1_isram_loader.ld 'I-SRAM loader origin'
+require_grep 'WASP1_OTP_PROTO_MAX_PAYLOAD' bsp/bootloader/wasp1_uart_otp_protocol.h 'OTP UART protocol payload bound'
+require_grep 'Validate the complete frame before the first irreversible pulse' bsp/bootloader/wasp1_uart_otp_protocol.c 'whole-frame OTP precheck'
+require_grep 'WASP1_UART_OTP_BAUD_DIV' bsp/bootloader/uart_otp_loader.c 'loader UART divisor'
 
 if command -v cc >/dev/null 2>&1; then
   tmp_c=$(mktemp "${TMPDIR:-/tmp}/wasp1_bsp_headers.$$.XXXXXX.c")
@@ -110,6 +122,14 @@ if command -v cc >/dev/null 2>&1; then
     failures=$((failures + 1))
   fi
   rm -f "$tmp_c"
+  if cc -std=c11 -Wall -Wextra -Werror -Ibsp/include -Ibsp/bootloader \
+      -fsyntax-only bsp/bootloader/wasp1_uart_otp_protocol.c \
+      bsp/bootloader/uart_otp_loader.c >> "$log_file" 2>&1; then
+    log "PASS host C syntax for UART OTP loader"
+  else
+    log "FAIL host C syntax for UART OTP loader"
+    failures=$((failures + 1))
+  fi
 else
   log "SKIP host C syntax check: cc not found"
 fi

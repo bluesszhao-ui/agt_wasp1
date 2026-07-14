@@ -2,8 +2,8 @@
 
 ## 1. Result
 
-Status: PASS for Rev A detailed-design collateral, native schematic, and routed
-PCB milestone.
+Status: PASS for Rev A detailed-design collateral, native schematic, routed
+PCB, and host OTP protocol/client milestone.
 
 This report verifies documentation, OpenOCD
 configuration, native KiCad hierarchy, design spec, editable architecture
@@ -17,6 +17,7 @@ J2.
 
 ```text
 make -C ftdi_debugger lint
+make -C ftdi_debugger host-test
 make -C ftdi_debugger kicad-erc
 make -C ftdi_debugger kicad-pcb-placement-drc
 make -C ftdi_debugger kicad-pcb-final-drc
@@ -43,6 +44,9 @@ make -C ftdi_debugger kicad-pcb-manufacturing
 | 13s-14s | Render the 1600x1000 top-side 3D preview | Board outline, USB-C, FT2232H, translators, target connector, test points, and readable reference designators are visible without incoherent overlap | PASS |
 | 14s-15s | Export and audit the manufacturing package | Nine Gerber X2 layers, separate PTH/NPTH drills, 56 populated positions, IPC-D-356, board statistics, and assembly drawings are complete | PASS |
 | 15s-16s | Render both assembly PDFs to raster for visual QA | No clipped board geometry, property noise, or unreadable footprint field overlap; DNP U2 is visibly crossed out | PASS; top drawing clear, bottom drawing correctly shows no bottom-side components |
+| 16s-17s | Compile and unit-test the host OTP package | Framing, CRC, chunking, monotonic programming, range/alignment, verify, error, sequence, and lock cases pass | PASS |
+| 17s-18s | Build and model-test target I-SRAM loader | Freestanding 2320-byte RV32I image and target protocol model pass | PASS |
+| 18s-19s | Run complete-SoC UART/OTP loader regression | OTP-to-I-SRAM entry, 8N1 framing, program/read, CRC/transition errors, lock, and lock rejection pass | PASS: 15 checks |
 
 ## 4. Coverage Summary
 
@@ -50,6 +54,7 @@ make -C ftdi_debugger kicad-pcb-manufacturing
 PASS openocd reference cfg
 PASS pinout document
 PASS spec and plans
+PASS host software collateral
 PASS hardware package
 PASS native KiCad schematic structure
 PASS native KiCad routed PCB structure
@@ -63,6 +68,10 @@ USB copper skew: 0.463216 mm pre-ESD, 0.414214 mm post-ESD
 Manufacturing audit: 9 Gerbers, 90 PTH holes, 2 NPTH holes, 56 placements
 Manufacturing support: IPC-D-356, board statistics, top/bottom assembly PDFs
 Assembly PDF raster review: PASS
+Host OTP unit tests: PASS
+Target OTP protocol model: PASS
+RV32I I-SRAM loader: PASS, 2320 bytes
+SoC UART/OTP loader: PASS, 15 checks at 862 us simulated
 Schematic preview: 5 A3 pages, 200 dpi source raster, light-background pixel audit PASS
 ```
 
@@ -72,6 +81,10 @@ Covered collateral:
 FT2232H VID/PID 0x0403:0x6010
 Channel A MPSSE JTAG
 Channel B UART
+Windows Interface A WinUSB and Interface B VCP setup contract
+Linux libusb/VCP udev access policy
+Versioned UART OTP framing with CRC32
+Host-side range, alignment, 0 -> 1, explicit confirmation, and verify safeguards
 ADBUS0..ADBUS5 JTAG/reset mapping
 BDBUS0..BDBUS1 UART mapping
 OpenOCD layout_init 0x0078 0x007b

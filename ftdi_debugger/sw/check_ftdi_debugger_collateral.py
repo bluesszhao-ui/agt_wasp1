@@ -119,6 +119,52 @@ def check_spec_and_plan() -> None:
     print("PASS spec and plans")
 
 
+def check_host_software() -> None:
+    """Check that host protocol, platform setup, and destructive safeguards exist."""
+    host_spec = read_rel("docs/ftdi_debugger_host_software_spec.md")
+    host_plan = read_rel("docs/ftdi_debugger_host_verification_plan.md")
+    linux_rules = read_rel("host/linux/99-wasp1-ftdi.rules")
+    windows_setup = read_rel("host/windows/README.md")
+    cli = read_rel("host/wasp1_otp/cli.py")
+    client = read_rel("host/wasp1_otp/client.py")
+    protocol = read_rel("host/wasp1_otp/protocol.py")
+
+    for path in [
+        "host/wasp1_otp_tool.py",
+        "host/tests/test_protocol.py",
+        "host/tests/test_client.py",
+        "host/tests/test_serial_transport.py",
+        "host/eeprom/README.md",
+        "docs/ftdi_debugger_host_verification_report.md",
+    ]:
+        require_file(path)
+    for token in [
+        "without a wasp1-specific kernel driver",
+        "Interface A",
+        "Interface B",
+        "CRC32",
+        "ILLEGAL_TRANSITION",
+        "Manufacturing/bootstrap",
+        "Resident service",
+        "0 -> 1",
+    ]:
+        require_token(host_spec, token, "host software spec")
+    for token in [
+        "CRC rejection",
+        "Monotonic safety",
+        "Physical Follow-Up",
+    ]:
+        require_token(host_plan, token, "host verification plan")
+    require_token(linux_rules, 'TAG+="uaccess"', "Linux udev rule")
+    require_token(windows_setup, "Interface A: WinUSB", "Windows setup")
+    require_token(windows_setup, "Interface B: FTDI VCP", "Windows setup")
+    require_token(cli, "--yes-program", "OTP CLI")
+    require_token(cli, "--yes-lock", "OTP CLI")
+    require_token(client, "illegal 0 -> 1 request", "OTP client")
+    require_token(protocol, 'MAGIC = b"W1"', "OTP protocol")
+    print("PASS host software collateral")
+
+
 def read_csv_rel(path: str) -> list[dict[str, str]]:
     with (ROOT / path).open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
@@ -321,6 +367,7 @@ def main() -> int:
         check_openocd_cfg()
         check_pinout_doc()
         check_spec_and_plan()
+        check_host_software()
         check_hardware_package()
         check_manufacturing_docs()
         check_native_kicad_schematic()

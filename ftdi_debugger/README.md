@@ -21,17 +21,19 @@ Primary software: OpenOCD ftdi driver plus wasp1 target config
 ```
 
 Current status: the requirements, pinout, OpenOCD config, Rev A BOM/netlist,
-editable block diagram, native four-sheet KiCad schematic, and routed
-four-layer PCB are present. ERC has zero violations; final PCB DRC has zero
-errors, zero unconnected pads, and zero schematic parity errors. The ADBUS6
-`FT_TARGET_EN` gate keeps the target isolated until OpenOCD explicitly enables
-it after MPSSE setup. Manufacturing-output review and physical board bring-up
-remain hardware milestones.
+editable block diagram, native four-sheet KiCad schematic, routed four-layer
+PCB, Windows/Linux host setup, tested UART OTP client, and a simulated RV32I
+I-SRAM target loader are present. ERC has
+zero violations; final PCB DRC has zero errors, zero unconnected pads, and zero
+schematic parity errors. The ADBUS6 `FT_TARGET_EN` gate keeps the target
+isolated until OpenOCD explicitly enables it after MPSSE setup. Independent
+manufacturing review and physical board bring-up remain milestones.
 
 Run the documentation/config consistency check with:
 
 ```text
 make -C ftdi_debugger lint
+make -C ftdi_debugger host-test
 make -C ftdi_debugger kicad-pcb-placement-drc
 make -C ftdi_debugger kicad-pcb-final-drc
 make -C ftdi_debugger kicad-pcb-manufacturing

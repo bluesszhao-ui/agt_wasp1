@@ -1,0 +1,7 @@
+# Permit active local users to access both FT2232H interfaces through libusb
+# and the FTDI VCP driver. Production releases should replace the default
+# FTDI VID/PID when a project-specific USB identity has been assigned.
+SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6010", TAG+="uaccess"
+
+# Give the Channel B tty node to active local users on udev-based desktops.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", TAG+="uaccess"

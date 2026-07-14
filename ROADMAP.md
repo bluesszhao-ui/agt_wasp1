@@ -73,14 +73,14 @@ PASS       Current verification target passes
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
 | `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/system-stress/random-IRQ-stress/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and corresponding wasp1 software smokes pass |
-| `ftdi_debugger` | DESIGN | FT2232H requirements, pinout, OpenOCD config, frozen Rev A parts/power/level shifting, fail-safe `FT_TARGET_EN` gating, schematic-input/netlist/BOM package, audited editable block diagram, and collateral checker are captured; formal EDA schematic, PCB, and FPGA/board bring-up remain |
+| `ftdi_debugger` | VERIFY | FT2232H requirements, pinout, OpenOCD config, frozen Rev A hardware, routed four-layer PCB, manufacturing package, Windows/Linux host setup, host OTP client, 2320-byte RV32I I-SRAM loader, and complete-SoC UART/OTP simulation are complete; independent manufacturing review and physical FPGA/silicon bring-up remain |
 | full system software | TODO | Directed machine timer and external interrupt tests, long generated-image boot, mixed IRQ/DMA smoke, six-round polling stress, four-seed/48-round randomized IRQ campaign, and debugger stress pass; longer-duration campaigns and optional advanced debug regressions remain |
 
 ## Near-Term Plan
 
 ```text
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
-2. Develop FT2232H hardware debugger schematic/PCB and validate OpenOCD/GDB on FPGA hardware
+2. Validate FT2232H OpenOCD/GDB and the simulated I-SRAM UART/OTP loader through Channel B on FPGA hardware
 3. Add optional System Bus Access after the verified Program Buffer postexec path if debugger performance or memory-access coverage requires it
 4. Extend the four-seed randomized IRQ baseline with longer-duration nightly/CI campaigns
 ```

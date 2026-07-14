@@ -130,6 +130,8 @@ syntax_sources="
   bsp/examples/dma_irq.c
   bsp/examples/timer_irq.c
   bsp/examples/otp_program.c
+  bsp/bootloader/wasp1_uart_otp_protocol.c
+  bsp/bootloader/uart_otp_loader.c
   bsp/runtime/memcpy.c
   bsp/runtime/memset.c
   bsp/runtime/syscalls.c

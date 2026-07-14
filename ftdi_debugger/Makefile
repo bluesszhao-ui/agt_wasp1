@@ -24,20 +24,26 @@ KICAD_PYTHON ?= /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framewo
 KICAD_SVG_DIR := hw/schematic/svg
 KICAD_ERC_REPORT := logs/ftdi_debugger_revA_erc.rpt
 
-.PHONY: all lint check diagram-check kicad-generate kicad-erc kicad-svg \
+.PHONY: all lint check diagram-check host-lint host-test kicad-generate kicad-erc kicad-svg \
 	kicad-netlist kicad-pcb-generate kicad-pcb-placement-drc \
 	kicad-pcb-final-drc kicad-pcb-manufacturing kicad-pcb-render \
 	kicad-python-deps clean
 
-all: lint
+all: lint host-test
 
-lint: check diagram-check
+lint: check diagram-check host-lint
 
 check:
 	$(PYTHON) sw/check_ftdi_debugger_collateral.py
 
 diagram-check:
 	$(PYTHON) ../docs/tools/audit_graffle_diagram.py $(DIAGRAM)
+
+host-lint:
+	$(PYTHON) -m compileall -q host
+
+host-test:
+	PYTHONPATH=host $(PYTHON) -m unittest discover -s host/tests -v
 
 kicad-generate:
 	PYTHONPATH=$${PYTHONPATH:-} $(PYTHON) sw/generate_ftdi_debugger_kicad.py --output $(KICAD_DIR)

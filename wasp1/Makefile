@@ -2,7 +2,9 @@ MODULE := wasp1
 VERILATOR ?= verilator
 RTL_FILELIST := filelists/wasp1.f
 TB_WASP1_FILELIST := filelists/tb_wasp1.f
+TB_UART_OTP_LOADER_FILELIST := filelists/tb_wasp1_uart_otp_loader.f
 WASP1_TOP := tb_wasp1
+UART_OTP_LOADER_TOP := tb_wasp1_uart_otp_loader
 OTP_HEX ?= ../llvm_s1/build/smoke/hello_uart_otp.hex
 GDB_OTP_HEX ?= dv/gdb/wasp1_debug_step_otp.hex
 GDB_WATCH_OTP_HEX ?= dv/gdb/wasp1_debug_watchpoint_otp.hex
@@ -24,7 +26,7 @@ RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress sim-openocd-gdb-watchpoint clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-uart-otp-loader sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress sim-openocd-gdb-watchpoint clean
 
 all: lint
 
@@ -49,6 +51,20 @@ sim-otp-program:
 	@./build/obj_$(WASP1_TOP)/V$(WASP1_TOP) +WASP1_OTP_HEX=$(OTP_PROGRAM_HEX) \
 		+WASP1_OTP_PROGRAM_CHECK $(SIM_ARGS) > logs/tb_wasp1_otp_program.log 2>&1
 	@cat logs/tb_wasp1_otp_program.log
+
+sim-uart-otp-loader:
+	WASP1_UART_OTP_BAUD_DIV=4 \
+	WASP1_UART_OTP_OUTPUT_DIR=build/uart_otp_loader_sim \
+	WASP1_UART_OTP_LOG_FILE=logs/uart_otp_loader_sim_build.log \
+		$(MAKE) -C ../llvm_s1 uart-otp-loader
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(UART_OTP_LOADER_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(UART_OTP_LOADER_TOP) \
+		-f $(TB_UART_OTP_LOADER_FILELIST) > logs/tb_wasp1_uart_otp_loader_build.log 2>&1
+	@./build/obj_$(UART_OTP_LOADER_TOP)/V$(UART_OTP_LOADER_TOP) \
+		> logs/tb_wasp1_uart_otp_loader.log 2>&1
+	@cat logs/tb_wasp1_uart_otp_loader.log
 
 sim-dma-copy:
 	$(MAKE) -C ../llvm_s1 smoke

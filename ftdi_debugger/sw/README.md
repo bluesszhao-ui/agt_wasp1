@@ -1,7 +1,7 @@
 # ftdi_debugger Software
 
-This directory is reserved for host-side helper scripts, EEPROM programming
-notes, and UART/OTP programming helpers associated with the FTDI debugger.
+This directory contains EDA generation and consistency-checking scripts. The
+end-user OpenOCD/UART software package is under `../host/`.
 
 The primary OpenOCD configuration lives in:
 

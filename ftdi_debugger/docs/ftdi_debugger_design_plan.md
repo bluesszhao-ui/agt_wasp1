@@ -24,6 +24,8 @@ USB-C / USB-B connector
 | 6 | Electrical bring-up | USB enumeration and voltage checks |
 | 7 | JTAG bring-up | OpenOCD IDCODE/DTM/hart detection on FPGA |
 | 8 | GDB bring-up | register read, halt/resume, step/breakpoint milestones |
+| 9 | Host package | Windows/Linux setup, udev policy, EEPROM plan, and UART OTP client |
+| 10 | OTP transport bring-up | Target I-SRAM loader, protocol simulation, and Channel B hardware smoke |
 
 Step 1 has a stage-1 reference output:
 
@@ -61,6 +63,20 @@ The reference OpenOCD output for step 4 is:
 ```text
 ftdi_debugger/openocd/wasp1_ft2232h_reference.cfg
 ```
+
+Step 9 now has a tested host-side baseline:
+
+```text
+ftdi_debugger/host/wasp1_otp_tool.py
+ftdi_debugger/docs/ftdi_debugger_host_software_spec.md
+ftdi_debugger/host/linux/99-wasp1-ftdi.rules
+ftdi_debugger/host/windows/README.md
+```
+
+It deliberately uses standard WinUSB/libusb/VCP facilities and does not add a
+wasp1 kernel driver. Step 10 now has a freestanding RV32I I-SRAM loader and a
+complete-SoC bit-serial UART/OTP regression. Physical FT2232H Channel B
+operation remains open.
 
 ## 3. Design Notes
 

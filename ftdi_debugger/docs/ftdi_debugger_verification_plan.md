@@ -18,6 +18,7 @@ behavior.
 | DTM/DM discovery | Run OpenOCD RISC-V examine | hart 0, XLEN=32, and `misa=0x40000100` are detected |
 | GDB attach | Run wasp1 GDB smoke/stress | GDB reads GPRs/PC, executes `stepi`, hits `hbreak *0x4`, and the stress flow hits simultaneous `hbreak *0x0` / `hbreak *0x4`, then detaches |
 | UART channel | Open host serial port | wasp1 UART TX/RX path works for console/OTP tooling |
+| Host OTP protocol | Run `make -C ftdi_debugger host-test` | Framing, CRC, chunking, range/alignment, irreversible-bit, verify, lock, and sequence checks pass |
 | Hardware package check | Run `make -C ftdi_debugger lint` | Pinout, OpenOCD config, Rev A design spec, schematic input, netlist, BOM, and docs remain mutually consistent |
 | PCB placement DRC | Run `make -C ftdi_debugger kicad-pcb-placement-drc` | No electrical/geometry/silk/parity category remains; unconnected items are explicit until routing |
 | Final PCB DRC | Run `make -C ftdi_debugger kicad-pcb-final-drc` | Zero unconnected items, shorts, clearance errors, silk violations, parity errors, and unreviewed warnings |
@@ -38,6 +39,7 @@ behavior.
 | offline | Run placement-stage PCB DRC and 3D preview | functional placement is electrically consistent and visually reviewable; unrouted nets remain explicit | PASS before routing |
 | offline | Run final DRC and routed-board audit | no DRC error, unconnected pad, or parity error; both USB skew checks pass | PASS: 2 reviewed footprint warnings only |
 | offline | Generate and visually review manufacturing outputs | all required files pass structural audit; top/bottom assembly plots are legible | PASS before independent release review |
+| offline | Run host protocol unit tests against OTP model | all destructive-operation safeguards and protocol invariants pass | PASS before target loader |
 
 ## 4. Required Evidence
 
