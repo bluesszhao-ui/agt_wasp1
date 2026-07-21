@@ -65,3 +65,12 @@ The verification clock is 100 MHz with `1ns/1ps` simulation resolution. The
 baseline seed is `0x1a2b3c4d`. The multi-seed campaign runs the same OTP image
 with seeds `0x1a2b3c4d`, `0x12345678`, `0xdeadbeef`, and `0x0f1e2d3c`, for 48
 total rounds. Seed zero is rejected because it is the xorshift32 lock state.
+
+The nightly campaign shall derive 32 simulation seeds from generator root
+`0xc001d00d`. Consecutive simulation seeds shall be separated by 13 xorshift32
+states so their 12 firmware-round windows do not overlap. The campaign shall
+therefore cover 384 distinct scheduled PRNG states across 32 independent SoC
+reset/boot runs. It passes only when every per-seed scoreboard passes and each
+of selectors 0, 1, 2, and 3 appears at least once in the aggregate schedule.
+The runner shall emit deterministic JSON and Markdown summaries plus one raw
+simulation log per seed.

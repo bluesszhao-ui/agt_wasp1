@@ -1,0 +1,47 @@
+name: wasp1 nightly random IRQ campaign
+
+on:
+  schedule:
+    - cron: "17 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wasp1-nightly-random-irq
+  cancel-in-progress: false
+
+jobs:
+  random-irq-campaign:
+    runs-on: macos-14
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out wasp1
+        uses: actions/checkout@v6
+
+      - name: Install LLVM and Verilator
+        run: |
+          brew install llvm verilator
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      - name: Run 32-seed random IRQ campaign
+        env:
+          REQUIRE_RISCV_TOOLCHAIN: "1"
+          RANDOM_IRQ_NIGHTLY_SEED_COUNT: "32"
+        run: make -C wasp1 sim-random-irq-nightly
+
+      - name: Archive campaign reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: wasp1-random-irq-nightly
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            wasp1/logs/random_irq_nightly.log
+            wasp1/logs/random_irq_nightly_summary.json
+            wasp1/logs/random_irq_nightly_summary.md
+            wasp1/logs/random_irq_seed_*.log
+            wasp1/logs/tb_wasp1_random_irq_nightly_build.log

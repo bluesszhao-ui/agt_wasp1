@@ -135,6 +135,7 @@ implemented:
   SoC mixed interrupt-and-DMA regression that consumes generated mixed_irq_dma OTP image
   SoC system stress regression that consumes generated system_stress OTP image
   SoC four-seed interrupt-heavy regression that reuses generated random_irq_stress OTP image
+  SoC 32-seed nightly interrupt campaign with 384 non-overlapping schedule rounds
   SoC DMA copy regression that consumes generated dma_copy OTP image
   SoC UART external interrupt regression that consumes generated uart_irq OTP image
   SoC UART RX/overrun interrupt regression that consumes generated uart_rx_irq OTP image
@@ -146,7 +147,7 @@ implemented:
 not yet implemented:
   bootloader sources
   wasp1-specific LLVM patches
-  longer-duration randomized software and interrupt-heavy stress campaigns
+  multi-hour randomized software and interrupt-heavy soak campaigns
 ```
 
 ## 5. Linker Layout

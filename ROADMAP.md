@@ -68,13 +68,13 @@ PASS       Current verification target passes
 | `debug` | PASS | Debug Module top and JTAG-facing wrapper are verified, including DPC readback, DCSR.step single-step, Access Memory, Program Buffer postexec, two OpenOCD/GDB hardware breakpoints, and load/store watchpoints |
 | `wdg/ahb_wdg` | PASS | Timeout, valid/bad kick, clear priority, IRQ/reset request, AHB error paths, and random timeouts pass |
 | `i2c/ahb_i2c` | PASS | TX ACK/NACK, RX ACK/NACK, busy reject, open-drain checks, AHB error paths, and random TX bytes pass |
-| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak/Program-Buffer smoke, OpenOCD/GDB register-write/step/breakpoint stress, long dual-breakpoint stress, load/store watchpoint regression, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round polling stress, four-seed/48-round randomized IRQ campaign, cache/runtime metrics sweep, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
+| `wasp1` top | PASS | Full hierarchy lint, reset-default smoke, SoC JTAG debug smoke, remote-bitbang socket smoke, automated OpenOCD/GDB process register/step/hbreak/Program-Buffer smoke, OpenOCD/GDB register-write/step/breakpoint stress, long dual-breakpoint stress, load/store watchpoint regression, generated OTP firmware boot-to-UART smoke, long multi-peripheral boot smoke, six-round polling stress, four-seed/48-round baseline and 32-seed/384-round nightly randomized IRQ campaigns, cache/runtime metrics sweep, mixed IRQ/DMA firmware smoke, DMA real-memory-copy firmware smoke, UART TX/RX/DMA/GPIO external IRQ firmware smokes, timer IRQ firmware smoke, OTP programming-register firmware smoke, debug status, and idle IO stability pass |
 | `wasp1` synthesis collateral | PASS | ASIC/DC and Virtex-7/Vivado script skeletons, clock constraints, ASIC SRAM/OTP blackbox filelist, and static collateral checker pass; real library/board synthesis remains |
 | Design presentations | PASS | Module/top-level PPT decks exist for common, bus, memories, peripherals, CPU/cache/tile/debug, and wasp1 top |
 | Editable OmniGraffle diagrams | PASS | All current design-spec `.graffle` diagrams pass the coordinate/overlap audit |
 | `llvm_s1` | PASS | Stage-1 BSP, Homebrew LLVM/lld strict RV32I compile/link smoke, objcopy, OTP image utility, generated UART/long-boot/mixed-IRQ-DMA/system-stress/random-IRQ-stress/UART-TX-IRQ/UART-RX-IRQ/GPIO-IRQ/DMA/DMA-IRQ/timer-IRQ/OTP-programming firmware images, local sparse LLVM source checkout, and corresponding wasp1 software smokes pass |
 | `ftdi_debugger` | VERIFY | FT2232H requirements, pinout, OpenOCD config, frozen Rev A hardware, routed four-layer PCB, local manufacturing/CAM audit, production BOM, release archive, Windows/Linux host setup, host OTP client, 2320-byte RV32I I-SRAM loader, and complete-SoC UART/OTP simulation are complete; fabricator impedance sign-off, second-person CAM review, procurement confirmation, and physical bring-up remain |
-| full system software | TODO | Directed machine timer and external interrupt tests, long generated-image boot, mixed IRQ/DMA smoke, six-round polling stress, four-seed/48-round randomized IRQ campaign, and debugger stress pass; longer-duration campaigns and optional advanced debug regressions remain |
+| full system software | PASS | Directed machine timer and external interrupt tests, long generated-image boot, mixed IRQ/DMA smoke, six-round polling stress, four-seed/48-round baseline, 32-seed/384-round scheduled campaign, and debugger stress pass; multi-hour soak and optional advanced debug regressions remain enhancements |
 
 ## Near-Term Plan
 
@@ -82,7 +82,7 @@ PASS       Current verification target passes
 1. Bind real ASIC standard-cell/memory libraries or a concrete Virtex-7 board part/pinout and run the first true synthesis reports
 2. Validate FT2232H OpenOCD/GDB and the simulated I-SRAM UART/OTP loader through Channel B on FPGA hardware
 3. Add optional System Bus Access after the verified Program Buffer postexec path if debugger performance or memory-access coverage requires it
-4. Extend the four-seed randomized IRQ baseline with longer-duration nightly/CI campaigns
+4. Monitor the scheduled 32-seed IRQ campaign and extend to multi-hour soak only when CI runtime permits
 ```
 
 ## Commit Policy Going Forward

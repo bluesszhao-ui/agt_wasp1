@@ -21,12 +21,14 @@ SYSTEM_STRESS_HEX ?= ../llvm_s1/build/smoke/system_stress_otp.hex
 RANDOM_IRQ_STRESS_HEX ?= ../llvm_s1/build/smoke/random_irq_stress_otp.hex
 RANDOM_IRQ_SEED ?= 1a2b3c4d
 RANDOM_IRQ_SEEDS ?= 1a2b3c4d 12345678 deadbeef 0f1e2d3c
+RANDOM_IRQ_NIGHTLY_BASE_SEED ?= c001d00d
+RANDOM_IRQ_NIGHTLY_SEED_COUNT ?= 32
 SIM_ARGS ?=
 RBB_TOP := wasp1
 RBB_OBJ_DIR := build/obj_wasp1_rbb
 RBB_PORT ?= 9824
 
-.PHONY: all lint sim sim-sw sim-otp-program sim-uart-otp-loader sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress sim-openocd-gdb-watchpoint clean
+.PHONY: all lint sim sim-sw sim-otp-program sim-uart-otp-loader sim-dma-copy sim-dma-irq sim-gpio-irq sim-uart-irq sim-uart-rx-irq sim-long-boot sim-mixed-irq-dma sim-system-stress sim-random-irq-stress sim-random-irq-multiseed sim-random-irq-nightly random-irq-runner-test sim-timer-irq sim-cache-metrics synth-collateral-check sim-rbb-build sim-rbb-smoke sim-openocd-gdb-smoke sim-openocd-gdb-stress sim-openocd-gdb-long-stress sim-openocd-gdb-watchpoint clean
 
 all: lint
 
@@ -179,6 +181,28 @@ sim-random-irq-multiseed:
 		--logs-dir logs --seeds $(RANDOM_IRQ_SEEDS) \
 		> logs/random_irq_multiseed.log 2>&1
 	@cat logs/random_irq_multiseed.log
+
+random-irq-runner-test:
+	PYTHONPATH=dv python3 -m unittest discover -s dv/tests -p 'test_random_irq_campaign.py' -v
+
+sim-random-irq-nightly: random-irq-runner-test
+	$(MAKE) -C ../llvm_s1 smoke
+	@mkdir -p build logs
+	$(VERILATOR) -sv --binary --timing --top-module $(WASP1_TOP) \
+		-Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-UNSIGNED \
+		-Mdir build/obj_$(WASP1_TOP) \
+		-f $(TB_WASP1_FILELIST) > logs/tb_wasp1_random_irq_nightly_build.log 2>&1
+	python3 dv/wasp1_random_irq_multiseed.py \
+		--sim build/obj_$(WASP1_TOP)/V$(WASP1_TOP) \
+		--otp-hex $(RANDOM_IRQ_STRESS_HEX) \
+		--logs-dir logs \
+		--generate-count $(RANDOM_IRQ_NIGHTLY_SEED_COUNT) \
+		--generator-seed $(RANDOM_IRQ_NIGHTLY_BASE_SEED) \
+		--require-selector-coverage \
+		--summary-json logs/random_irq_nightly_summary.json \
+		--summary-markdown logs/random_irq_nightly_summary.md \
+		> logs/random_irq_nightly.log 2>&1
+	@cat logs/random_irq_nightly.log
 
 sim-timer-irq:
 	$(MAKE) -C ../llvm_s1 smoke

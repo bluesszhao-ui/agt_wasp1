@@ -13,6 +13,8 @@ make -C wasp1 sim-mixed-irq-dma
 make -C wasp1 sim-system-stress
 make -C wasp1 sim-random-irq-stress
 make -C wasp1 sim-random-irq-multiseed
+make -C wasp1 random-irq-runner-test
+make -C wasp1 sim-random-irq-nightly
 make -C wasp1 sim-otp-program
 make -C wasp1 sim-dma-copy
 make -C wasp1 sim-uart-irq
@@ -42,6 +44,8 @@ make -C wasp1 sim-cache-metrics
 | `tb_wasp1` system stress firmware simulation | PASS |
 | `tb_wasp1` deterministic-random IRQ stress | PASS |
 | Four-seed randomized IRQ campaign | PASS |
+| Random IRQ campaign runner unit tests | PASS (5/5) |
+| 32-seed nightly randomized IRQ campaign | PASS |
 | `tb_wasp1` OTP programming firmware simulation | PASS |
 | `tb_wasp1` DMA copy firmware simulation | PASS |
 | `tb_wasp1` UART IRQ firmware simulation | PASS |
@@ -75,7 +79,10 @@ WASP1_RANDOM_IRQ_SEED seed=0x1a2b3c4d state=0xdc745d7e trace=0x00871448 events=1
 WASP1_RANDOM_IRQ_SEED seed=0x12345678 state=0x4e0f25f8 trace=0x0007540d events=14 timer=7 dma=7 gpio=0 PASS
 WASP1_RANDOM_IRQ_SEED seed=0xdeadbeef state=0xf9327ce4 trace=0x0026cccb events=16 timer=8 dma=5 gpio=3 PASS
 WASP1_RANDOM_IRQ_SEED seed=0x0f1e2d3c state=0x037695f6 trace=0x00af40a8 events=14 timer=6 dma=3 gpio=5 PASS
+WASP1_RANDOM_IRQ_CAMPAIGN seeds=4 rounds=48 events=57 timer=27 dma=20 gpio=10 selectors=18/11/10/9 PASS
 WASP1_RANDOM_IRQ_MULTI_SEED seeds=4 PASS
+WASP1_RANDOM_IRQ_CAMPAIGN seeds=32 rounds=384 events=478 timer=183 dma=197 gpio=98 selectors=89/103/98/94 PASS
+WASP1_RANDOM_IRQ_MULTI_SEED seeds=32 PASS
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/otp_program_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/dma_copy_otp.hex
@@ -131,6 +138,7 @@ WASP1_CACHE_METRICS_ROW label=random_irq_stress cycles=111920 retired=9999 ipc=0
 | 105ns-737us | System stress firmware run | CPU runs six polling rounds of D-SRAM seed/readback, DMA copy of eight words, timer compare polling, GPIO writes/toggles, UART TX pushes, and executable OTP readback; testbench checks checksum, final DMA buffers, GPIO value, status accumulators, and final deasserted IRQ state | PASS |
 | 105ns-1ms | Deterministic-random IRQ stress | Fixed seed `0x1a2b3c4d` selects 12 timer, DMA, GPIO, or concurrent timer+DMA rounds; testbench performs two GPIO request/ack handshakes and independently checks selector trace `0x00871448`, 13 events (timer 6, DMA 5, GPIO 2), event checksum `0x0000184a`, DMA checksum `0xa87c2adf`, UART progress, and final IRQ deassertion | PASS |
 | Four independent runs, about 0-1.2ms each | Multi-seed randomized IRQ campaign | Testbench holds each nonzero seed on GPIO through reset, waits for firmware seed capture, then runs four independent 12-round scoreboards; combined coverage is 48 rounds and 57 interrupt events, including a zero-GPIO schedule and timer+DMA concurrent rounds for every seed | PASS |
+| 32 independent runs, about 0-1.2ms each | Nightly randomized IRQ campaign | Runner derives non-overlapping 12-round windows from root `0xc001d00d`; each run cold-boots the same OTP image, captures its GPIO seed, and executes the full independent scoreboard. Aggregate result is 384 distinct rounds, 478 events (timer 183, DMA 197, GPIO 98), and selector counts 89/103/98/94 | PASS |
 | 105ns-33us | OTP programming firmware run | Startup copies `.fasttext` to I-SRAM; CPU executes the programming routine from I-SRAM and programs OTP word `0x00003fa0` to `0x13572468` with `done=1` and `error=0` | PASS |
 | 105ns-21us | DMA copy firmware run | CPU seeds D-SRAM source words at `0x20003000`, starts DMA to copy four words to `0x20003040`, and the testbench observes matching destination words with `done=1`, `error=0`, and `irq=1` | PASS |
 | 105ns-75us | UART IRQ firmware run | CPU enables UART TX-empty IRQ ID 2 in INTC, services one machine external interrupt, claims/completes IRQ 2, clears UART sticky TX-empty status, disables UART TX IRQ enable, and returns to idle | PASS |
@@ -169,6 +177,10 @@ testbench scoreboard checks the complete PRNG trace, per-source counts,
 order-independent event and DMA-data checksums, GPIO request/ack handshakes,
 and final IRQ state. The standard four-seed campaign reuses one OTP image for
 48 rounds and 57 interrupt events while retaining one failure log per seed.
+The scheduled 32-seed campaign spaces seed starts so all 384 firmware-round
+PRNG states are distinct. Its first recorded run completed 478 interrupt events
+with every operation selector covered, and emitted deterministic JSON,
+Markdown, and per-seed logs for CI review.
 The cache metrics sweep now records current I-cache/D-cache hit rates and
 cycles/retired/IPC/CPI for all generated C firmware images.
 The mixed IRQ/DMA firmware image now combines DMA master activity with two INTC
@@ -179,6 +191,5 @@ Buffer postexec is covered from DMI storage and abstract-command dispatch
 through real halted-core instruction execution, including backpressure and
 executor error mapping. The machine
 timer interrupt path is covered by a generated firmware image that returns
-through the C trap handler. Remaining top-level work includes optional
-optional SBA flows and longer-duration randomized software campaigns
-beyond the four-seed baseline.
+through the C trap handler. Remaining top-level work includes optional SBA
+flows, still-longer multi-hour soak campaigns, and physical FPGA/FTDI testing.
