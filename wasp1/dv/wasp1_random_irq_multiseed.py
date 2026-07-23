@@ -115,7 +115,7 @@ def build_summary(
         assert isinstance(selectors, list)
         selector_totals = [
             total + int(count)
-            for total, count in zip(selector_totals, selectors, strict=True)
+            for total, count in zip(selector_totals, selectors)
         ]
 
     summary: dict[str, object] = {

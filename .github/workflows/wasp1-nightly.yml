@@ -21,6 +21,11 @@ jobs:
       - name: Check out wasp1
         uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
       - name: Install LLVM and Verilator
         run: |
           brew install llvm verilator
@@ -44,4 +49,5 @@ jobs:
             wasp1/logs/random_irq_nightly_summary.json
             wasp1/logs/random_irq_nightly_summary.md
             wasp1/logs/random_irq_seed_*.log
+            wasp1/logs/random_irq_runner_test.log
             wasp1/logs/tb_wasp1_random_irq_nightly_build.log

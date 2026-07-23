@@ -27,8 +27,9 @@ missing aggregate selector class fails the target.
 
 `.github/workflows/wasp1-nightly.yml` runs daily at 18:17 UTC and also supports
 manual dispatch. It installs LLVM and Verilator on a hosted macOS runner,
-requires complete RISC-V toolchain support, invokes the local target, and
-archives reports for 30 days even when the campaign fails.
+selects Python 3.13 for the campaign tooling, requires complete RISC-V
+toolchain support, invokes the local target, and archives reports for 30 days
+even when the campaign fails.
 
 ## 4. Outputs
 
@@ -37,6 +38,7 @@ wasp1/logs/random_irq_nightly.log
 wasp1/logs/random_irq_nightly_summary.json
 wasp1/logs/random_irq_nightly_summary.md
 wasp1/logs/random_irq_seed_<seed>.log
+wasp1/logs/random_irq_runner_test.log
 wasp1/logs/tb_wasp1_random_irq_nightly_build.log
 ```
 

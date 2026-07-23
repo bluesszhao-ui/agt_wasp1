@@ -183,7 +183,12 @@ sim-random-irq-multiseed:
 	@cat logs/random_irq_multiseed.log
 
 random-irq-runner-test:
-	PYTHONPATH=dv python3 -m unittest discover -s dv/tests -p 'test_random_irq_campaign.py' -v
+	@mkdir -p logs
+	@PYTHONPATH=dv python3 -m unittest discover -s dv/tests \
+		-p 'test_random_irq_campaign.py' -v \
+		> logs/random_irq_runner_test.log 2>&1 || \
+		{ cat logs/random_irq_runner_test.log; exit 1; }
+	@cat logs/random_irq_runner_test.log
 
 sim-random-irq-nightly: random-irq-runner-test
 	$(MAKE) -C ../llvm_s1 smoke
