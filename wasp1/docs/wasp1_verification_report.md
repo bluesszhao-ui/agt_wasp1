@@ -46,6 +46,7 @@ make -C wasp1 sim-cache-metrics
 | Four-seed randomized IRQ campaign | PASS |
 | Random IRQ campaign runner unit tests | PASS (5/5) |
 | 32-seed nightly randomized IRQ campaign | PASS |
+| Hosted GitHub Actions nightly campaign | PASS (run 4, 1m 10s) |
 | `tb_wasp1` OTP programming firmware simulation | PASS |
 | `tb_wasp1` DMA copy firmware simulation | PASS |
 | `tb_wasp1` UART IRQ firmware simulation | PASS |
@@ -83,6 +84,7 @@ WASP1_RANDOM_IRQ_CAMPAIGN seeds=4 rounds=48 events=57 timer=27 dma=20 gpio=10 se
 WASP1_RANDOM_IRQ_MULTI_SEED seeds=4 PASS
 WASP1_RANDOM_IRQ_CAMPAIGN seeds=32 rounds=384 events=478 timer=183 dma=197 gpio=98 selectors=89/103/98/94 PASS
 WASP1_RANDOM_IRQ_MULTI_SEED seeds=32 PASS
+GITHUB_ACTIONS_RUN 29994889463 result=PASS artifact_sha256=725f891a02566a05c3d0c5bd4a81761942c46bc4082fd368297b1127fb4e923f
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/otp_program_otp.hex
 tb_wasp1 PASS pass_count=10 trap_valid=0 trap_cause=0x02 bus_grant_idx=0 dbg_running=1 dbg_halted=0 dbg_dmactive=1
 tb_wasp1 loaded OTP image: ../llvm_s1/build/smoke/dma_copy_otp.hex

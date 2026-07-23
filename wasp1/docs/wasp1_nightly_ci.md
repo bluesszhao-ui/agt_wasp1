@@ -61,3 +61,21 @@ selector 0/1/2/3: 89/103/98/94
 
 This campaign complements directed peripheral, interrupt, DMA, debug, and
 module-level tests. It does not replace them.
+
+## 6. Hosted Runner Validation
+
+GitHub Actions run
+[`29994889463`](https://github.com/bluesszhao-ui/agt_wasp1/actions/runs/29994889463)
+completed successfully in 1 minute 10 seconds. It produced the complete
+`wasp1-random-irq-nightly` artifact with digest:
+
+```text
+sha256:725f891a02566a05c3d0c5bd4a81761942c46bc4082fd368297b1127fb4e923f
+```
+
+Initial hosted runs exposed two CI-environment assumptions before the passing
+run: the macOS system Python did not support `zip(strict=True)`, and LLVM's
+RISC-V link smoke required Homebrew's separate `lld` package. The runner now
+selects Python 3.13 explicitly, retains compatibility with Python 3.9, installs
+`lld`, and archives the unit-test log even when failure occurs before firmware
+or simulator logs are created.
