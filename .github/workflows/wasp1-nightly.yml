@@ -36,10 +36,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install LLVM and Verilator
+      - name: Install LLVM, lld, and Verilator
         run: |
-          brew install llvm verilator
+          brew install llvm lld verilator
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix lld)/bin" >> "$GITHUB_PATH"
 
       - name: Run 32-seed random IRQ campaign
         env:
