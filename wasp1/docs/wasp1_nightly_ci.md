@@ -26,10 +26,12 @@ missing aggregate selector class fails the target.
 ## 3. CI Entry Point
 
 `.github/workflows/wasp1-nightly.yml` runs daily at 18:17 UTC and also supports
-manual dispatch. It installs LLVM and Verilator on a hosted macOS runner,
-selects Python 3.13 for the campaign tooling, requires complete RISC-V
-toolchain support, invokes the local target, and archives reports for 30 days
-even when the campaign fails.
+manual dispatch. Changes on `main` to the workflow, campaign driver/tests,
+top-level testbench, Makefile entry point, or random-IRQ firmware also trigger
+the job; unrelated commits do not. It installs LLVM and Verilator on a hosted
+macOS runner, selects Python 3.13 for the campaign tooling, requires complete
+RISC-V toolchain support, invokes the local target, and archives reports for
+30 days even when the campaign fails.
 
 ## 4. Outputs
 

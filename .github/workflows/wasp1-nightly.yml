@@ -1,6 +1,16 @@
 name: wasp1 nightly random IRQ campaign
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/wasp1-nightly.yml"
+      - "wasp1/Makefile"
+      - "wasp1/dv/wasp1_random_irq_multiseed.py"
+      - "wasp1/dv/tests/test_random_irq_campaign.py"
+      - "wasp1/tb/tb_wasp1.sv"
+      - "llvm_s1/bsp/examples/random_irq_stress.c"
   schedule:
     - cron: "17 18 * * *"
   workflow_dispatch:
